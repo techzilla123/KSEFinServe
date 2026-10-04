@@ -1,0 +1,11 @@
+{
+  "title": "KSEFinServe",
+  "description": "Enables users to create precise, custom designs effortlessly, ensuring perfect alignment with their exact specifications for professional results.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

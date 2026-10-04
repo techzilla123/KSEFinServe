@@ -1,0 +1,16 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="64" height="44" viewBox="0 0 64 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="dot-grid-bl">
+<circle id="e1" opacity="0.2" cx="2" cy="2" r="2" fill="#C6A15B"/>
+<circle id="e2" opacity="0.2" cx="22" cy="2" r="2" fill="#C6A15B"/>
+<circle id="e3" opacity="0.2" cx="42" cy="2" r="2" fill="#C6A15B"/>
+<circle id="e4" opacity="0.2" cx="62" cy="2" r="2" fill="#C6A15B"/>
+<circle id="e5" opacity="0.15" cx="2" cy="22" r="2" fill="#C6A15B"/>
+<circle id="e6" opacity="0.15" cx="22" cy="22" r="2" fill="#C6A15B"/>
+<circle id="e7" opacity="0.15" cx="42" cy="22" r="2" fill="#C6A15B"/>
+<circle id="e8" opacity="0.15" cx="62" cy="22" r="2" fill="#C6A15B"/>
+<circle id="e9" opacity="0.1" cx="2" cy="42" r="2" fill="#C6A15B"/>
+<circle id="e10" opacity="0.1" cx="22" cy="42" r="2" fill="#C6A15B"/>
+<circle id="e11" opacity="0.1" cx="42" cy="42" r="2" fill="#C6A15B"/>
+<circle id="e12" opacity="0.1" cx="62" cy="42" r="2" fill="#C6A15B"/>
+</g>
+</svg>

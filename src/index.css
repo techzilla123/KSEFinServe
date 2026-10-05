@@ -66,7 +66,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .art { max-width: none; flex-shrink: 0; pointer-events: none; }
 .eyebrow { font-size: 14px; line-height: 1.5; letter-spacing: .08em; color: var(--color-gold); }
 .button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 16px; border-radius: var(--radius-button); border: 0; font-size: 14px; line-height: 20px; font-weight: 500; text-align: center; transition: background .2s, transform .2s, box-shadow .2s; }
-.button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px #00000012; }
 .button-navy { background: var(--color-navy); color: white; }
 .button-navy:hover { background: #184562; }
 .button-gold { background: var(--color-gold); color: var(--color-midnight); }
@@ -120,7 +119,12 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 @keyframes revealChild { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
 /* Rotated wrappers keep their own tilt: animate opacity only */
 [data-reveal].is-visible > .work-card-wrap { animation-name: revealFade; }
+/* Cards that have their own hover transform: fade in without locking transform */
+[data-reveal].is-visible > .testimonial,
+[data-reveal].is-visible > .metric,
+[data-reveal].is-visible > .service-card { animation-name: revealFadeUp; animation-fill-mode: backwards; }
 @keyframes revealFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes revealFadeUp { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; } }
 
 /* Hero entrance */
 @keyframes heroRise { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
@@ -131,14 +135,73 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .hero-actions { animation: heroRise .8s cubic-bezier(.22,.61,.36,1) .32s both; }
 .hero-portrait { animation: heroRise 1s cubic-bezier(.22,.61,.36,1) .18s both; }
 
-/* Card hover polish */
-.work-card, .service-card, .testimonial, .metric { transition: transform .35s cubic-bezier(.22,.61,.36,1), box-shadow .35s ease; }
-.work-card:hover, .service-card:hover { transform: translateY(-6px); }
-.testimonial:hover { transform: translateY(-4px); }
-.metric:hover { transform: translateY(-4px); }
+/* ---- Card hover polish ---- */
+.work-card, .service-card, .testimonial, .metric {
+  transition: transform .45s cubic-bezier(.22,.61,.36,1), box-shadow .45s cubic-bezier(.22,.61,.36,1), border-color .45s ease, background-color .45s ease;
+  will-change: transform;
+}
+.button.work-card { transition: transform .45s cubic-bezier(.22,.61,.36,1), box-shadow .45s cubic-bezier(.22,.61,.36,1), background-color .45s ease; }
+.button.work-card:hover, .work-card:focus-visible { transform: translateY(-10px); }
+.service-card:hover, .service-card:focus-visible { transform: translateY(-8px); box-shadow: 0 24px 48px -20px #0d2b4240; }
+.metric:hover, .metric:focus-visible { transform: translateY(-6px); }
+
+/* Testimonials: lift + glow + border highlight */
+.testimonial { transition: transform .45s cubic-bezier(.22,.61,.36,1), box-shadow .45s cubic-bezier(.22,.61,.36,1), border-color .45s ease; }
+.testimonial:hover, .testimonial:focus-visible {
+  transform: translateY(-10px);
+  border-color: #c9a96366;
+  box-shadow: 4px 4px 20px #0000004d, 0 26px 50px -22px #c9a9634d, 0 0 0 1px #c9a96340;
+}
+/* Keep the middle card's offset when it lifts */
+.testimonial-1:hover, .testimonial-1:focus-visible { transform: translateY(-45px); }
+
+/* Service cards get a soft gold wash on hover */
+.service-card { transition: transform .45s cubic-bezier(.22,.61,.36,1), box-shadow .45s cubic-bezier(.22,.61,.36,1), background-color .45s ease; }
+
+/* Metric cards */
+.metric { transition: transform .45s cubic-bezier(.22,.61,.36,1), box-shadow .45s cubic-bezier(.22,.61,.36,1), background-color .45s ease; }
+.metric:hover, .metric:focus-visible { box-shadow: 0 22px 44px -22px #00000040; }
+
+/* Work card images gently zoom on hover */
+.work-card img { transition: transform .6s cubic-bezier(.22,.61,.36,1); }
+.work-card:hover img { transform: scale(1.04); }
+
+/* Testimonial avatar ring on hover */
+.testimonial figcaption img { transition: box-shadow .4s ease, transform .4s cubic-bezier(.22,.61,.36,1); }
+.testimonial:hover figcaption img { box-shadow: 0 0 0 3px #c9a96366; transform: scale(1.06); }
+
+/* Insight cards */
+.insight-card { transition: opacity .35s ease, box-shadow .35s ease, transform .35s cubic-bezier(.22,.61,.36,1), filter .35s ease; }
+
+/* Buttons: smoother, more tactile */
+.button { transition: background .25s ease, color .25s ease, transform .25s cubic-bezier(.22,.61,.36,1), box-shadow .25s ease; }
+.button:not(.work-card):hover { transform: translateY(-3px); box-shadow: 0 10px 24px -8px #00000033; }
+.button:not(.work-card):active { transform: translateY(-1px); box-shadow: 0 4px 10px -4px #0000002e; }
+
+/* Nav + links */
+.nav-item { transition: background .25s ease, color .25s ease; }
+.footer-nav nav a, .footer-calculators .button { transition: color .25s ease, opacity .25s ease; }
+
+/* Carousel arrows */
+.carousel-arrow { transition: background .25s ease, transform .25s cubic-bezier(.22,.61,.36,1), box-shadow .25s ease; }
+.carousel-arrow:hover { transform: translateY(-3px) scale(1.06); box-shadow: 0 8px 18px -8px #0d2b4240; }
+.carousel-arrow:active { transform: translateY(-1px) scale(1); }
+
+/* Small caption buttons */
+.card-caption-btn { transition: transform .3s cubic-bezier(.22,.61,.36,1), box-shadow .3s ease, background-color .3s ease; }
+.card-caption-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px -10px #00000040; }
+
+/* Insight modal cards */
+.insights-modal-card { transition: transform .3s cubic-bezier(.22,.61,.36,1), background-color .3s ease; }
+.insights-modal-card:hover { transform: translateY(-4px); background: #ffffff1a; }
+
+/* Focus visibility for keyboard users */
+.work-card:focus-visible, .service-card:focus-visible, .testimonial:focus-visible, .metric:focus-visible, .insight-card:focus-visible, .card-caption-btn:focus-visible { outline: 3px solid var(--color-sun); outline-offset: 4px; }
 
 @media (prefers-reduced-motion: reduce) {
   [data-reveal], [data-reveal].is-visible > *, .hero-copy .eyebrow, .hero h1, .hero-subtitle, .hero-description, .hero-actions, .hero-portrait { animation: none !important; transition: none !important; opacity: 1 !important; transform: none !important; }
+  .work-card, .service-card, .testimonial, .metric, .insight-card, .button, .carousel-arrow, .card-caption-btn, .work-card img, .testimonial figcaption img { transition: none !important; }
+  .work-card:hover, .service-card:hover, .testimonial:hover, .metric:hover, .button:hover, .carousel-arrow:hover, .card-caption-btn:hover, .work-card:hover img, .testimonial:hover figcaption img { transform: none !important; }
 }
 .hero-subtitle { font-size: clamp(20px, 1.5vw, 28px); font-weight: 500; margin-bottom: 18px; }
 .hero-description { max-width: 560px; color: #e7edf0b3; font-size: 16px; line-height: 1.6; }
@@ -287,7 +350,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .work-card-wrap:first-child { transform: rotate(-3deg); }
 .work-card-wrap:last-child { transform: rotate(3deg); }
 .work-card { padding: 10px; width: 100%; flex-direction: column; gap: 0; border-radius: 0; color: white; overflow: hidden; }
-.work-card:hover { transform: translateY(-12px); }
 .work-card img { width: 100%; aspect-ratio: .75; object-fit: cover; }
 .wealth-work { background: #203bff; }
 .wealth-work img { object-fit: contain; background: #f1f8fd; }
@@ -315,12 +377,25 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .impact-section .eyebrow { color: #d9dedc8c; font-size: 13px; margin-bottom: 24px; }
 .impact-section h2 { font-size: clamp(28px, 2.8vw, 48px); line-height: 1.2; font-weight: 550; margin-bottom: 48px; }
 .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
-.metric { background: #ffffff04; border: 1px solid #ffffff0d; border-radius: 18px; padding: 30px; }
-.metric strong { display: block; font-size: clamp(35px, 3vw, 54px); line-height: 1.15; font-weight: 650; margin-bottom: 16px; }
-.metric p { color: var(--white-muted); font-size: 16px; line-height: 1.5; }
+.metric { background: #ffffff04; border: 1px solid #ffffff0d; border-radius: 18px; padding: 30px; text-align: left; color: inherit; font: inherit; cursor: pointer; }
+.metric strong { display: block; font-size: clamp(35px, 3vw, 54px); line-height: 1.15; font-weight: 650; margin-bottom: 16px; transition: color .35s ease; }
+.metric p { color: var(--white-muted); font-size: 16px; line-height: 1.5; transition: color .35s ease; }
+/* Active (clicked) state: brown-gold like the hero "Clarity." */
+.metric.is-active { background: #dbab4710; border-color: #dbab4759; }
+.metric.is-active strong { color: var(--color-sun); }
+.metric.is-active p { color: #dbab47cc; }
 .metric:last-child { grid-column: 1 / -1; }
 
 .testimonials-section { position: relative; isolation: isolate; background: #ede8d0; padding: clamp(100px, 8vw, 160px) 0 clamp(210px, 18vw, 355px); }
+/* Fade the section in without shifting layout (its decor bleeds upward) */
+.testimonials-section[data-reveal] { transform: none; transition: opacity .9s ease; }
+.testimonials-section[data-reveal].is-visible > * { animation: none; }
+.testimonials-section[data-reveal] .impact-wave,
+.testimonials-section[data-reveal] .forest-scene,
+.testimonials-section[data-reveal] .land-scene { opacity: 0; transition: opacity 1s ease .15s; }
+.testimonials-section[data-reveal].is-visible .impact-wave,
+.testimonials-section[data-reveal].is-visible .forest-scene,
+.testimonials-section[data-reveal].is-visible .land-scene { opacity: 1; }
 .impact-wave { position: absolute; left: 0; bottom: calc(100% - 1px); width: 100%; height: auto; z-index: 3; pointer-events: none; }
 .forest-scene { position: absolute; bottom: 7%; left: 0; width: 100%; height: 87%; object-fit: fill; z-index: -1; }
 .testimonials-inner { max-width: 1320px; }
@@ -427,7 +502,42 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .site-footer { color: white; background: var(--color-navy); }
 .footer-top { max-width: 1320px; padding: 70px 0 55px; }
 .skyline { height: 150px; gap: 6px; position: relative; border-bottom: 2px solid #0077b566; width: min(100%, 1100px); margin: auto; overflow: hidden; }
-.building { width: 20px; height: 40px; background: #0a2235; position: relative; border-radius: 2px 2px 0 0; flex-shrink: 1; }
+.building { width: 20px; height: 40px; background: #0a2235; position: relative; border-radius: 2px 2px 0 0; flex-shrink: 1; padding: 0; border: 0; cursor: pointer; transform-origin: bottom center; transition: background-color .3s ease, box-shadow .3s ease, transform .3s cubic-bezier(.22,.61,.36,1); }
+.building:hover { background-color: #14405f; }
+.building:focus-visible { outline: 2px solid var(--color-sun); outline-offset: 2px; }
+/* "Build wealth" growth effect on click */
+.building.is-growing { animation: buildingGrow .9s cubic-bezier(.22,.61,.36,1); }
+@keyframes buildingGrow {
+  0%   { transform: scaleY(1) translateY(0); background-color: #0a2235; box-shadow: 0 0 0 0 #dbab4700; }
+  25%  { transform: scaleY(1.28) translateY(-4px); background-color: #dbab47; box-shadow: 0 0 22px 4px #dbab4780; }
+  55%  { transform: scaleY(1.12) translateY(-2px); background-color: #c9a963; box-shadow: 0 0 16px 2px #dbab4759; }
+  100% { transform: scaleY(1) translateY(0); background-color: #0a2235; box-shadow: 0 0 0 0 #dbab4700; }
+}
+/* Rising coin/spark */
+.building.is-growing::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffe9a8, #dbab47 60%, #b98b2e);
+  box-shadow: 0 0 10px 2px #dbab4799;
+  animation: coinRise .9s cubic-bezier(.22,.61,.36,1) forwards;
+  pointer-events: none;
+}
+@keyframes coinRise {
+  0%   { opacity: 0; transform: translateY(6px) scale(.4); }
+  25%  { opacity: 1; transform: translateY(-6px) scale(1); }
+  70%  { opacity: .9; transform: translateY(-34px) scale(1); }
+  100% { opacity: 0; transform: translateY(-58px) scale(.7); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .building.is-growing { animation: none; }
+  .building.is-growing::after { animation: none; }
+}
 .building-1 { height: 55px; background: #0b2438; width: 14px; }
 .building-2 { height: 70px; background: #0c2840; width: 22px; }
 .building-3 { height: 38px; width: 12px; }
@@ -436,6 +546,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .building-6 { height: 65px; background: #0f3050; width: 28px; }
 .building-7 { height: 40px; width: 14px; }
 .building:nth-child(15) { height: 148px; background: transparent; display: flex; align-items: flex-end; justify-content: center; width: 52px; }
+.building:nth-child(15):hover { background-color: transparent; }
 .building:nth-child(15) svg { display: block; }
 .building > .art { zoom: .6; }
 .footer-top h2 { font-size: clamp(30px, 2.5vw, 48px); line-height: 1.2; font-weight: 600; margin: 44px 0 16px; }

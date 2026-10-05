@@ -563,6 +563,7 @@ export default function App() {
   const [workIndex, setWorkIndex] = useState(0)
   const [testimonialIndex, setTestimonialIndex] = useState(1)
   const [insightsModal, setInsightsModal] = useState(false)
+  const [activeMetric, setActiveMetric] = useState<number | null>(null)
   const dialog = useRef<HTMLDialogElement>(null)
   useScrollReveal()
   useEffect(() => {
@@ -1070,11 +1071,17 @@ export default function App() {
                 ["$9M+", "Annual Team Production"],
                 ["7 Figures", "Personal Annual Production"],
                 ["4,500+", "Families & Professionals Served"],
-              ].map(([value, label]) => (
-                <div key={value} className="metric">
+              ].map(([value, label], i) => (
+                <button
+                  type="button"
+                  key={value}
+                  className={`metric ${activeMetric === i ? "is-active" : ""}`}
+                  onClick={() => setActiveMetric(activeMetric === i ? null : i)}
+                  aria-pressed={activeMetric === i}
+                >
                   <CountUp value={value} />
                   <p>{label}</p>
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -1084,6 +1091,7 @@ export default function App() {
           id="testimonials"
           className="testimonials-section"
           aria-labelledby="testimonials-title"
+          data-reveal
         >
           <img
             src={artwork.wave}
@@ -1495,12 +1503,22 @@ export default function App() {
 
       <footer className="site-footer">
         <div className="container footer-top text-center">
-          <div
-            className="skyline flex items-end justify-center"
-            aria-hidden="true"
-          >
+          <div className="skyline flex items-end justify-center">
             {Array.from({ length: 32 }, (_, i) => (
-              <span className={`building building-${i % 8}`} key={i}>
+              <button
+                type="button"
+                className={`building building-${i % 8}`}
+                key={i}
+                onClick={(e) => {
+                  const el = e.currentTarget
+                  el.classList.remove("is-growing")
+                  // force reflow so the animation can restart
+                  void el.offsetWidth
+                  el.classList.add("is-growing")
+                  window.setTimeout(() => el.classList.remove("is-growing"), 900)
+                }}
+                aria-label="Grow the skyline"
+              >
                 {i === 14 && (
                   <svg
                     width="52"
@@ -1554,7 +1572,7 @@ export default function App() {
                     </defs>
                   </svg>
                 )}
-              </span>
+              </button>
             ))}
           </div>
           <Heading>Build Wealth with Clarity.</Heading>

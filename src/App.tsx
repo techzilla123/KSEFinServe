@@ -28,9 +28,9 @@ const artwork = {
   wealth: `${assetPathPrefix}/99851.webp`,
   advisors: `${assetPathPrefix}/ee9ac.webp`,
   building: `${assetPathPrefix}/3ec07.webp`,
-  wealthCard: `${assetPathPrefix}/e9615.webp`,
-  guideCard: `${assetPathPrefix}/1a476.webp`,
-  careerCard: `${assetPathPrefix}/5ae3f.webp`,
+  wealthCard: `${assetPathPrefix}/wealthCard.webp`,
+  guideCard: `${assetPathPrefix}/guideCard.webp`,
+  careerCard: `${assetPathPrefix}/careerCard.webp`,
   nextChapter: `${assetPathPrefix}/fb1d4.webp`,
   conversation: `${assetPathPrefix}/0f1eb.webp`,
   chevron: `${assetPathPrefix}/32174.svg`,
@@ -534,6 +534,7 @@ const calculators = [
   "College Savings",
   "Debt Repayment",
   "Retirement Planning",
+  "Compound Interest",
 ] as const
 type CalculatorKind = typeof calculators[number]
 type Panel = { kind: "story" } | {
@@ -544,9 +545,9 @@ type Panel = { kind: "story" } | {
   calculator: CalculatorKind
 }
 const money = (amount: number) =>
-  new Intl.NumberFormat("en-CA", {
+  new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "CAD",
+    currency: "USD",
     maximumFractionDigits: 0,
   }).format(amount)
 
@@ -564,8 +565,21 @@ export default function App() {
   const [testimonialIndex, setTestimonialIndex] = useState(1)
   const [insightsModal, setInsightsModal] = useState(false)
   const [activeMetric, setActiveMetric] = useState<number | null>(null)
+  const [calcMenuOpen, setCalcMenuOpen] = useState(false)
   const dialog = useRef<HTMLDialogElement>(null)
+  const calcMenuRef = useRef<HTMLDivElement>(null)
   useScrollReveal()
+
+  // Close the calculators dropdown when clicking anywhere outside it
+  useEffect(() => {
+    if (!calcMenuOpen) return
+    const onPointerDown = (event: PointerEvent) => {
+      if (calcMenuRef.current?.contains(event.target as Node)) return
+      setCalcMenuOpen(false)
+    }
+    document.addEventListener("pointerdown", onPointerDown)
+    return () => document.removeEventListener("pointerdown", onPointerDown)
+  }, [calcMenuOpen])
   useEffect(() => {
     if (!panel) {
       dialog.current?.close()
@@ -631,17 +645,34 @@ export default function App() {
             <Link href="#insights" className="nav-item">
               Events
             </Link>
-            <Button
-              className="nav-calculator"
-              onClick={() =>
-                setPanel({
-                  kind: "calculator",
-                  calculator: "Retirement Planning",
-                })
-              }
-            >
-              Calculators <Art src={artwork.chevron} />
-            </Button>
+            <div className="nav-calculator-wrap" ref={calcMenuRef}>
+              <Button
+                className="nav-calculator"
+                aria-haspopup="true"
+                aria-expanded={calcMenuOpen}
+                onClick={() => setCalcMenuOpen((v) => !v)}
+              >
+                Calculators <Art src={artwork.chevron} />
+              </Button>
+              {calcMenuOpen && (
+                <div className="nav-calculator-menu" role="menu">
+                  {calculators.map((calculator) => (
+                    <button
+                      key={calculator}
+                      type="button"
+                      role="menuitem"
+                      className="nav-calculator-item"
+                      onClick={() => {
+                        setCalcMenuOpen(false)
+                        setPanel({ kind: "calculator", calculator })
+                      }}
+                    >
+                      {calculator}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </nav>
           <div className="flex items-center gap-3">
             <BookingLink className="header-book">Book a Session</BookingLink>
@@ -707,7 +738,7 @@ export default function App() {
                 <br />
                 <span>
                   <TextType
-                    text={["Clarity.", "Purpose.", "Legacy."]}
+                    text={["Clarity.", "Purpose.", "Strategy."]}
                     typingSpeed={90}
                     deletingSpeed={45}
                     pauseDuration={1600}
@@ -759,20 +790,7 @@ export default function App() {
               <br />
               ORGANIZATIONS
             </Eyebrow>
-            <div className="trusted-logos grid">
-              {[
-                ["MacPhini Foundation", artwork.macPhini],
-                ["The Canadian Institute of Financial Planning", artwork.cifp],
-                ["Registered Retirement Consultant", artwork.rrc],
-                ["1Mfor1T", artwork.million],
-                ["MacPhini Foundation", artwork.macPhini],
-              ].map(([label, src], i) => (
-                <div key={`${label}-${i}`}>
-                  <img src={src} alt={label} />
-                </div>
-              ))}
-            </div>
-            <div className="trusted-marquee" aria-hidden="true">
+            <div className="trusted-marquee">
               <div className="trusted-marquee-track">
                 {[
                   ["MacPhini Foundation", artwork.macPhini],
@@ -787,7 +805,7 @@ export default function App() {
                   ["MacPhini Foundation", artwork.macPhini],
                 ].map(([label, src], i) => (
                   <div key={`m-${label}-${i}`}>
-                    <img src={src} alt="" />
+                    <img src={src} alt={label} />
                   </div>
                 ))}
               </div>
@@ -909,8 +927,8 @@ export default function App() {
                 KAYODE S.{" "}
                 <br />
                 <span>ELEPE,</span>{" "}
-                <br />
-                RR
+                <br className="about-rr-br" />
+                <span className="about-rr">Registered Rep.</span>
               </Heading>
               <p>
                 What matters most is helping people make better decisions for
@@ -1275,15 +1293,20 @@ export default function App() {
             </div>
             <div className="diagram-bottom flex items-center justify-center">
               <Art src={artwork.lineLeft} />
-              <BookingLink
-                variant="text"
-                className="session-seal"
-                aria-label="Book a session"
-              >
-                <Art src={artwork.seal} />
-                <span>BOOK SESSION</span>
-                <Art src={artwork.arrow} />
-              </BookingLink>
+              <div className="book-now">
+                <span className="book-now-icon" aria-hidden="true">
+                  <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                    <path d="M9 15.5l2 2 4-4" />
+                  </svg>
+                </span>
+                <BookingLink className="book-now-btn">
+                  Book Session
+                </BookingLink>
+              </div>
               <Art src={artwork.lineRight} />
             </div>
           </div>
@@ -1599,18 +1622,26 @@ export default function App() {
               <Link href="#insights">Events</Link>
               <Link href="#contact">Contact Us</Link>
             </nav>
-            <Link
-              href="https://www.linkedin.com/"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="Visit LinkedIn"
-              className="linkedin-link"
-            >
-              <Art src={artwork.linkedin} />
-            </Link>
+            <div className="footer-socials">
+              <a href="https://www.linkedin.com/" target="_blank" rel="noreferrer" aria-label="LinkedIn" className="footer-social">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45z"/></svg>
+              </a>
+              <a href="https://www.instagram.com/" target="_blank" rel="noreferrer" aria-label="Instagram" className="footer-social">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+              </a>
+              <a href="https://www.facebook.com/" target="_blank" rel="noreferrer" aria-label="Facebook" className="footer-social">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+              </a>
+              <a href="https://www.youtube.com/" target="_blank" rel="noreferrer" aria-label="YouTube" className="footer-social">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
+              </a>
+              <a href="https://www.tiktok.com/" target="_blank" rel="noreferrer" aria-label="TikTok" className="footer-social">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
+              </a>
+            </div>
           </div>
           <div className="footer-calculators flex items-center justify-between">
-            <Eyebrow>Financial Calculators</Eyebrow>
+            <Eyebrow className="footer-calculators-title">Financial Calculators</Eyebrow>
             <div className="flex flex-wrap gap-6">
               {calculators.map((calculator) => (
                 <Button
@@ -1624,7 +1655,7 @@ export default function App() {
             </div>
           </div>
           <div className="footer-copyright flex flex-wrap items-center justify-between gap-3">
-            <p>© 2026 Kayode Samson Elepe. All rights reserved.</p>
+            <p>© 2026 KSEFinServe. All rights reserved.</p>
             <p>Clarity · Growth · Impact</p>
           </div>
         </div>
@@ -1692,27 +1723,99 @@ export default function App() {
                       ? "Estimate the monthly payment needed to pay off a balance."
                       : "Explore how consistent contributions could grow over time."}
                 </p>
-                <div className="calculator-switch flex flex-wrap gap-2">
-                  {calculators.map((calculator) => (
-                    <Button
-                      key={calculator}
-                      variant={
-                        calculator === panel.calculator ? "navy" : "white"
-                      }
-                      aria-pressed={calculator === panel.calculator}
-                      onClick={() =>
-                        setPanel({ kind: "calculator", calculator })
+                <div className="calculator-switch">
+                  <label className="calculator-select">
+                    <span className="sr-only">Choose a calculator</span>
+                    <select
+                      value={panel.calculator}
+                      onChange={(e) =>
+                        setPanel({
+                          kind: "calculator",
+                          calculator: e.target.value as CalculatorKind,
+                        })
                       }
                     >
-                      {calculator}
-                    </Button>
-                  ))}
+                      {calculators.map((calculator) => (
+                        <option key={calculator} value={calculator}>
+                          {calculator}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                 </div>
                 <div className="calculator-fields grid">
-                  {panel.calculator === "Tax Calculator" ? (
+                  {panel.calculator === "Compound Interest" ? (
                     <>
                       <label>
-                        Annual income (CAD)
+                        Initial deposit (USD)
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100000000"
+                          step="100"
+                          value={principal}
+                          onChange={(e) =>
+                            setPrincipal(
+                              Math.min(
+                                100000000,
+                                Math.max(0, Number(e.target.value)),
+                              ),
+                            )
+                          }
+                        />
+                      </label>
+                      <label>
+                        Monthly contribution (USD)
+                        <Input
+                          type="number"
+                          min="0"
+                          max="1000000"
+                          step="25"
+                          value={monthly}
+                          onChange={(e) =>
+                            setMonthly(
+                              Math.min(
+                                1000000,
+                                Math.max(0, Number(e.target.value)),
+                              ),
+                            )
+                          }
+                        />
+                      </label>
+                      <label>
+                        Annual interest rate (%)
+                        <Input
+                          type="number"
+                          min="0"
+                          max="30"
+                          step="0.5"
+                          value={rate}
+                          onChange={(e) =>
+                            setRate(
+                              Math.min(30, Math.max(0, Number(e.target.value))),
+                            )
+                          }
+                        />
+                      </label>
+                      <label>
+                        Years to grow
+                        <Input
+                          type="number"
+                          min="1"
+                          max="60"
+                          value={years}
+                          onChange={(e) =>
+                            setYears(
+                              Math.min(60, Math.max(1, Number(e.target.value))),
+                            )
+                          }
+                        />
+                      </label>
+                    </>
+                  ) : panel.calculator === "Tax Calculator" ? (
+                    <>
+                      <label>
+                        Annual income (USD)
                         <Input
                           type="number"
                           min="0"
@@ -1752,8 +1855,8 @@ export default function App() {
                     <>
                       <label>
                         {panel.calculator === "Debt Repayment"
-                          ? "Current balance (CAD)"
-                          : "Starting savings (CAD)"}
+                          ? "Current balance (USD)"
+                          : "Starting savings (USD)"}
                         <Input
                           type="number"
                           min="0"
@@ -1772,7 +1875,7 @@ export default function App() {
                       </label>
                       {panel.calculator !== "Debt Repayment" && (
                         <label>
-                          Monthly contribution (CAD)
+                          Monthly contribution (USD)
                           <Input
                             type="number"
                             min="0"
@@ -1832,7 +1935,9 @@ export default function App() {
                       ? "Estimated annual tax"
                       : panel.calculator === "Debt Repayment"
                         ? "Estimated monthly payment"
-                        : "Projected future value"}
+                        : panel.calculator === "Compound Interest"
+                          ? "Projected balance"
+                          : "Projected future value"}
                   </span>
                   <strong>
                     {money(
@@ -1849,8 +1954,16 @@ export default function App() {
                     </small>
                   )}
                 </output>
+                {panel.calculator === "Compound Interest" && (
+                  <CompoundGraph
+                    principal={principal}
+                    monthly={monthly}
+                    rate={rate}
+                    years={years}
+                  />
+                )}
                 <small>
-                  Illustrative estimates in Canadian dollars, not financial or
+                  Illustrative estimates in US dollars, not financial or
                   tax advice. Growth assumes constant returns and end-of-month
                   contributions; fees, inflation, and taxes are excluded. Debt
                   assumes fixed monthly payments. Tax uses your supplied
@@ -1862,6 +1975,179 @@ export default function App() {
         )}
       </dialog>
     </>
+  )
+}
+
+function CompoundGraph({
+  principal,
+  monthly,
+  rate,
+  years,
+}: {
+  principal: number
+  monthly: number
+  rate: number
+  years: number
+}) {
+  const W = 560
+  const H = 220
+  const PAD = { top: 18, right: 14, bottom: 26, left: 14 }
+  const r = rate / 100
+  const monthlyRate = r / 12
+  const months = Math.max(1, Math.round(years * 12))
+
+  // Build the growth series (balance at each year mark)
+  const points: { x: number; y: number; label: string }[] = []
+  let balance = principal
+  for (let m = 0; m <= months; m++) {
+    if (m > 0) {
+      balance = balance * (1 + monthlyRate) + monthly
+    }
+    if (m % 12 === 0 || m === months) {
+      points.push({ x: m / 12, y: balance, label: `Year ${m / 12}` })
+    }
+  }
+
+  const maxVal = Math.max(...points.map((p) => p.y), 1)
+  const minVal = Math.min(...points.map((p) => p.y), 0)
+  const range = maxVal - minVal || 1
+
+  const toX = (yr: number) =>
+    PAD.left + (yr / years) * (W - PAD.left - PAD.right)
+  const toY = (val: number) =>
+    PAD.top + (1 - (val - minVal) / range) * (H - PAD.top - PAD.bottom)
+
+  const linePath = points
+    .map((p, i) => `${i === 0 ? "M" : "L"}${toX(p.x).toFixed(1)},${toY(p.y).toFixed(1)}`)
+    .join(" ")
+  const areaPath = `${linePath} L${toX(points[points.length - 1].x).toFixed(1)},${toY(minVal).toFixed(1)} L${toX(0).toFixed(1)},${toY(minVal).toFixed(1)} Z`
+
+  const [hover, setHover] = useState<number | null>(null)
+
+  const totalContributed = principal + monthly * months
+  const interestEarned = Math.max(0, balance - totalContributed)
+
+  const hovered = hover !== null ? points[hover] : null
+  const hoverX = hovered ? toX(hovered.x) : 0
+  const hoverY = hovered ? toY(hovered.y) : 0
+
+  return (
+    <div className="compound-graph">
+      <div className="compound-graph-stats">
+        <div>
+          <span>Total contributed</span>
+          <strong>{money(totalContributed)}</strong>
+        </div>
+        <div>
+          <span>Interest earned</span>
+          <strong>{money(interestEarned)}</strong>
+        </div>
+      </div>
+      <div className="compound-graph-plot">
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          className="compound-graph-svg"
+          role="img"
+          aria-label={`Projected balance of ${money(balance)} after ${years} years`}
+          onMouseLeave={() => setHover(null)}
+        >
+          <defs>
+            <linearGradient id="compoundFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#dbab47" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="#dbab47" stopOpacity="0.02" />
+            </linearGradient>
+          </defs>
+          {/* grid lines */}
+          {[0.25, 0.5, 0.75].map((f) => (
+            <line
+              key={f}
+              x1={PAD.left}
+              x2={W - PAD.right}
+              y1={PAD.top + f * (H - PAD.top - PAD.bottom)}
+              y2={PAD.top + f * (H - PAD.top - PAD.bottom)}
+              stroke="#ffffff14"
+              strokeDasharray="3 4"
+            />
+          ))}
+          <path d={areaPath} fill="url(#compoundFill)" />
+          <path
+            d={linePath}
+            fill="none"
+            stroke="#dbab47"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {points.map((p, i) => (
+            <circle
+              key={p.label}
+              cx={toX(p.x)}
+              cy={toY(p.y)}
+              r={hover === i ? 5 : 3.5}
+              fill="#0b2638"
+              stroke="#dbab47"
+              strokeWidth="2"
+              style={{ transition: "r .15s ease" }}
+            >
+              <title>{`${p.label}: ${money(p.y)}`}</title>
+            </circle>
+          ))}
+          {/* hover crosshair */}
+          {hovered && (
+            <g className="compound-graph-hover" pointerEvents="none">
+              <line
+                x1={hoverX}
+                x2={hoverX}
+                y1={PAD.top}
+                y2={H - PAD.bottom}
+                stroke="#dbab47"
+                strokeOpacity="0.4"
+                strokeDasharray="3 3"
+              />
+              <circle cx={hoverX} cy={hoverY} r="7" fill="#dbab47" fillOpacity="0.25" />
+              <circle cx={hoverX} cy={hoverY} r="4" fill="#dbab47" stroke="#0b2638" strokeWidth="2" />
+            </g>
+          )}
+          {/* x-axis labels */}
+          {points.map((p) => (
+            <text
+              key={`t-${p.label}`}
+              x={toX(p.x)}
+              y={H - 8}
+              textAnchor="middle"
+              fontSize="10"
+              fill="#ffffff80"
+            >
+              {p.x}y
+            </text>
+          ))}
+          {/* invisible hover targets */}
+          {points.map((p, i) => (
+            <rect
+              key={`h-${p.label}`}
+              x={toX(p.x) - (W - PAD.left - PAD.right) / years / 2}
+              y={PAD.top}
+              width={(W - PAD.left - PAD.right) / years}
+              height={H - PAD.top - PAD.bottom}
+              fill="transparent"
+              onMouseEnter={() => setHover(i)}
+            />
+          ))}
+        </svg>
+        {hovered && (
+          <div
+            className="compound-graph-tooltip"
+            style={{
+              left: `${(hoverX / W) * 100}%`,
+              top: `${(hoverY / H) * 100}%`,
+            }}
+          >
+            <strong>{money(hovered.y)}</strong>
+            <span>{hovered.label}</span>
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 

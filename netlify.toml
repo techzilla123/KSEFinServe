@@ -1,0 +1,5 @@
+[build]
+  # Leave command empty or set to a no-op so it doesn't rebuild
+  command = ""
+  # Point the publish directory to your dist folder
+  publish = "dist"

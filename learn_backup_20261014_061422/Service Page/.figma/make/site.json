@@ -1,0 +1,10 @@
+{
+  "description": "Create visually stunning service pages effortlessly, tailored for businesses seeking to enhance their online presence and attract more customers.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

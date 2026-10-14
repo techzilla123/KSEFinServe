@@ -1,0 +1,291 @@
+@import 'tailwindcss';
+
+@font-face {
+  font-family: 'Inter:Medium';
+  src: url('https://static.figma.com/font/Inter_1') format('woff2');
+  font-style: normal;
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: 'Mona Sans:Bold';
+  src: url('https://static.figma.com/font/MonaSans_wdth_wght__1') format('woff2');
+  font-style: normal;
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: 'Mona Sans:ExtraBold';
+  src: url('https://static.figma.com/font/MonaSans_wdth_wght__1') format('woff2');
+  font-style: normal;
+  font-weight: 800;
+}
+
+@font-face {
+  font-family: 'Mona Sans:Light';
+  src: url('https://static.figma.com/font/MonaSans_wdth_wght__1') format('woff2');
+  font-style: normal;
+  font-weight: 300;
+}
+
+@font-face {
+  font-family: 'Mona Sans:Medium';
+  src: url('https://static.figma.com/font/MonaSans_wdth_wght__1') format('woff2');
+  font-style: normal;
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: 'Mona Sans:Regular';
+  src: url('https://static.figma.com/font/MonaSans_wdth_wght__1') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Mona Sans:SemiBold';
+  src: url('https://static.figma.com/font/MonaSans_wdth_wght__1') format('woff2');
+  font-style: normal;
+  font-weight: 600;
+}
+
+@font-face {
+  font-family: 'Oswald:SemiBold';
+  src: url('https://static.figma.com/font/Oswald_wght__2') format('woff2');
+  font-style: normal;
+  font-weight: 600;
+}
+
+:root {
+  color: #081d2b;
+  background: #f0ede6;
+  font-synthesis: none;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+button,
+a {
+  cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  [data-name='Hero section'] > [data-name^='float-card'],
+  [data-name='Hero section'] > [data-name^='glow-'],
+  [data-name='Hero section'] > [data-name^='arc-'],
+  [data-name='Hero section'] > [data-name^='diamond-'],
+  [data-name='Hero section'] > [data-name^='dot-'] {
+    display: none;
+  }
+
+  [data-name='hero-headline'] {
+    width: calc(100% - 40px) !important;
+  }
+
+  [data-name='hero-headline'] > div {
+    font-size: 52px !important;
+  }
+
+  [data-name='hero-main-card'],
+  [data-name='hero-main-card'] > div {
+    width: min(520px, calc(100vw - 40px)) !important;
+  }
+
+  [data-name='services-header'],
+  [data-name='process-header'] {
+    padding-left: 28px !important;
+    padding-right: 28px !important;
+  }
+
+  [data-name='services-header'] > div:nth-of-type(2) {
+    width: 100% !important;
+    font-size: 46px !important;
+  }
+
+  [data-name='services-header'] > p {
+    width: min(600px, 100%) !important;
+  }
+
+  [data-name='service-cards'] {
+    flex-direction: column;
+  }
+
+  [data-name='wealth-card'],
+  [data-name='biz-card'] {
+    flex: none !important;
+    width: 100%;
+  }
+
+  [data-name='wealth-card'] > [data-name='photo'],
+  [data-name='wealth-card'] > [data-name='overlay'],
+  [data-name='wealth-card'] > [data-name='card-content'],
+  [data-name='biz-card'] > [data-name='photo'],
+  [data-name='biz-card'] > [data-name='overlay'],
+  [data-name='biz-card'] > [data-name='card-content'] {
+    width: 100% !important;
+  }
+
+  [data-name='services-bottom-bar'] {
+    gap: 24px;
+    padding: 28px !important;
+  }
+
+  [data-name='heading-row'] {
+    align-items: flex-start !important;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  [data-name='heading-row'] > div,
+  [data-name='heading-row'] > p {
+    width: 100% !important;
+  }
+
+  [data-name='heading-row'] > div {
+    font-size: 48px !important;
+  }
+
+  [data-name^='Phase 0'] {
+    height: auto !important;
+    flex-direction: column;
+  }
+
+  [data-name^='Phase 0'] > [data-name='phase-left'],
+  [data-name^='Phase 0'] > [data-name='phase-right'] {
+    height: 560px !important;
+    width: 100% !important;
+  }
+
+  [data-name='Before conversation'] {
+    flex-direction: column;
+    gap: 48px !important;
+    padding: 64px 28px !important;
+  }
+
+  [data-name='Before conversation'] > [data-name='left'] {
+    width: 100% !important;
+  }
+
+  [data-name='CTA banner'] {
+    align-items: flex-start !important;
+    flex-direction: column;
+    gap: 40px !important;
+    padding: 64px 28px !important;
+  }
+
+  [data-name='CTA banner'] > [data-name='left'] {
+    width: 100% !important;
+  }
+
+  [data-name='CTA banner'] > [data-name='left'] > div:nth-of-type(2) {
+    font-size: 44px !important;
+    white-space: normal !important;
+  }
+}
+
+@media (max-width: 600px) {
+  [data-name='hero-headline'] > div {
+    font-size: 42px !important;
+  }
+
+  [data-name='hero-ctas'] {
+    flex-direction: column;
+    top: 738px !important;
+  }
+
+  [data-name='scroll-hint'] {
+    display: none;
+  }
+
+  [data-name='services-header'] {
+    padding-top: 56px !important;
+  }
+
+  [data-name='services-header'] > div:nth-of-type(2) {
+    font-size: 38px !important;
+  }
+
+  [data-name='wealth-card'],
+  [data-name='biz-card'] {
+    height: 720px !important;
+  }
+
+  [data-name='wealth-card'] > [data-name='card-content'],
+  [data-name='biz-card'] > [data-name='card-content'] {
+    height: 720px !important;
+    gap: 22px !important;
+    padding: 36px 24px !important;
+  }
+
+  [data-name='wealth-card'] [data-name='card-content'] > div:nth-of-type(2),
+  [data-name='biz-card'] [data-name='card-content'] > div:nth-of-type(2) {
+    font-size: 56px !important;
+    width: 100% !important;
+  }
+
+  [data-name='card-content'] > p,
+  [data-name='feature-pills'] {
+    width: 100% !important;
+  }
+
+  [data-name='services-bottom-bar'] {
+    align-items: flex-start !important;
+    flex-direction: column;
+  }
+
+  [data-name='services-bottom-bar'] > p {
+    white-space: normal !important;
+  }
+
+  [data-name='process-header'] {
+    padding-top: 60px !important;
+  }
+
+  [data-name='heading-row'] > div {
+    font-size: 39px !important;
+  }
+
+  [data-name^='Phase 0'] > [data-name='phase-left'],
+  [data-name^='Phase 0'] > [data-name='phase-right'] {
+    height: auto !important;
+    min-height: 560px;
+    padding: 44px 24px !important;
+  }
+
+  [data-name^='Phase 0'] [data-name='phase-photo'] {
+    opacity: 0.28 !important;
+  }
+
+  [data-name^='Phase 0'] [data-name='phase-left'] > div:nth-of-type(4),
+  [data-name^='Phase 0'] [data-name='phase-right'] > div:nth-of-type(3) {
+    width: 100% !important;
+  }
+
+  [data-name='points'] [data-name='text'] > p {
+    white-space: normal !important;
+  }
+
+  [data-name='outcome'] > p {
+    white-space: normal !important;
+  }
+
+  [data-name='Before conversation'] [data-name='left'] > div:nth-of-type(2) {
+    font-size: 44px !important;
+    white-space: normal !important;
+  }
+
+  [data-name='CTA banner'] > [data-name='left'] > div:nth-of-type(2) {
+    font-size: 38px !important;
+  }
+
+  [data-name='CTA banner'] > [data-name='left'] > p {
+    white-space: normal !important;
+  }
+}

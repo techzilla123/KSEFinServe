@@ -1,0 +1,708 @@
+@import 'tailwindcss';
+
+/* Fonts come from about-layout.css (local /fonts/*.ttf). The Figma export's
+   @font-face rules pointed at static.figma.com URLs that do not resolve.
+   Oswald:SemiBold is used by this page's headings and is not declared there,
+   so register it here against the same local file. */
+@font-face {
+  font-family: 'Oswald:SemiBold';
+  src: url('/fonts/Oswald_wght__2.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+
+.service-page {
+  background: #f0ede6;
+}
+
+/* Hero decoration stage.
+   Below 1500px the stage is a transparent pass-through: decorations keep the
+   original Figma absolute pixel offsets and behave exactly as before.
+   From 1500px up the stage becomes a 1440px design canvas centred in the hero,
+   so the composition stays identical instead of bunching to the left. */
+.hero-stage {
+  position: static;
+  display: contents;
+}
+
+@media (min-width: 1500px) {
+  .hero-stage {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    margin-left: -720px;
+    width: 1440px;
+    height: 860px;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .hero-stage > * {
+    pointer-events: none;
+  }
+}
+
+/* Service path cards on wide screens.
+   The Figma card content is a fixed 720x680 block that overflows (and is
+   clipped) on narrow screens. From 1500px up the cards get wider than that
+   block, so the photo/overlay/content must stretch to the card instead of
+   leaving a strip and spilling past the bottom. */
+@media (min-width: 1500px) {
+  .service-page [data-name="wealth-card"],
+  .service-page [data-name="biz-card"] {
+    height: auto !important;
+    min-height: 680px;
+  }
+
+  .service-page [data-name="wealth-card"] > [data-name="photo"],
+  .service-page [data-name="biz-card"] > [data-name="photo"],
+  .service-page [data-name="wealth-card"] > [data-name="overlay"],
+  .service-page [data-name="biz-card"] > [data-name="overlay"] {
+    width: 100%;
+    height: 100%;
+  }
+
+  .service-page [data-name="wealth-card"] > [data-name="card-content"],
+  .service-page [data-name="biz-card"] > [data-name="card-content"] {
+    position: relative;
+    width: 100%;
+    height: auto !important;
+    min-height: 680px;
+  }
+}
+.phase-carousel {
+  position: relative;
+  width: 100%;
+}
+
+.phase-carousel > div[data-name^="Phase"] {
+  animation: phaseFadeIn .5s ease both;
+}
+
+@keyframes phaseFadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.phase-label-btn {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: inherit;
+  transition: opacity .2s ease;
+}
+
+.phase-label-btn:hover {
+  opacity: .7;
+}
+
+/* Track fill: sweeps only across the CURRENT phase's third of the track.
+   Phase 1 runs 0% -> 33.33%, phase 2 runs 33.33% -> 66.66%, phase 3 runs
+   66.66% -> 100%. Restarts from its own start each phase (key remount), so
+   it never animates backwards when the cycle wraps. */
+.track-fill-anim {
+  width: var(--track-from, 0%);
+  animation: trackSweep 15s linear forwards;
+}
+
+@keyframes trackSweep {
+  from { width: var(--track-from, 0%); }
+  to { width: var(--track-to, 100%); }
+}
+
+.phase-controls {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 0;
+  margin-top: -96px;
+  margin-bottom: 48px;
+  position: relative;
+  z-index: 5;
+}
+
+.phase-arrow,
+.phase-playpause {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 1px 6px;
+  background: #FFFFFF;
+  border: 0;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: transform .2s ease, box-shadow .2s ease, background-color .2s ease;
+}
+
+.phase-arrow:hover,
+.phase-playpause:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px -6px rgba(0,0,0,.25);
+  background: #f7f5f0;
+}
+
+.phase-arrow:active,
+.phase-playpause:active {
+  transform: translateY(0);
+}
+
+/* FAQ accordion (+ / −) — matches the About page */
+.service-page [data-name="qa"] {
+  display: block;
+}
+
+.service-page [data-name="qa"] > p {
+  margin-top: 10px;
+}
+
+.service-page [data-name="qa"]:not([open]) > p {
+  display: none;
+}
+
+.service-page [data-name="qa"] summary::-webkit-details-marker {
+  display: none;
+}
+
+.service-page [data-name="qa"] summary {
+  list-style: none;
+}
+
+.service-page [data-name="qa"] .faq-icon {
+  color: #c9a963;
+  font-size: 28px;
+  line-height: 1;
+  font-family: "Mona Sans:Regular", sans-serif;
+  flex-shrink: 0;
+}
+
+.service-page [data-name="qa"]:not([open]) .faq-icon::before {
+  content: "+";
+}
+
+.service-page [data-name="qa"][open] .faq-icon::before {
+  content: "−";
+}
+
+/* Button styles - must override about-layout.css global a { color: inherit; } */
+.service-page a[class*="rounded-[100px]"],
+.service-page a[class*="rounded-[24px]"] {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+  transition: transform .2s ease, box-shadow .2s ease, background-color .2s ease !important;
+}
+
+.service-page a[class*="rounded-[100px]"]:hover,
+.service-page a[class*="rounded-[24px]"]:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 12px 24px -8px rgba(0,0,0,.25) !important;
+}
+
+.service-page a[class*="rounded-[100px]"]:active,
+.service-page a[class*="rounded-[24px]"]:active {
+  transform: translateY(0) !important;
+}
+
+/* Button text colors */
+.service-page a[class*="text-white"] p,
+.service-page a[class*="text-white"] {
+  color: #ffffff !important;
+}
+
+.service-page a[class*="text-[#081d2b]"] p,
+.service-page a[class*="text-[#081d2b]"] {
+  color: #081d2b !important;
+}
+
+.service-page a[class*="text-[#56646c]"] p,
+.service-page a[class*="text-[#56646c]"] {
+  color: #56646c !important;
+}
+
+/* Nav text thickness fix */
+.service-page .nav-item,
+.service-page .nav-calculator {
+  font-weight: 500 !important;
+  font-size: 14px !important;
+}
+
+/* Card hover effects */
+.service-page [data-name="wealth-card"],
+.service-page [data-name="biz-card"] {
+  transition: transform .3s ease;
+}
+
+.service-page [data-name="wealth-card"]:hover,
+.service-page [data-name="biz-card"]:hover {
+  transform: translateY(-4px);
+}
+
+/* Float card animations */
+.service-page [data-name^="float-card"] {
+  transition: transform .3s ease;
+}
+
+.service-page [data-name^="float-card"]:hover {
+  transform: scale(1.05) rotate(0deg) !important;
+}
+
+/* FAQ accordion animation */
+.service-page [data-name="qa"] {
+  transition: background-color .2s ease;
+}
+
+.service-page [data-name="qa"]:hover {
+  background-color: rgba(201,169,99,.05);
+}
+
+.service-page [data-name="qa"] p {
+  transition: max-height .3s ease, opacity .3s ease;
+}
+
+/* Scroll reveal animations */
+.service-page [data-reveal] {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity .6s ease, transform .6s ease;
+}
+
+.service-page [data-reveal].is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .service-page [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .service-page a[class*="rounded-[100px]"],
+  .service-page a[class*="rounded-[24px]"],
+  .service-page [data-name="wealth-card"],
+  .service-page [data-name="biz-card"],
+  .service-page [data-name^="float-card"] {
+    transition: none;
+  }
+}
+
+/* Smooth scroll for anchor links */
+.service-page {
+  scroll-behavior: smooth;
+}
+
+@media (max-width: 900px) {
+  /* Show the hero decorations on mobile, scaled down and pulled in so they
+     frame the content the way they do on desktop. */
+  [data-name='Hero section'] [data-name^='float-card'],
+  [data-name='Hero section'] [data-name^='glow-'],
+  [data-name='Hero section'] [data-name^='arc-'],
+  [data-name='Hero section'] [data-name^='diamond-'],
+  [data-name='Hero section'] [data-name^='dot-'] {
+    display: block;
+    zoom: 0.45;
+  }
+
+  /* Keep each decoration near its desktop corner, scaled for the narrow hero.
+     Offsets are divided by the 0.45 zoom so they land where intended. */
+  [data-name='glow-left'] {
+    left: -240px !important;
+    top: 260px !important;
+  }
+
+  [data-name='glow-right'] {
+    left: auto !important;
+    right: -270px !important;
+    top: 200px !important;
+  }
+
+  [data-name='glow-pink'] {
+    left: auto !important;
+    right: -200px !important;
+    top: 950px !important;
+  }
+
+  [data-name='arc-1'] {
+    left: 50px !important;
+    top: 660px !important;
+  }
+
+  [data-name='arc-2'] {
+    left: auto !important;
+    right: 60px !important;
+    top: 630px !important;
+  }
+
+  [data-name='arc-3'] {
+    left: 75px !important;
+    top: 1040px !important;
+  }
+
+  [data-name='dot-1'] {
+    left: 40px !important;
+    top: 1420px !important;
+  }
+
+  [data-name='dot-2'] {
+    left: auto !important;
+    right: 65px !important;
+    top: 550px !important;
+  }
+
+  [data-name='hero-headline'] {
+    width: calc(100% - 40px) !important;
+  }
+
+  [data-name='hero-headline'] > div {
+    font-size: 52px !important;
+  }
+
+  [data-name='hero-main-card'],
+  [data-name='hero-main-card'] > div {
+    width: min(520px, calc(100vw - 40px)) !important;
+  }
+
+  /* Keep the browser-chrome dots at their own size - the rule above would
+     otherwise stretch them across the whole card. */
+  [data-name='hero-main-card'] > [data-name='browser-chrome'] {
+    width: 42px !important;
+    height: 10px !important;
+  }
+
+  /* Float cards: bring them in from their desktop offsets so they wrap the
+     hero edges on mobile, and scale them to a readable size. The position
+     lives on the unnamed wrapper div, so target it by data-node-id. */
+  [data-name='Hero section'] [data-name='float-card-1'],
+  [data-name='Hero section'] [data-name='float-card-2'],
+  [data-name='Hero section'] [data-name='float-card-3'],
+  [data-name='Hero section'] [data-name='float-card-4'] {
+    zoom: 0.5;
+  }
+
+  /* Straddle the hero card's corners: upper two overlap the top corners,
+     lower two overlap the bottom corners. */
+  [data-node-id='1:29'] {
+    left: -8px !important;
+    top: 300px !important;
+  }
+
+  [data-node-id='1:35'] {
+    left: auto !important;
+    right: -8px !important;
+    top: 290px !important;
+  }
+
+  [data-node-id='1:42'] {
+    left: -8px !important;
+    top: 570px !important;
+  }
+
+  [data-node-id='1:48'] {
+    left: auto !important;
+    right: -8px !important;
+    top: 560px !important;
+  }
+
+  [data-name='services-header'],
+  [data-name='process-header'] {
+    padding-left: 28px !important;
+    padding-right: 28px !important;
+  }
+
+  [data-name='services-header'] > div:nth-of-type(2),
+  [data-name='services-header'] > div:nth-of-type(3) {
+    width: 100% !important;
+    font-size: 46px !important;
+  }
+
+  [data-name='services-header'] > p {
+    width: min(600px, 100%) !important;
+  }
+
+  [data-name='service-cards'] {
+    flex-direction: column;
+  }
+
+  [data-name='wealth-card'],
+  [data-name='biz-card'] {
+    flex: none !important;
+    width: 100%;
+  }
+
+  [data-name='wealth-card'] > [data-name='photo'],
+  [data-name='wealth-card'] > [data-name='overlay'],
+  [data-name='wealth-card'] > [data-name='card-content'],
+  [data-name='biz-card'] > [data-name='photo'],
+  [data-name='biz-card'] > [data-name='overlay'],
+  [data-name='biz-card'] > [data-name='card-content'] {
+    width: 100% !important;
+  }
+
+  [data-name='services-bottom-bar'] {
+    gap: 24px;
+    padding: 28px !important;
+  }
+
+  [data-name='heading-row'] {
+    align-items: flex-start !important;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  [data-name='heading-row'] > div,
+  [data-name='heading-row'] > p {
+    width: 100% !important;
+  }
+
+  [data-name='heading-row'] > div {
+    font-size: 48px !important;
+  }
+
+  [data-name^='Phase 0'] {
+    height: auto !important;
+    flex-direction: column;
+  }
+
+  [data-name^='Phase 0'] > [data-name='phase-left'],
+  [data-name^='Phase 0'] > [data-name='phase-right'] {
+    height: 560px !important;
+    width: 100% !important;
+  }
+
+  [data-name='Before conversation'] {
+    flex-direction: column;
+    gap: 48px !important;
+    padding: 64px 28px !important;
+  }
+
+  [data-name='Before conversation'] > [data-name='left'] {
+    width: 100% !important;
+  }
+
+  [data-name='CTA banner'] {
+    align-items: flex-start !important;
+    flex-direction: column;
+    gap: 40px !important;
+    padding: 64px 28px !important;
+  }
+
+  [data-name='CTA banner'] > [data-name='left'] {
+    width: 100% !important;
+  }
+
+  [data-name='CTA banner'] > [data-name='left'] > div:nth-of-type(2) {
+    font-size: 44px !important;
+    white-space: normal !important;
+  }
+}
+
+@media (max-width: 600px) {
+  [data-name='hero-headline'] > div {
+    font-size: 42px !important;
+  }
+
+  [data-name='hero-ctas'] {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 8px !important;
+    top: 690px !important;
+    width: calc(100% - 32px) !important;
+  }
+
+  [data-name='hero-ctas'] > * {
+    padding: 10px 14px !important;
+  }
+
+  [data-name='hero-ctas'] > * > p {
+    font-size: 12px !important;
+    white-space: nowrap !important;
+  }
+
+  [data-name='scroll-hint'] {
+    display: none;
+  }
+
+  [data-name='services-header'] {
+    padding-top: 56px !important;
+  }
+
+  [data-name='services-header'] > div:nth-of-type(2),
+  [data-name='services-header'] > div:nth-of-type(3) {
+    font-size: 34px !important;
+    line-height: 1.1 !important;
+  }
+
+  [data-name='services-header'] > p {
+    font-size: 15px !important;
+    line-height: 1.55 !important;
+  }
+
+  [data-name='wealth-card'],
+  [data-name='biz-card'] {
+    height: 650px !important;
+  }
+
+  /* Photo and overlay must match the card height, otherwise the card's raw
+     background colour shows as a strip at the bottom. */
+  [data-name='wealth-card'] > [data-name='photo'],
+  [data-name='biz-card'] > [data-name='photo'],
+  [data-name='wealth-card'] > [data-name='overlay'],
+  [data-name='biz-card'] > [data-name='overlay'] {
+    height: 100% !important;
+  }
+
+  [data-name='wealth-card'] > [data-name='card-content'],
+  [data-name='biz-card'] > [data-name='card-content'] {
+    height: 600px !important;
+    gap: 22px !important;
+    padding: 36px 24px !important;
+  }
+
+  [data-name='wealth-card'] [data-name='card-content'] > div:nth-of-type(2),
+  [data-name='biz-card'] [data-name='card-content'] > div:nth-of-type(2) {
+    font-size: 40px !important;
+    line-height: 1.05 !important;
+    width: 100% !important;
+  }
+
+  [data-name='card-content'] > p,
+  [data-name='feature-pills'] {
+    width: 100% !important;
+  }
+
+  [data-name='card-content'] > p {
+    font-size: 14px !important;
+    line-height: 1.55 !important;
+  }
+
+  [data-name='services-bottom-bar'] {
+    align-items: flex-start !important;
+    flex-direction: column;
+  }
+
+  [data-name='services-bottom-bar'] > p {
+    white-space: normal !important;
+  }
+
+  [data-name='process-header'] {
+    padding-top: 60px !important;
+  }
+
+  [data-name='heading-row'] > div {
+    font-size: 39px !important;
+  }
+
+  /* Controls sit below the phase content on mobile instead of being pulled
+     up into it by the desktop -96px offset. */
+  .phase-controls {
+    margin-top: 0 !important;
+    margin-bottom: 32px !important;
+    padding-top: 24px !important;
+    position: relative !important;
+    z-index: 5 !important;
+  }
+
+  /* Phase 02's outer container is gold with a fixed height; on mobile the
+     columns are taller than it, so the gold shows as a border. Let the
+     container size to its columns. */
+  [data-name^='Phase 0'] {
+    height: auto !important;
+    background: transparent !important;
+  }
+
+  [data-name^='Phase 0'] > [data-name='phase-left'],
+  [data-name^='Phase 0'] > [data-name='phase-right'] {
+    width: 100% !important;
+  }
+
+  /* phase-left/right are flex columns; let their content define the height. */
+  [data-name^='Phase 0'] > [data-name='phase-left'],
+  [data-name^='Phase 0'] > [data-name='phase-right'] {
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 36px 24px !important;
+    gap: 18px !important;
+    flex: 0 0 auto !important;
+    overflow: visible !important;
+  }
+
+  /* Tighten the point list so the right column fits comfortably. */
+  [data-name^='Phase 0'] [data-name='points'] {
+    gap: 16px !important;
+  }
+
+  [data-name^='Phase 0'] [data-name='points'] [data-name='text'] > p {
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+  }
+
+  [data-name^='Phase 0'] [data-name='outcome'] {
+    padding: 16px !important;
+  }
+
+  [data-name^='Phase 0'] [data-name='outcome'] > p {
+    font-size: 14px !important;
+    line-height: 1.45 !important;
+  }
+
+  /* Phase copy is fixed-width in the Figma export and overflows the narrow
+     column. Phase 01/03 put the copy in phase-left, phase 02 in phase-right,
+     so cover both. The heading is the div right after the phase-tag. */
+  [data-name^='Phase 0'] [data-name='phase-left'] > [data-name='phase-tag'] + div,
+  [data-name^='Phase 0'] [data-name='phase-right'] > [data-name='phase-tag'] + div {
+    width: 100% !important;
+    font-size: 34px !important;
+    line-height: 1.08 !important;
+  }
+
+  /* Only the description paragraph, not the big decorative "01"/"02" number. */
+  [data-name^='Phase 0'] [data-name='phase-left'] > p:not([class*='text-[120px]']),
+  [data-name^='Phase 0'] [data-name='phase-right'] > p:not([class*='text-[120px]']) {
+    width: 100% !important;
+    font-size: 14px !important;
+    line-height: 1.55 !important;
+  }
+
+  /* The decorative photo overlaps the copy on narrow screens - keep it as a
+     faint backdrop behind the text instead. */
+  [data-name^='Phase 0'] [data-name='phase-photo'] {
+    right: -40px !important;
+    bottom: 20px !important;
+    top: auto !important;
+    width: 160px !important;
+    height: 180px !important;
+    opacity: 0.15 !important;
+  }
+
+  [data-name='points'] [data-name='text'] > p {
+    white-space: normal !important;
+  }
+
+  [data-name='outcome'] > p {
+    white-space: normal !important;
+  }
+
+  [data-name='Before conversation'] [data-name='left'] > div:nth-of-type(2) {
+    font-size: 44px !important;
+    white-space: normal !important;
+  }
+
+  [data-name='CTA banner'] > [data-name='left'] > div:nth-of-type(2) {
+    font-size: 38px !important;
+  }
+
+  [data-name='CTA banner'] > [data-name='left'] > p {
+    white-space: normal !important;
+  }
+}

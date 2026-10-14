@@ -1,0 +1,706 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Inter:Medium";
+  font-style: normal;
+  font-weight: 500;
+  src: url("https://static.figma.com/font/Inter_1") format("woff2");
+}
+
+@font-face {
+  font-family: "Manrope:Bold";
+  font-style: normal;
+  font-weight: 700;
+  src: url("https://static.figma.com/font/Manrope_wght__1") format("woff2");
+}
+
+@font-face {
+  font-family: "Mona Sans:Light";
+  font-style: normal;
+  font-weight: 300;
+  src: url("https://static.figma.com/font/MonaSans_wdth_wght__1") format("woff2");
+}
+
+@font-face {
+  font-family: "Mona Sans:Medium";
+  font-style: normal;
+  font-weight: 500;
+  src: url("https://static.figma.com/font/MonaSans_wdth_wght__1") format("woff2");
+}
+
+@font-face {
+  font-family: "Mona Sans:Regular";
+  font-style: normal;
+  font-weight: 400;
+  src: url("https://static.figma.com/font/MonaSans_wdth_wght__1") format("woff2");
+}
+
+@font-face {
+  font-family: "Mona Sans:SemiBold";
+  font-style: normal;
+  font-weight: 600;
+  src: url("https://static.figma.com/font/MonaSans_wdth_wght__1") format("woff2");
+}
+
+:root {
+  color: #ffffff;
+  background: #061621;
+  font-family: "Mona Sans:Regular", sans-serif;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.contact-page {
+  min-height: 100dvh;
+  overflow: hidden;
+  background: #061621;
+}
+
+.contact-section {
+  display: flex;
+  width: 100%;
+  max-width: 1440px;
+  min-height: 1024px;
+  margin: 0 auto;
+  padding: 48px 120px;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  background: #061621;
+}
+
+.introduction {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-label span {
+  width: 32px;
+  height: 2px;
+  background: #dbab47;
+}
+
+.section-label p {
+  margin: 0;
+  color: #a7b2b9;
+  font-family: "Mona Sans:Medium", sans-serif;
+  font-size: 12px;
+  font-variation-settings: "wdth" 100;
+  font-weight: 500;
+}
+
+.introduction h1 {
+  margin: 0;
+  color: #ffffff;
+  font-family: "Mona Sans:SemiBold", sans-serif;
+  font-size: 64px;
+  font-variation-settings: "wdth" 100;
+  font-weight: 600;
+  line-height: 70px;
+}
+
+.introduction h1 strong {
+  display: block;
+  color: #dbab47;
+  font: inherit;
+}
+
+.intro-copy {
+  margin: 0;
+  color: #a7b2b9;
+  font-family: "Mona Sans:Regular", sans-serif;
+  font-size: 16px;
+  font-variation-settings: "wdth" 100;
+  font-weight: 400;
+  line-height: 25px;
+}
+
+.contact-options {
+  display: grid;
+  width: 100%;
+  height: 360px;
+  grid-template-columns: 280px minmax(0, 560px) 280px;
+  align-items: center;
+  gap: 40px;
+}
+
+.email-contact {
+  display: flex;
+  width: 280px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.contact-icon {
+  display: flex;
+  width: 48px;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+}
+
+.email-details {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.email-details h2,
+.office-heading h2 {
+  margin: 0;
+  font-family: "Mona Sans:Medium", sans-serif;
+  font-size: 24px;
+  font-variation-settings: "wdth" 100;
+  font-weight: 500;
+  line-height: normal;
+}
+
+.email-details p {
+  margin: 0;
+  color: #a7b2b9;
+  font-size: 14px;
+  font-variation-settings: "wdth" 100;
+  line-height: 22px;
+}
+
+.email-address {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.email-address a {
+  color: #dbab47;
+  font-family: "Mona Sans:Medium", sans-serif;
+  font-size: 18px;
+  font-variation-settings: "wdth" 100;
+  font-weight: 500;
+  line-height: normal;
+  text-decoration: none;
+}
+
+.email-address p,
+.contact-action p {
+  margin: 0;
+  color: #a7b2b9;
+  font-family: "Mona Sans:Light", sans-serif;
+  font-size: 14px;
+  font-variation-settings: "wdth" 100;
+  font-weight: 300;
+  line-height: 20px;
+}
+
+.contact-divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.write-here {
+  margin: 0;
+  color: #a7b2b9;
+  font-size: 13px;
+  font-variation-settings: "wdth" 100;
+  line-height: 21px;
+}
+
+.telephone-display {
+  position: relative;
+  width: 560px;
+  height: 360px;
+  overflow: hidden;
+}
+
+.telephone-display img {
+  position: absolute;
+  display: block;
+  max-width: none;
+}
+
+.telephone {
+  z-index: 3;
+  top: -2px;
+  left: 20px;
+  width: 520px;
+  height: 360px;
+  object-fit: cover;
+}
+
+.halo-outline {
+  z-index: 1;
+  top: -4px;
+  left: 84px;
+}
+
+.telephone-halo {
+  z-index: 2;
+  top: 12px;
+  left: 100px;
+}
+
+.office-contact {
+  display: flex;
+  width: 280px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.office-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.address {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.address p {
+  margin: 0;
+  font-family: "Mona Sans:Medium", sans-serif;
+  font-size: 16px;
+  font-variation-settings: "wdth" 100;
+  font-weight: 500;
+}
+
+.address span {
+  color: #a7b2b9;
+  font-size: 13px;
+  font-variation-settings: "wdth" 100;
+}
+
+.location-preview {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.map-preview {
+  position: relative;
+  width: 280px;
+  height: 156px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #eae9e1;
+}
+
+.street-map {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 280px;
+  height: 156px;
+  object-fit: cover;
+}
+
+.preview-badge {
+  position: absolute;
+  z-index: 2;
+  top: 126px;
+  left: 10px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: #061621;
+  background: rgba(255, 255, 255, 0.9);
+  font-family: "Inter:Medium", sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: normal;
+}
+
+.map-controls {
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  left: 245px;
+  display: flex;
+  padding: 5px;
+  flex-direction: column;
+  gap: 8px;
+  border-radius: 4px;
+  background: #ffffff;
+}
+
+.location-marker {
+  position: absolute;
+  z-index: 2;
+  top: 53px;
+  left: 123px;
+  display: flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #061621;
+}
+
+.location-preview > p {
+  margin: 0;
+  color: #a7b2b9;
+  font-size: 11px;
+  font-variation-settings: "wdth" 100;
+  line-height: 1.4;
+}
+
+.contact-action {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.contact-action button,
+.send-button {
+  display: flex;
+  height: 52px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  color: #061621;
+  background: #dbab47;
+  font-family: "Mona Sans:SemiBold", sans-serif;
+  font-size: 14px;
+  font-variation-settings: "wdth" 100;
+  font-weight: 600;
+}
+
+.contact-action button {
+  width: 184px;
+}
+
+.contact-action button:hover,
+.send-button:hover {
+  background: #e4b852;
+}
+
+.contact-action button:focus-visible,
+.send-button:focus-visible,
+.dialog-close:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(219, 171, 71, 0.45);
+  outline-offset: 2px;
+}
+
+.dialog-backdrop {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: flex;
+  overflow-y: auto;
+  padding: 40px 20px;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.58);
+}
+
+.contact-dialog {
+  position: relative;
+  display: flex;
+  width: min(620px, 100%);
+  max-height: calc(100dvh - 40px);
+  margin: auto;
+  padding: 40px;
+  overflow-y: auto;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 24px;
+  border-radius: 20px;
+  color: #061621;
+  background: #ffffff;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.33);
+}
+
+.dialog-heading {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.dialog-eyebrow {
+  margin: 0;
+  color: #92702e !important;
+  font-family: "Mona Sans:SemiBold", sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  line-height: normal !important;
+}
+
+.dialog-heading h2 {
+  margin: 0;
+  font-family: "Mona Sans:SemiBold", sans-serif;
+  font-size: 36px;
+  font-variation-settings: "wdth" 100;
+  font-weight: 600;
+  line-height: normal;
+}
+
+.dialog-heading p {
+  margin: 0;
+  color: #68747d;
+  font-size: 15px;
+  font-variation-settings: "wdth" 100;
+  line-height: 24px;
+}
+
+.dialog-close {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  display: flex;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: #f7f5f2;
+}
+
+.dialog-divider {
+  width: 100%;
+  height: 1px;
+  flex: 0 0 auto;
+  background: #dedad2;
+}
+
+.contact-form {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.field-row {
+  display: flex;
+  gap: 16px;
+}
+
+.form-field {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-field span {
+  font-family: "Mona Sans:Medium", sans-serif;
+  font-size: 13px;
+  font-variation-settings: "wdth" 100;
+  font-weight: 500;
+  line-height: normal;
+}
+
+.form-field input,
+.form-field textarea {
+  width: 100%;
+  border: 1px solid #dedad2;
+  border-radius: 8px;
+  color: #061621;
+  background: #fcfbf9;
+  font-family: "Mona Sans:Regular", sans-serif;
+  font-size: 14px;
+  font-variation-settings: "wdth" 100;
+  font-weight: 400;
+  line-height: 21px;
+}
+
+.form-field input {
+  height: 52px;
+  padding: 15px 16px;
+}
+
+.form-field textarea {
+  height: 128px;
+  padding: 15px 16px;
+  resize: none;
+}
+
+.form-field input::placeholder,
+.form-field textarea::placeholder {
+  color: #68747d;
+  opacity: 1;
+}
+
+.form-action {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.send-button {
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.privacy-note {
+  display: flex;
+  margin: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #68747d;
+  font-size: 12px;
+  font-variation-settings: "wdth" 100;
+  line-height: normal;
+}
+
+@media (max-width: 1100px) {
+  .contact-section {
+    padding-inline: 48px;
+  }
+
+  .contact-options {
+    height: auto;
+    grid-template-columns: minmax(240px, 1fr) minmax(240px, 1fr);
+  }
+
+  .telephone-display {
+    width: 100%;
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .telephone-display img {
+    left: 50%;
+  }
+
+  .telephone {
+    transform: translateX(-50%);
+  }
+
+  .halo-outline {
+    transform: translateX(calc(-50% - 8px));
+  }
+
+  .telephone-halo {
+    transform: translateX(calc(-50% - 68px));
+  }
+
+  .email-contact,
+  .office-contact {
+    width: 100%;
+  }
+}
+
+@media (max-width: 680px) {
+  .contact-section {
+    min-height: 100dvh;
+    padding: 40px 24px 56px;
+    gap: 40px;
+  }
+
+  .introduction h1 {
+    font-size: 42px;
+    line-height: 48px;
+  }
+
+  .intro-copy {
+    font-size: 15px;
+  }
+
+  .desktop-break {
+    display: none;
+  }
+
+  .contact-options {
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+  }
+
+  .telephone-display {
+    width: calc(100% + 48px);
+    max-width: 560px;
+    order: -1;
+    transform: scale(0.8);
+    margin-block: -36px;
+  }
+
+  .office-contact {
+    align-items: stretch;
+  }
+
+  .map-preview {
+    width: 100%;
+  }
+
+  .street-map {
+    width: 100%;
+  }
+
+  .contact-dialog {
+    padding: 32px 24px;
+    border-radius: 16px;
+  }
+
+  .dialog-heading {
+    padding-right: 36px;
+  }
+
+  .dialog-heading h2 {
+    font-size: 32px;
+  }
+
+  .dialog-close {
+    top: 20px;
+    right: 20px;
+  }
+
+  .field-row {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .privacy-note {
+    align-items: flex-start;
+    text-align: center;
+  }
+}

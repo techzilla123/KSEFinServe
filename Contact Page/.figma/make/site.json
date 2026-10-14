@@ -1,0 +1,10 @@
+{
+  "description": "Enables users to easily contact support by displaying a modal form upon clicking the Contact Us button, enhancing user interaction and accessibility.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

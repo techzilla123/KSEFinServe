@@ -101,7 +101,7 @@ export function AboutLayout({
         </div>
         {mobileMenu && (
           <nav id="mobile-navigation" aria-label="Mobile navigation" className="mobile-nav">
-            {[["Service", "/"], ["Testimonial", "/"]].map(([label, id]) => (
+            {[["Service", "/"], ["Testimonial", "/#testimonials"]].map(([label, id]) => (
               <a key={label} href={id} onClick={(e) => { e.preventDefault(); setMobileMenu(false); navigate("/") }}>{label}</a>
             ))}
             <a href="/contact" onClick={(e) => { e.preventDefault(); setMobileMenu(false); navigate("/contact") }}>Contact</a>
@@ -152,7 +152,7 @@ export function AboutLayout({
             <nav aria-label="Footer navigation" className="flex flex-wrap gap-6">
               <a href="/about" onClick={(e) => { e.preventDefault(); navigate("/about") }}>About</a>
               <a href="/" onClick={(e) => { e.preventDefault(); navigate("/service") }}>How I Can Help</a>
-              <a href="/" onClick={(e) => { e.preventDefault(); navigate("/") }}>Testimonial</a>
+              <a href="/" onClick={(e) => { e.preventDefault(); navigate("/#testimonials") }}>Testimonial</a>
               <a href="/" onClick={(e) => { e.preventDefault(); navigate("/") }}>Events</a>
               <a href="/contact" onClick={(e) => { e.preventDefault(); navigate("/contact") }}>Contact Us</a>
             </nav>

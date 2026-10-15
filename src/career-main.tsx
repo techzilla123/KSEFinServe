@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client"
 import App from "./CareerPage"
 import SiteLayout from "./SiteLayout"
 import "./career.css"
-import "./about-layout.css"
+import "./career-layout.css"
 
 const assetPathPrefix = "/assets"
 const socials = [

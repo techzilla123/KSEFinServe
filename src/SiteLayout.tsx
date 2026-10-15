@@ -274,7 +274,7 @@ export default function SiteLayout({
               ...(hideAboutNav ? [] : [["About", "/about"]] as const),
               ...(hideServiceNav ? [] : [["Service", "/service"]] as const),
               ...(hideCareerNav ? [] : [["Career", "/career"]] as const),
-              ["Testimonial", "/"],
+              ["Testimonial", "/#testimonials"],
               ...(hideContactNav ? [] : [["Contact", "/contact"]] as const),
             ].map(([label, id]) => (
               <Link
@@ -377,7 +377,7 @@ export default function SiteLayout({
             <nav aria-label="Footer navigation" className="flex flex-wrap gap-6">
               <Link href="/about" onClick={(e) => { e.preventDefault(); navigate("/about") }}>About</Link>
               <Link href="/" onClick={(e) => { e.preventDefault(); navigate("/service") }}>How I Can Help</Link>
-              <Link href="/" onClick={(e) => { e.preventDefault(); navigate("/") }}>Testimonial</Link>
+              <Link href="/" onClick={(e) => { e.preventDefault(); navigate("/#testimonials") }}>Testimonial</Link>
               <Link href="/" onClick={(e) => { e.preventDefault(); navigate("/") }}>Events</Link>
               <a href="/contact" onClick={(e) => { e.preventDefault(); navigate("/contact") }}>Contact Us</a>
             </nav>

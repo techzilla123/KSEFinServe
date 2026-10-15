@@ -612,6 +612,10 @@ export default function App() {
       window.location.href = "/service"
       return
     }
+    if (path === "/career") {
+      window.location.href = "/career"
+      return
+    }
     window.history.pushState({}, "", path)
     setRoute(path)
     window.scrollTo(0, 0)

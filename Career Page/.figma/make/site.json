@@ -1,0 +1,10 @@
+{
+  "description": "This web application streamlines the job application process for KSEFinServe, featuring a dynamic career page that allows users to express interest and view additional content seamlessly.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

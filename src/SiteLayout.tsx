@@ -104,6 +104,7 @@ interface SiteLayoutProps {
   hideAboutNav?: boolean
   hideContactNav?: boolean
   hideServiceNav?: boolean
+  hideCareerNav?: boolean
 }
 
 export default function SiteLayout({
@@ -124,6 +125,7 @@ export default function SiteLayout({
   hideAboutNav = false,
   hideContactNav = false,
   hideServiceNav = false,
+  hideCareerNav = false,
 }: SiteLayoutProps) {
   useEffect(() => {
     if (!calcMenuOpen) return
@@ -171,6 +173,11 @@ export default function SiteLayout({
             {!hideServiceNav && (
               <Link href="/service" className="nav-item">
                 Service
+              </Link>
+            )}
+            {!hideCareerNav && (
+              <Link href="/career" className="nav-item" onClick={(e) => { e.preventDefault(); navigate("/career") }}>
+                Career
               </Link>
             )}
             <Link href="#testimonials" className="nav-item">
@@ -266,6 +273,7 @@ export default function SiteLayout({
             {[
               ...(hideAboutNav ? [] : [["About", "/about"]] as const),
               ...(hideServiceNav ? [] : [["Service", "/service"]] as const),
+              ...(hideCareerNav ? [] : [["Career", "/career"]] as const),
               ["Testimonial", "/"],
               ...(hideContactNav ? [] : [["Contact", "/contact"]] as const),
             ].map(([label, id]) => (

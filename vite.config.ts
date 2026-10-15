@@ -22,6 +22,7 @@ export default defineConfig(({ mode }) => {
           main: path.resolve(__dirname, "./index.html"),
           about: path.resolve(__dirname, "./about.html"),
           service: path.resolve(__dirname, "./service.html"),
+          career: path.resolve(__dirname, "./career.html"),
         },
       },
     },
@@ -49,6 +50,17 @@ export default defineConfig(({ mode }) => {
           server.middlewares.use((req, res, next) => {
             if (req.url?.split("?")[0] === "/service") {
               req.url = "/service.html"
+            }
+            next()
+          })
+        },
+      },
+      {
+        name: "career-page-middleware",
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            if (req.url?.split("?")[0] === "/career") {
+              req.url = "/career.html"
             }
             next()
           })

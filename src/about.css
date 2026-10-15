@@ -605,7 +605,10 @@ a {
   background: rgb(66 185 250 / 13%);
 }
 
-.service-content h3 {
+/* Scoped to .service-card so it outranks the .service-card h3 rule that
+   about-layout.css (a copy of index.css) also defines. Without the extra
+   class both selectors have equal specificity and the later one wins. */
+.service-card .service-content h3 {
   margin: 0;
   font-family: "Oswald", sans-serif;
   font-style: normal;
@@ -615,7 +618,7 @@ a {
   color: #FFFFFF;
 }
 
-.service-content p {
+.service-card .service-content p {
   width: 380px;
   max-width: 100%;
   margin: 0;
@@ -1703,7 +1706,7 @@ a {
     flex-shrink: 0;
   }
 
-  .service-content h3 {
+  .service-card .service-content h3 {
     font-size: 14px;
     line-height: 22px;
     white-space: normal;
@@ -1712,7 +1715,7 @@ a {
     flex-shrink: 0;
   }
 
-  .service-content p {
+  .service-card .service-content p {
     font-size: 10px;
     line-height: 1.5;
     margin: 0;
@@ -1867,12 +1870,12 @@ a {
     padding: 4px 10px;
   }
 
-  .service-content h3 {
+  .service-card .service-content h3 {
     font-size: 18px;
     line-height: 28px;
   }
 
-  .service-content p {
+  .service-card .service-content p {
     font-size: 10px;
     line-height: 1.5;
   }

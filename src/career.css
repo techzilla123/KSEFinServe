@@ -53,6 +53,7 @@ main .purpose>div{display:flex;flex-direction:column;align-items:flex-start;gap:
 main .principles{border-top:1px solid #dddcd5;padding-top:20px;width:100%;display:flex;gap:24px;font:500 14px/20px "Mona Sans:Medium"}
 main .split-heading{display:grid;grid-template-columns:710px 1fr;gap:100px;align-items:end;margin-bottom:48px}main .split-heading.fit-heading{grid-template-columns:670px 1fr}main .split-heading p{font-size:17px}main .split-heading .eyebrow{margin-bottom:20px}
 main .benefit-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+main .benefit-mobile, main .journey-mobile{display:none}
 main .benefit-grid article{background:#fff;border:1px solid #dddcd5;border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:20px}
 main .benefit-grid img, main .soft-card img{width:26px;height:26px}main .benefit-grid h3, main .soft-card h3{font-size:30px;line-height:36px}main .benefit-grid p, main .soft-card p{font-size:16px}
 main .fine-print{font-size:14px;margin-top:48px}
@@ -70,16 +71,16 @@ main .factor-card{background:#fff;border-radius:20px;padding:40px;display:flex;f
 main .standard{background:#0b2638;color:#fff;padding:72px 0}main .standard-inner{display:grid;grid-template-columns:112px 570px 1fr;gap:72px;align-items:center}main .integrity{position:relative;width:112px;height:112px;display:grid;place-items:center}main .integrity img{position:absolute;width:112px;height:112px}main .integrity b{font-size:34px;color:#f3d991}main .standard h2{font-size:48px}main .standard .eyebrow{margin-bottom:18px}main .standard p{font-size:17px;color:#afbdc5}main .standard-inner>div:last-child>b{display:block;margin-top:16px;color:#f3d991;font:500 14px/20px "Mona Sans:Medium"}
 main .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;margin-top:48px}main .steps article{border-top:2px solid #dbab47;padding-top:24px;display:flex;flex-direction:column;gap:18px}main .steps article>b{font:600 48px/48px "Mona Sans:SemiBold";color:#98702a}main .steps h3{font-size:30px;line-height:36px}main .steps p{font-size:16px}
 main .faq-layout{display:grid;grid-template-columns:410px 1fr;gap:100px}main .faq-layout>div:first-child{display:flex;flex-direction:column;align-items:flex-start;gap:24px}main .faq-layout .eyebrow{margin:0}main .faq-layout>div:first-child>p{font-size:17px}main .faq-layout>div:first-child>b{color:#98702a;font:500 14px/20px "Mona Sans:Medium"}
-main .faq{border-top:1px solid #d0cec4;padding:24px 0}main .faq h3{font-size:24px;line-height:32px;display:flex;justify-content:space-between;gap:24px}main .faq h3 img{width:18px;height:18px;flex:0 0 18px;margin-top:7px}main .faq p{font-size:16px;margin-top:12px}
+main .faq{border-top:1px solid #d0cec4;padding:24px 0}main .faq h3{font-size:24px;line-height:32px}main .faq-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:24px;background:none;border:0;padding:0;margin:0;text-align:left;cursor:pointer;font:inherit;color:inherit}main .faq-toggle>span:first-child{font-size:24px;line-height:32px}main .faq-icon{flex:0 0 auto;width:32px;height:32px;border-radius:50%;border:1px solid #d0cec4;display:flex;align-items:center;justify-content:center;color:#98702a;font-size:18px;line-height:1;transition:background .2s ease,color .2s ease}main .faq-toggle:hover .faq-icon{background:#dbab47;border-color:#dbab47;color:#fff}main .faq p{font-size:16px;margin-top:12px}main .consents label{cursor:pointer}
 
 main .application{padding:112px 0}main .application-grid{display:grid;grid-template-columns:408px 800px;gap:72px;justify-content:space-between;align-items:start}
 main .invitation{display:flex;flex-direction:column;align-items:flex-start;gap:28px}main .invitation .eyebrow{margin:0}main .invitation h2{font-size:48px}main .invitation>p{font-size:18px}
 main .know{width:100%;padding:28px;background:#0b2638;border:1px solid #ffffff17;border-radius:20px;display:flex;flex-direction:column;gap:20px}main .know h3{font:500 18px/28px "Mona Sans:Medium"}main .know p{display:flex;gap:12px;font-size:14px;line-height:21px}main .know p b{color:#dbab47}
 main .privacy{display:flex;gap:12px}main .privacy img{width:24px;height:24px}main .privacy p{font-size:14px;line-height:21px}main .motto{font:500 14px/20px "Mona Sans:Medium";color:#dbab47}
-main .form-card{background:#f7f5f0;border-radius:24px;padding:40px;color:#102b3e}main .form-card>h2{font-size:30px;line-height:36px}main .form-card>h2+ p{margin-top:8px}main .form-card>p{font-size:14px;line-height:21px}main .form-card form{margin-top:28px;display:flex;flex-direction:column;gap:28px}main .form-step{color:#98702a;font:500 14px/20px "Mona Sans:Medium"}
+main .form-card{background:#f7f5f0;border-radius:24px;padding:40px;color:#102b3e}main .form-card>h2{font-size:30px;line-height:36px}main .form-card>h2+ p{margin-top:8px}main .form-card>p{font-size:14px;line-height:21px}main .form-card form{margin-top:28px;display:flex;flex-direction:column;gap:0}main .form-card form>*{margin-top:28px}main .form-card form>*:first-child{margin-top:0}main .form-step{color:#98702a;font:500 14px/20px "Mona Sans:Medium"}
 main .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px 20px}main .field{display:flex;flex-direction:column;gap:9px;font:500 14px/20px "Mona Sans:Medium"}main .field.full{grid-column:1/-1}main .field input, main .field select, main .field textarea{width:100%;height:52px;border:1px solid #ced3d3;border-radius:6px;background:#fff;padding:16px;color:#102b3e;font:400 14px/21px "Mona Sans:Regular";outline:none}main .field select{appearance:none;background:#fff url("/assets/ead22.svg") no-repeat right 16px center;padding-right:44px}main .field input:focus, main .field select:focus, main .field textarea:focus{border-color:#98702a;box-shadow:0 0 0 2px #dbab4722}main .field textarea{height:124px;resize:vertical}main .field small{color:#62717a;font:400 14px/21px "Mona Sans:Regular"}main .field ::placeholder{color:#7b858b;opacity:1}
 main .choice-block{display:flex;flex-direction:column;gap:12px;font-size:14px}main .choice-block>b{font:500 14px/20px "Mona Sans:Medium"}main .choice-block>div{display:flex;flex-wrap:wrap;gap:10px}main .chip{border:0;border-radius:100px;background:#e8ebe9;padding:12px;color:#1a1a1a;cursor:pointer;font:500 14px "Inter:Medium"}main .chip.selected{background:#0b2638;color:#fff}main .interests>p{font-size:14px;line-height:21px}main .interests .chip{color:#62717a;background:#f0f2f1}main .interests .chip.selected{background:#0b2638;color:#fff}
-main .form-card hr{width:100%;border:0;border-top:1px solid #dddcd5;margin:0}main .submit{height:52px;width:100%;border:0;border-radius:8px;background:#dbab47;color:#102b3e;cursor:pointer;font-size:14px}main .form-note{text-align:center;margin-top:20px}main .consents{display:flex;flex-direction:column;gap:14px}main .consents label{display:flex;align-items:flex-start;gap:12px;color:#62717a;font-size:14px;line-height:21px}main .consents input{appearance:none;width:18px;height:18px;flex:0 0 18px;background:#fff;border:1px solid #aeb9bd;border-radius:3px;margin:0}main .consents input:checked{background:#0b2638;border-color:#0b2638;box-shadow:inset 0 0 0 4px white}main .success{margin:28px 0;padding:28px;background:#efe9dd;border-radius:12px}main .success h3{font-size:24px;margin-bottom:10px}
+main .form-card hr{width:100%;border:0;border-top:1px solid #dddcd5;margin:0}main .submit{height:52px;width:100%;border:0;border-radius:8px;background:#dbab47;color:#102b3e;cursor:pointer;font-size:14px}main .form-step-row{display:flex;align-items:center;gap:16px}main .back-btn{display:inline-flex;align-items:center;gap:8px;background:none;border:0;color:#62717a;cursor:pointer;font:500 14px "Mona Sans:Medium";padding:8px 0}main .back-btn:hover{color:#102b3e}main .interests{margin-top:24px}main .interests+.field-grid{margin-top:24px}main .consents{margin-top:24px}main .form-nav-submit{margin-top:24px}main .form-note{text-align:center;margin-top:20px}main .consents{display:flex;flex-direction:column;gap:14px}main .consents label{display:flex;align-items:flex-start;gap:12px;color:#62717a;font-size:14px;line-height:21px}main .consents input{appearance:none;width:18px;height:18px;flex:0 0 18px;background:#fff;border:1px solid #aeb9bd;border-radius:3px;margin:0}main .consents input:checked{background:#0b2638;border-color:#0b2638;box-shadow:inset 0 0 0 4px white}main .success{margin:28px 0;padding:28px;background:#efe9dd;border-radius:12px}main .success h3{font-size:24px;margin-bottom:10px}
 
 @media (max-width:1100px){
   main .container{width:min(100% - 40px,900px)}main .section, main .application{padding:80px 0}
@@ -97,6 +98,36 @@ main .form-card hr{width:100%;border:0;border-top:1px solid #dddcd5;margin:0}mai
   main .journey-grid{grid-template-columns:1fr 1fr}main .traits{align-items:flex-start;gap:14px;flex-direction:column}main .traits span{margin-left:4px}
   main .standard-inner{display:flex;flex-direction:column;align-items:flex-start}main .standard-inner>div:last-child{grid-column:auto}
   main .field-grid{grid-template-columns:1fr}main .field.full{grid-column:auto}main .form-card{padding:28px 20px}main .application-grid{gap:48px}
+
+  /* Mobile: benefits carousel */
+  main .benefit-grid{display:none}
+  main .benefit-mobile{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+  main .benefit-mobile-card{flex:1;background:#fff;border:1px solid #dddcd5;border-radius:20px;padding:26px;display:flex;flex-direction:column;gap:16px;text-align:center;align-items:center}
+  main .benefit-mobile-card img{width:26px;height:26px}
+  main .benefit-mobile-card h3{font-size:25px;line-height:30px}
+  main .benefit-mobile-card p{font-size:16px}
+  main .benefit-arrow{flex:0 0 44px;width:44px;height:44px;border-radius:50%;border:1px solid #dddcd5;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#102b3e;transition:background .2s}
+  main .benefit-arrow:hover{background:#f2ece0}
+
+  /* Mobile: journey carousel */
+  main .journey-grid{display:none}
+  main .journey-mobile{display:flex;flex-direction:column;gap:16px;margin-top:32px}
+  main .journey-mobile-card{background:#102d40;border:1px solid #ffffff21;border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:16px}
+  main .journey-mobile-card .stage-marker span{font-size:14px;color:#dbab47}
+  main .journey-mobile-card h3{font-size:25px;line-height:30px;color:#fff}
+  main .journey-mobile-card b{color:#f3d991;font:500 14px/20px "Mona Sans:Medium"}
+  main .journey-mobile-card p{font-size:16px;color:#afbdc5}
+  main .journey-progress{height:4px;background:#ffffff21;border-radius:2px;overflow:hidden}
+  main .journey-progress span{display:block;height:100%;background:#dbab47;border-radius:2px;transition:width .05s linear}
+  main .journey-dots{display:flex;justify-content:center;gap:8px;margin-top:4px}
+  main .journey-dots .dot{width:8px;height:8px;border-radius:50%;border:0;background:#ffffff33;cursor:pointer;padding:0;transition:background .2s}
+  main .journey-dots .dot.active{background:#dbab47}
+
+  /* Mobile: reduce gap before "Your ambition belongs here" */
+  main .fit-heading{margin-top:-300px}
+  main .fit-heading h2{font-size:28px;line-height:1.15;white-space:normal}
+  main .fit-heading p{font-size:15px}
+  main .section{padding:32px 0}
 }
 
 @media (max-width:440px){

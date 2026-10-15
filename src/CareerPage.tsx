@@ -1,4 +1,4 @@
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 const A = "/assets/";
 
@@ -61,6 +61,38 @@ function Sculpture() {
 }
 
 function CareerDetails() {
+  const [benefitIdx, setBenefitIdx] = useState(0)
+  const [journeyIdx, setJourneyIdx] = useState(0)
+  const [progress, setProgress] = useState(0)
+  const journeyStartRef = useRef(Date.now())
+
+  // Mobile: auto-rotate benefits every 20s
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 760px)")
+    if (!mq.matches) return
+    const t = setInterval(() => {
+      setBenefitIdx(i => (i + 1) % benefits.length)
+    }, 20000)
+    return () => clearInterval(t)
+  }, [])
+
+  // Mobile: journey progress bar + auto-advance every 10s
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 760px)")
+    if (!mq.matches) return
+    const iv = setInterval(() => {
+      const elapsed = Date.now() - journeyStartRef.current
+      if (elapsed >= 10000) {
+        journeyStartRef.current = Date.now()
+        setProgress(0)
+        setJourneyIdx(i => (i + 1) % journey.length)
+      } else {
+        setProgress(elapsed / 10000)
+      }
+    }, 50)
+    return () => clearInterval(iv)
+  }, [])
+
   return (
     <div id="career-details">
       <section className="section dark journey">
@@ -70,6 +102,22 @@ function CareerDetails() {
             <h2>From curious to capable.<br />From capable to confident.</h2>
             <p>Progress is built, not promised. Your starting point and pace will be individual.</p>
           </div>
+          {/* Mobile: journey carousel with progress + dots */}
+          <div className="journey-mobile">
+            <div className="journey-mobile-card">
+              <div className="stage-marker"><span>{String(journeyIdx + 1).padStart(2, "0")}</span><i /></div>
+              <h3>{journey[journeyIdx][0]}</h3>
+              <b>{journey[journeyIdx][1]}</b>
+              <p>{journey[journeyIdx][2]}</p>
+            </div>
+            <div className="journey-progress"><span style={{ width: `${progress * 100}%` }} /></div>
+            <div className="journey-dots">
+              {journey.map((_, i) => (
+                <button key={i} className={`dot${i === journeyIdx ? " active" : ""}`} onClick={() => { journeyStartRef.current = Date.now(); setJourneyIdx(i); setProgress(0) }} aria-label={`Step ${i + 1}`} />
+              ))}
+            </div>
+          </div>
+          {/* Desktop: original grid */}
           <div className="journey-grid">
             {journey.map(([title, subtitle, text], i) => (
               <article key={title} className="journey-card">
@@ -135,7 +183,7 @@ function CareerDetails() {
       <section className="section sand">
         <div className="container faq-layout">
           <div><Eyebrow dark>Clarity before commitment</Eyebrow><h2>Good questions.<br />Straight answers.</h2><p>Every career decision deserves a clear understanding of the opportunity. Here are a few things you may be wondering.</p><b>Bring your other questions to the conversation.</b></div>
-          <div>{faqs.map(([q, a]) => <article className="faq" key={q}><h3>{q}<img src={`${A}1f8b8.svg`} alt="" /></h3><p>{a}</p></article>)}</div>
+          <div><CareerFaqs /></div>
         </div>
       </section>
     </div>
@@ -146,6 +194,23 @@ function Field({ label, children, full = false }: { label: string; children: Rea
   return <label className={full ? "field full" : "field"}><span>{label}</span>{children}</label>;
 }
 
+function CareerFaqs() {
+  const [open, setOpen] = useState(0)
+  return (
+    <div>{faqs.map(([q, a], i) => (
+      <article className={`faq${open === i ? " is-open" : ""}`} key={q}>
+        <h3>
+          <button type="button" className="faq-toggle" onClick={() => setOpen(open === i ? -1 : i)} aria-expanded={open === i}>
+            <span>{q}</span>
+            <span className="faq-icon" aria-hidden="true">{open === i ? "−" : "+"}</span>
+          </button>
+        </h3>
+        {open === i && <p>{a}</p>}
+      </article>
+    ))}</div>
+  )
+}
+
 function ApplicationForm() {
   const [step, setStep] = useState(1);
   const [contact, setContact] = useState("WhatsApp");
@@ -153,10 +218,32 @@ function ApplicationForm() {
   const [sent, setSent] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
 
+  // Controlled step-1 fields: keeps the values when the user goes back, and
+  // stops the browser from autofilling one field with another's value.
+  const [details, setDetails] = useState({ name: "", email: "", phone: "", location: "" });
+  const setDetail = (key: keyof typeof details) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setDetails((d) => ({ ...d, [key]: e.target.value }));
+
+  // Controlled step-2 fields: same reason - values survive a back/next round trip.
+  const [background, setBackground] = useState({ experience: "", role: "", availability: "", commitment: "", licences: "", motivation: "" });
+  const setBg = (key: keyof typeof background) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+    setBackground((b) => ({ ...b, [key]: e.target.value }));
+
+  const scrollToFormTop = () => {
+    requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
   const next = (e: FormEvent) => {
     e.preventDefault();
     setStep(2);
-    requestAnimationFrame(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }));
+    scrollToFormTop();
+  };
+
+  const back = () => {
+    setStep(1);
+    scrollToFormTop();
   };
 
   return (
@@ -175,32 +262,40 @@ function ApplicationForm() {
           <h2>Express your interest</h2><p>Fields marked * are required.</p>
           {sent ? <div className="success"><h3>Thank you for your interest.</h3><p>Your details have been received. If there is a potential fit, the KSEFinServe team may contact you through your preferred channel.</p></div> :
           <form onSubmit={step === 1 ? next : (e) => { e.preventDefault(); setSent(true); }}>
-            <p className="form-step">{step === 1 ? "01 / YOUR DETAILS" : "02 / YOUR BACKGROUND & GOALS"}</p>
+            <div className="form-step-row">
+              {step === 2 && (
+                <button type="button" className="back-btn" onClick={back}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 5L8 12L15 19" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  Back
+                </button>
+              )}
+              <p className="form-step">{step === 1 ? "01 / YOUR DETAILS" : "02 / YOUR BACKGROUND & GOALS"}</p>
+            </div>
             {step === 1 ? <>
               <div className="field-grid">
-                <Field label="Full name *"><input required placeholder="Your full name" /></Field>
-                <Field label="Email address *"><input required type="email" placeholder="you@example.com" /></Field>
-                <Field label="WhatsApp number *"><input required type="tel" placeholder="+234 800 000 0000" /><small>Include your country code.</small></Field>
-                <Field label="Location *"><input required placeholder="City, state / province, country" /></Field>
+                <Field label="Full name *"><input required name="name" autoComplete="name" placeholder="Your full name" value={details.name} onChange={setDetail("name")} /></Field>
+                <Field label="Email address *"><input required name="email" type="email" autoComplete="email" placeholder="you@example.com" value={details.email} onChange={setDetail("email")} /></Field>
+                <Field label="WhatsApp number *"><input required name="phone" type="tel" autoComplete="tel" placeholder="+234 800 000 0000" value={details.phone} onChange={setDetail("phone")} /><small>Include your country code.</small></Field>
+                <Field label="Location *"><input required name="location" autoComplete="address-level2" placeholder="City, state / province, country" value={details.location} onChange={setDetail("location")} /></Field>
               </div>
               <div className="choice-block"><b>Preferred contact method</b><div>{["WhatsApp", "Email"].map(x => <button type="button" className={contact === x ? "chip selected" : "chip"} onClick={() => setContact(x)} key={x}>{x}</button>)}</div></div>
               <hr /><button className="submit" type="submit">Next</button>
-            </> : <>
+            </> : <div key="step-2">
               <div className="field-grid">
-                <Field label="Relevant experience *"><select required defaultValue=""><option value="" disabled>Select your experience</option><option>Starting my career</option><option>Changing direction</option><option>Financial-services experience</option></select></Field>
-                <Field label="Current role or field"><input placeholder="e.g. Customer service, graduate" /></Field>
+                <Field label="Relevant experience *"><select required name="experience" value={background.experience} onChange={setBg("experience")}><option value="" disabled>Select your experience</option><option>Starting my career</option><option>Changing direction</option><option>Financial-services experience</option></select></Field>
+                <Field label="Current role or field"><input name="role" autoComplete="off" value={background.role} onChange={setBg("role")} placeholder="e.g. Customer service, graduate" /></Field>
               </div>
               <div className="choice-block interests"><b>Career interests *</b><p>Choose the areas you would like to explore. Select all that apply.</p><div>{["Client relationships", "Financial education", "Business development", "Leadership", "Still exploring"].map(x => <button type="button" key={x} onClick={() => setInterests(v => v.includes(x) ? v.filter(i => i !== x) : [...v, x])} className={interests.includes(x) ? "chip selected" : "chip"}>{x}</button>)}</div></div>
               <div className="field-grid">
-                <Field label="Availability *"><select required defaultValue=""><option value="" disabled>When could you start?</option><option>Immediately</option><option>Within one month</option><option>Exploring for later</option></select></Field>
-                <Field label="Weekly time commitment *"><select required defaultValue=""><option value="" disabled>Select your availability</option><option>Under 10 hours</option><option>10–20 hours</option><option>Full-time</option></select></Field>
-                <Field label="Licences or registrations (if any)" full><input placeholder="List relevant credentials, or enter “None”" /></Field>
-                <Field label="What motivates you to explore this career? *" full><textarea required placeholder="Tell us about your goals, strengths and what meaningful work looks like to you…" /><small>A short, thoughtful response is enough.</small></Field>
+                <Field label="Availability *"><select required name="availability" value={background.availability} onChange={setBg("availability")}><option value="" disabled>When could you start?</option><option>Immediately</option><option>Within one month</option><option>Exploring for later</option></select></Field>
+                <Field label="Weekly time commitment *"><select required name="commitment" value={background.commitment} onChange={setBg("commitment")}><option value="" disabled>Select your availability</option><option>Under 10 hours</option><option>10–20 hours</option><option>Full-time</option></select></Field>
+                <Field label="Licences or registrations (if any)" full><input name="licences" autoComplete="off" value={background.licences} onChange={setBg("licences")} placeholder="List relevant credentials, or enter “None”" /></Field>
+                <Field label="What motivates you to explore this career? *" full><textarea required name="motivation" value={background.motivation} onChange={setBg("motivation")} placeholder="Tell us about your goals, strengths and what meaningful work looks like to you…" /><small>A short, thoughtful response is enough.</small></Field>
               </div>
               <hr />
               <div className="consents"><label><input type="checkbox" required /><span>I agree that KSEFinServe may contact me by email, phone or WhatsApp about my career enquiry. *</span></label><label><input type="checkbox" required /><span>I consent to the collection and use of the information in this form to review my career enquiry and arrange relevant follow-up. *</span></label></div>
-              <button className="submit" type="submit">Send my career interest</button>
-            </>}
+              <button className="submit form-nav-submit" type="submit">Send my career interest</button>
+            </div>}
           </form>}
           <p className="form-note">Submitting interest does not guarantee a role, an offer or income.</p>
         </div>
@@ -210,7 +305,18 @@ function ApplicationForm() {
 }
 
 export default function App() {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(false)
+  const [benefitIdx, setBenefitIdx] = useState(0)
+
+  // Mobile: auto-rotate benefits every 20s
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 760px)")
+    if (!mq.matches) return
+    const t = setInterval(() => {
+      setBenefitIdx(i => (i + 1) % benefits.length)
+    }, 20000)
+    return () => clearInterval(t)
+  }, [])
 
   return (
     <main>
@@ -241,6 +347,21 @@ export default function App() {
       <section className="section sand support">
         <div className="container">
           <div className="split-heading"><div><Eyebrow dark>Grow with intention</Eyebrow><h2>Ambition is a start.<br />Support makes it a path.</h2></div><p>The right environment helps you build the skills behind lasting progress. Here is what to explore in your career conversation.</p></div>
+          {/* Mobile: benefits carousel */}
+          <div className="benefit-mobile">
+            <button className="benefit-arrow left" onClick={() => setBenefitIdx(i => (i - 1 + benefits.length) % benefits.length)} aria-label="Previous">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M15 5L8 12L15 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+            <div className="benefit-mobile-card">
+              <img src={`${A}${benefits[benefitIdx][0]}`} alt="" />
+              <h3>{benefits[benefitIdx][1]}</h3>
+              <p>{benefits[benefitIdx][2]}</p>
+            </div>
+            <button className="benefit-arrow right" onClick={() => setBenefitIdx(i => (i + 1) % benefits.length)} aria-label="Next">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 5L16 12L9 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+          </div>
+          {/* Desktop: original grid */}
           <div className="benefit-grid">{benefits.map(([icon, title, text]) => <article key={title}><img src={`${A}${icon}`} alt="" /><h3>{title}</h3><p>{text}</p></article>)}</div>
           <p className="fine-print">Specific support, training and benefits vary by role and arrangement. We will clarify what applies before you make a commitment.</p>
           {!expanded && <button className="see-more" onClick={() => setExpanded(true)}>See More</button>}

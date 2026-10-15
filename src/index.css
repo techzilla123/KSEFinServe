@@ -84,6 +84,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .logo-link img { width: 200px; height: auto; max-height: 72px; object-fit: contain; }
 .desktop-nav { gap: 4px; padding: 4px; background: #e4e4e49c; border: 1px solid var(--color-gold); border-radius: 100px; box-shadow: 0 8px 24px #00000014; }
 .nav-item { padding: 13px 12px; font-size: 14px; border-radius: 100px; transition: background .2s; color: #1a1a1a; }
+.nav-work { background: transparent !important; }
+.nav-calculator-wrap:has(.nav-work) { margin-right: -15px; }
 .nav-item:hover { background: white; }
 .nav-events { display: inline-flex; align-items: center; gap: 6px; background: #c9a96314; color: #1a1a1a; font-weight: 500; }
 .nav-events:hover { background: #c9a96326; }

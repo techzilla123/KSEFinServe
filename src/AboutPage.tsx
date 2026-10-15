@@ -273,7 +273,7 @@ function App() {
                 For purpose-driven professionals ready to launch or grow a financial services career.
                 Mentorship, systems and the support of someone who has done it.
               </p>
-              <a className="button service-button-blue" href="#contact">Explore the opportunity</a>
+              <a className="button service-button-blue" href="/career">Explore the opportunity</a>
             </div>
           </article>
         </div>

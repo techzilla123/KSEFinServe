@@ -15,14 +15,16 @@ const socials = [
 function CareerApp() {
   const [mobileMenu, setMobileMenu] = useState(false)
   const [eventsMenuOpen, setEventsMenuOpen] = useState(false)
+  const [workMenuOpen, setWorkMenuOpen] = useState(false)
   const [calcMenuOpen, setCalcMenuOpen] = useState(false)
   const [growing, setGrowing] = useState<number | null>(null)
   const eventsMenuRef = useRef<HTMLDivElement>(null)
+  const workMenuRef = useRef<HTMLDivElement>(null)
   const calcMenuRef = useRef<HTMLDivElement>(null)
   const navigate = (path: string) => { window.location.href = path }
   const setPanel = (_panel: any) => {}
   return (
-    <SiteLayout navigate={navigate} setPanel={setPanel} setMobileMenu={setMobileMenu} mobileMenu={mobileMenu} eventsMenuOpen={eventsMenuOpen} setEventsMenuOpen={setEventsMenuOpen} calcMenuOpen={calcMenuOpen} setCalcMenuOpen={setCalcMenuOpen} eventsMenuRef={eventsMenuRef} calcMenuRef={calcMenuRef} growing={growing} setGrowing={setGrowing} socials={socials} hideCareerNav>
+    <SiteLayout navigate={navigate} setPanel={setPanel} setMobileMenu={setMobileMenu} mobileMenu={mobileMenu} eventsMenuOpen={eventsMenuOpen} setEventsMenuOpen={setEventsMenuOpen} calcMenuOpen={calcMenuOpen} setCalcMenuOpen={setCalcMenuOpen} eventsMenuRef={eventsMenuRef} workMenuOpen={workMenuOpen} setWorkMenuOpen={setWorkMenuOpen} workMenuRef={workMenuRef} calcMenuRef={calcMenuRef} growing={growing} setGrowing={setGrowing} socials={socials} hideCareerNav>
       <App />
     </SiteLayout>
   )

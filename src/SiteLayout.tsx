@@ -93,11 +93,14 @@ interface SiteLayoutProps {
   setMobileMenu: (open: boolean | ((v: boolean) => boolean)) => void
   mobileMenu: boolean
   eventsMenuOpen: boolean
-  setEventsMenuOpen: (open: boolean | ((v: boolean) => boolean)) => void
+  setEventsMenuOpen: React.Dispatch<React.SetStateAction<boolean>>
   calcMenuOpen: boolean
-  setCalcMenuOpen: (open: boolean | ((v: boolean) => boolean)) => void
+  setCalcMenuOpen: React.Dispatch<React.SetStateAction<boolean>>
+  workMenuOpen: boolean
+  setWorkMenuOpen: React.Dispatch<React.SetStateAction<boolean>>
   eventsMenuRef: React.RefObject<HTMLDivElement | null>
   calcMenuRef: React.RefObject<HTMLDivElement | null>
+  workMenuRef: React.RefObject<HTMLDivElement | null>
   growing: number | null
   setGrowing: (v: number | null) => void
   socials: Array<{ label: string; href: string; icon: string }>
@@ -105,6 +108,7 @@ interface SiteLayoutProps {
   hideContactNav?: boolean
   hideServiceNav?: boolean
   hideCareerNav?: boolean
+  isLanding?: boolean
 }
 
 export default function SiteLayout({
@@ -117,8 +121,11 @@ export default function SiteLayout({
   setEventsMenuOpen,
   calcMenuOpen,
   setCalcMenuOpen,
+  workMenuOpen,
+  setWorkMenuOpen,
   eventsMenuRef,
   calcMenuRef,
+  workMenuRef,
   growing,
   setGrowing,
   socials,
@@ -126,6 +133,7 @@ export default function SiteLayout({
   hideContactNav = false,
   hideServiceNav = false,
   hideCareerNav = false,
+  isLanding = false,
 }: SiteLayoutProps) {
   useEffect(() => {
     if (!calcMenuOpen) return
@@ -148,6 +156,17 @@ export default function SiteLayout({
     document.addEventListener("pointerdown", onPointerDown)
     return () => document.removeEventListener("pointerdown", onPointerDown)
   }, [eventsMenuOpen, eventsMenuRef, setEventsMenuOpen])
+
+  useEffect(() => {
+    if (!workMenuOpen) return
+    const onPointerDown = (event: PointerEvent) => {
+      if (workMenuRef.current?.contains(event.target as Node)) return
+      if ((event.target as HTMLElement).closest("dialog")) return
+      setWorkMenuOpen(false)
+    }
+    document.addEventListener("pointerdown", onPointerDown)
+    return () => document.removeEventListener("pointerdown", onPointerDown)
+  }, [workMenuOpen, workMenuRef, setWorkMenuOpen])
 
   return (
     <>
@@ -180,9 +199,51 @@ export default function SiteLayout({
                 Career
               </Link>
             )}
-            <Link href="#testimonials" className="nav-item">
-              Testimonial
-            </Link>
+            {isLanding && (
+              <div className="nav-calculator-wrap" ref={workMenuRef}>
+                <Button
+                  className="nav-item nav-work"
+                  aria-haspopup="true"
+                  aria-expanded={workMenuOpen}
+                  onClick={() => setWorkMenuOpen((v) => !v)}
+                >
+                  Work <Art src={artwork.chevron} />
+                </Button>
+                {workMenuOpen && (
+                  <div className="nav-calculator-menu" role="menu">
+                    <Link
+                      href="/career"
+                      role="menuitem"
+                      className="nav-calculator-item"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setWorkMenuOpen(false)
+                        navigate("/career")
+                      }}
+                    >
+                      Career
+                    </Link>
+                    <Link
+                      href="/#testimonials"
+                      role="menuitem"
+                      className="nav-calculator-item"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setWorkMenuOpen(false)
+                        navigate("/#testimonials")
+                      }}
+                    >
+                      Testimonial
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+            {!isLanding && (
+              <Link href="/#testimonials" className="nav-item">
+                Testimonial
+              </Link>
+            )}
             {!hideContactNav && (
               <button
                 className="nav-item"
@@ -376,8 +437,9 @@ export default function SiteLayout({
             <Link href="/" aria-label="Home" onClick={(e) => { e.preventDefault(); navigate("/") }}><img src={artwork.footerLogo} alt="Kayode Samson Elepe" className="footer-logo" /></Link>
             <nav aria-label="Footer navigation" className="flex flex-wrap gap-6">
               <Link href="/about" onClick={(e) => { e.preventDefault(); navigate("/about") }}>About</Link>
-              <Link href="/" onClick={(e) => { e.preventDefault(); navigate("/service") }}>How I Can Help</Link>
-              <Link href="/" onClick={(e) => { e.preventDefault(); navigate("/#testimonials") }}>Testimonial</Link>
+              <Link href="/service" onClick={(e) => { e.preventDefault(); navigate("/service") }}>How I Can Help</Link>
+              <Link href="/career" onClick={(e) => { e.preventDefault(); navigate("/career") }}>Career</Link>
+              <Link href="/#testimonials" onClick={(e) => { e.preventDefault(); navigate("/#testimonials") }}>Testimonial</Link>
               <Link href="/" onClick={(e) => { e.preventDefault(); navigate("/") }}>Events</Link>
               <a href="/contact" onClick={(e) => { e.preventDefault(); navigate("/contact") }}>Contact Us</a>
             </nav>

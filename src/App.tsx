@@ -87,17 +87,19 @@ function Link(props: ComponentProps<"a">) {
 function BookingLink({
   variant = "navy",
   className = "",
+  href = "https://calendly.com/kay-business360/discovery_call",
   ...props
 }: Omit<ComponentProps<"a">, "href"> & {
-  variant?: "navy" | "gold" | "white" | "text"
+  variant?: "navy" | "gold" | "white" | "text";
+  href?: string;
 }) {
   return (
     <Link
       {...props}
-      href="https://calendly.com/kay-business360/discovery_call"
+      href={href}
       className={`button button-${variant} ${className}`}
     />
-  )
+  );
 }
 function Heading({
   level = 2,
@@ -571,9 +573,11 @@ export default function App() {
   const [activeMetric, setActiveMetric] = useState<number | null>(null)
   const [calcMenuOpen, setCalcMenuOpen] = useState(false)
   const [eventsMenuOpen, setEventsMenuOpen] = useState(false)
+  const [workMenuOpen, setWorkMenuOpen] = useState(false)
   const dialog = useRef<HTMLDialogElement>(null)
   const calcMenuRef = useRef<HTMLDivElement>(null)
   const eventsMenuRef = useRef<HTMLDivElement>(null)
+  const workMenuRef = useRef<HTMLDivElement>(null)
   useScrollReveal()
 
   // Footer skyline buildings
@@ -598,6 +602,25 @@ export default function App() {
 
   // Path-based routing: /contact shows the Contact page, unknown paths show 404
   const [route, setRoute] = useState(() => window.location.pathname)
+
+  // When the landing page loads with a hash (e.g. /#testimonials), scroll to
+  // that section once it has rendered. The browser's own hash scroll fires
+  // before React mounts, so it does nothing on a fresh load.
+  useEffect(() => {
+    const hash = window.location.hash.slice(1)
+    if (!hash) return
+    let attempts = 0
+    const tryScroll = () => {
+      const el = document.getElementById(hash)
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" })
+      } else if (attempts++ < 30) {
+        setTimeout(tryScroll, 100)
+      }
+    }
+    tryScroll()
+  }, [route])
+
   useEffect(() => {
     const onPopState = () => { setRoute(window.location.pathname); window.scrollTo(0, 0) }
     window.addEventListener("popstate", onPopState)
@@ -616,9 +639,34 @@ export default function App() {
       window.location.href = "/career"
       return
     }
+    // Hash links (e.g. /#testimonials) must land on the landing page and then
+    // scroll to the section, even when we are already on the landing page.
+    const [base, hash] = path.split("#")
+    const target = base || "/"
+    const scrollToHash = () => {
+      if (!hash) return
+      const el = document.getElementById(hash)
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" })
+    }
+    if (window.location.pathname !== target) {
+      // Different page: navigate there, then scroll once the section exists.
+      window.location.href = path
+      return
+    }
     window.history.pushState({}, "", path)
-    setRoute(path)
-    window.scrollTo(0, 0)
+    setRoute(target)
+    // The landing page may not be rendered yet, so retry until the section
+    // appears rather than scrolling once and giving up.
+    let attempts = 0
+    const tryScroll = () => {
+      const el = document.getElementById(hash)
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" })
+      } else if (attempts++ < 20) {
+        setTimeout(tryScroll, 100)
+      }
+    }
+    tryScroll()
   }
 
   // Close the calculators dropdown when clicking anywhere outside it
@@ -690,7 +738,7 @@ export default function App() {
         setEventsMenuOpen={setEventsMenuOpen}
         calcMenuOpen={calcMenuOpen}
         setCalcMenuOpen={setCalcMenuOpen}
-        eventsMenuRef={eventsMenuRef}
+        eventsMenuRef={eventsMenuRef} workMenuOpen={workMenuOpen} setWorkMenuOpen={setWorkMenuOpen} workMenuRef={workMenuRef}
         calcMenuRef={calcMenuRef}
         growing={growing}
         setGrowing={setGrowing}
@@ -730,11 +778,13 @@ export default function App() {
       setEventsMenuOpen={setEventsMenuOpen}
       calcMenuOpen={calcMenuOpen}
       setCalcMenuOpen={setCalcMenuOpen}
-      eventsMenuRef={eventsMenuRef}
+      eventsMenuRef={eventsMenuRef} workMenuOpen={workMenuOpen} setWorkMenuOpen={setWorkMenuOpen} workMenuRef={workMenuRef}
       calcMenuRef={calcMenuRef}
       growing={growing}
       setGrowing={setGrowing}
       socials={[]}
+      hideCareerNav
+      isLanding
     >
       <Link href="#main" className="skip-link">
         Skip to content
@@ -1030,7 +1080,7 @@ export default function App() {
                 </Button>
               </div>
               <div className="work-card-wrap" data-index="2">
-                <BookingLink variant="text" className="work-card career-work">
+                <BookingLink variant="text" className="work-card career-work" href="/career" onClick={(e) => { e.preventDefault(); navigate("/career") }}>
                   <img
                     src={artwork.careerCard}
                     alt="A professional sharing an opportunity on his phone"

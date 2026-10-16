@@ -56,7 +56,7 @@ function BookingLink({
   return (
     <Link
       {...props}
-      href="https://calendly.com/kay-business360/discovery_call"
+      href="/book-now"
       className={`button button-${variant} ${className}`}
     />
   )
@@ -110,6 +110,7 @@ interface SiteLayoutProps {
   hideCareerNav?: boolean
   isLanding?: boolean
   hideCareerNavOnly?: boolean
+  workDropdownNav?: boolean
 }
 
 export default function SiteLayout({
@@ -136,6 +137,7 @@ export default function SiteLayout({
   hideCareerNav = false,
   isLanding = false,
   hideCareerNavOnly = false,
+  workDropdownNav = false,
 }: SiteLayoutProps) {
   useEffect(() => {
     if (!calcMenuOpen) return

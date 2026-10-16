@@ -24,6 +24,7 @@ export default defineConfig(({ mode }) => {
           service: path.resolve(__dirname, "./service.html"),
           career: path.resolve(__dirname, "./career.html"),
           "event-insight": path.resolve(__dirname, "./event-insight.html"),
+          "book-now": path.resolve(__dirname, "./book-now.html"),
         },
       },
     },
@@ -73,6 +74,17 @@ export default defineConfig(({ mode }) => {
           server.middlewares.use((req, res, next) => {
             if (req.url?.split("?")[0] === "/events" || req.url?.split("?")[0] === "/insights") {
               req.url = "/event-insight.html"
+            }
+            next()
+          })
+        },
+      },
+      {
+        name: "book-now-page-middleware",
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            if (req.url?.split("?")[0] === "/book-now") {
+              req.url = "/book-now.html"
             }
             next()
           })

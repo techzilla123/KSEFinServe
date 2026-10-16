@@ -1,0 +1,876 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "DM Serif Display:Regular";
+  src: url("https://static.figma.com/font/DMSerifDisplay-Regular_2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "Manrope:Bold";
+  src: url("https://static.figma.com/font/Manrope_wght__1") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: "Mona Sans:Medium";
+  src: url("https://static.figma.com/font/MonaSans_wdth_wght__1") format("woff2");
+  font-style: normal;
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: "Mona Sans:Regular";
+  src: url("https://static.figma.com/font/MonaSans_wdth_wght__1") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "Mona Sans:SemiBold";
+  src: url("https://static.figma.com/font/MonaSans_wdth_wght__1") format("woff2");
+  font-style: normal;
+  font-weight: 600;
+}
+
+/* Scoped to the Book a Session page so nothing leaks into the shared
+   top nav / footer or other pages. */
+.book-now-page {
+  color: #081d2b;
+  background: #f5f1e8;
+  font-family: "Mona Sans:Regular", sans-serif;
+  font-variation-settings: "wdth" 100;
+  min-height: 100vh;
+}
+
+.book-now-page *,
+.book-now-page *::before,
+.book-now-page *::after {
+  box-sizing: border-box;
+}
+
+.book-now-page button,
+.book-now-page input,
+.book-now-page select,
+.book-now-page textarea {
+  color: inherit;
+  font: inherit;
+  font-variation-settings: "wdth" 100;
+}
+
+.book-now-page button {
+  cursor: pointer;
+}
+
+.book-now-page p,
+.book-now-page h1,
+.book-now-page h2,
+.book-now-page h3,
+.book-now-page figure {
+  margin: 0;
+}
+.book-now-page .eyebrow {
+  color: #886526;
+  font-family: "Mona Sans:SemiBold", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.book-now-page .gold {
+  color: #c9a963;
+}
+.book-now-page .book-page {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 48px;
+  align-items: start;
+  width: 100%;
+  min-height: 100vh;
+  padding: 40px 80px 64px;
+}
+.book-now-page .book-intro, .book-now-page .companion {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #081d2b;
+  padding: 32px;
+  color: #fffdfa;
+}
+.book-now-page .book-intro h1, .book-now-page .companion h2 {
+  font-family: "Mona Sans:SemiBold", sans-serif;
+  font-size: 40px;
+  font-weight: 600;
+  letter-spacing: -1.6px;
+  line-height: 1.08;
+}
+.book-now-page .book-intro h1 span {
+  display: block;
+  color: #c9a963;
+  font-family: "DM Serif Display:Regular", serif;
+  font-weight: 400;
+  letter-spacing: -1.6px;
+}
+.book-now-page .muted-light {
+  color: #b9c4c8;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.book-now-page .book-art, .book-now-page .companion-art {
+  width: 100%;
+  height: 235px;
+  border-radius: 20px;
+  object-fit: cover;
+}
+.book-now-page .art-caption {
+  border-top: 1px solid rgb(255 255 255 / 15%);
+  padding-top: 16px;
+  color: #c9a963;
+  font-family: "Mona Sans:SemiBold", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.book-now-page .surface {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #fffdfa;
+  padding: 40px;
+}
+.book-now-page .booking-surface {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.book-now-page .intro-line {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.book-now-page .route-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.book-now-page .route {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  align-items: flex-start;
+  border: 1px solid #d9d5cb;
+  border-radius: 10px;
+  background: #fffdfa;
+  padding: 18px;
+  text-align: left;
+}
+.book-now-page .route.selected {
+  border: 2px solid #c9a963;
+  background: #eee3cb;
+  padding: 17px;
+}
+.book-now-page .route > span {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+}
+.book-now-page .route b {
+  color: #886526;
+  font-family: "Mona Sans:SemiBold", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.book-now-page .route img {
+  width: 18px;
+  height: 18px;
+}
+.book-now-page .route strong {
+  font-family: "Mona Sans:SemiBold", sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+}
+.book-now-page .route small, .book-now-page .field small, .book-now-page .field-group small, .book-now-page .footnote, .book-now-page .permissions > small {
+  color: #59666b;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.book-now-page hr {
+  width: 100%;
+  height: 1px;
+  margin: 0;
+  border: 0;
+  background: #d9d5cb;
+}
+.book-now-page .quick-form, .book-now-page .detailed-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.book-now-page .detailed-form {
+  gap: 28px;
+}
+.book-now-page .step-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.book-now-page .detailed-form .step-heading {
+  gap: 12px;
+}
+.book-now-page .step-heading h1, .book-now-page .step-heading h2 {
+  font-family: "Mona Sans:SemiBold", sans-serif;
+  font-weight: 600;
+  line-height: 1.08;
+}
+.book-now-page .step-heading h1 {
+  font-size: 42px;
+  letter-spacing: -1.68px;
+}
+.book-now-page .step-heading h2 {
+  font-size: 32px;
+  letter-spacing: -1.28px;
+}
+.book-now-page .step-heading p {
+  color: #59666b;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.book-now-page .quick-form .step-heading p {
+  font-size: 14px;
+}
+.book-now-page .step-heading > small {
+  color: #59666b;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.book-now-page .field {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  color: #081d2b;
+  font-family: "Mona Sans:Medium", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+}
+.book-now-page .field em {
+  color: #59666b;
+  font-style: normal;
+}
+.book-now-page .field input, .book-now-page .field textarea, .book-now-page .field select {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid #d9d5cb;
+  border-radius: 6px;
+  outline: 0;
+  background: #fffdfa;
+  padding: 13px 16px;
+  color: #59666b;
+  font-family: "Mona Sans:Regular", sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.55;
+}
+.book-now-page .field input:focus, .book-now-page .field textarea:focus, .book-now-page .field select:focus {
+  border-color: #886526;
+  box-shadow: 0 0 0 2px rgb(201 169 99 / 20%);
+}
+.book-now-page .field textarea {
+  min-height: 102px;
+  resize: vertical;
+}
+.book-now-page .select-wrap {
+  position: relative;
+  display: block;
+}
+.book-now-page .select-wrap select {
+  appearance: none;
+  padding-right: 44px;
+}
+.book-now-page .select-wrap img {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+.book-now-page .two-col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+.book-now-page .check-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 6px 0;
+  color: #081d2b;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.book-now-page .check-row input {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  margin: 0;
+  appearance: none;
+  border: 1px solid #59666b;
+  border-radius: 4px;
+  background: #fffdfa;
+}
+.book-now-page .check-row input:checked {
+  border-color: #886526;
+  background: #c9a963 url("/assets/f4f9c.svg") center / 14px 14px no-repeat;
+}
+.book-now-page .primary, .book-now-page .secondary {
+  display: inline-flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  padding: 0 24px;
+  font-family: "Mona Sans:SemiBold", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+}
+.book-now-page .primary {
+  border: 1px solid #c9a963;
+  background: #c9a963;
+}
+.book-now-page .secondary {
+  border: 1px solid #d9d5cb;
+  background: #fffdfa;
+}
+.book-now-page .wide {
+  width: 100%;
+}
+.book-now-page .detailed-page {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  gap: 36px;
+  padding: 40px 80px 64px;
+}
+.book-now-page .flow-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.book-now-page .flow-head > p:last-child {
+  width: 360px;
+  color: #59666b;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.book-now-page .progress {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+.book-now-page .progress > div {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: #59666b;
+  font-size: 13px;
+}
+.book-now-page .progress i {
+  width: 100%;
+  height: 3px;
+  background: #d9d5cb;
+}
+.book-now-page .progress .active i {
+  background: #c9a963;
+}
+.book-now-page .progress .current {
+  color: #081d2b;
+  font-family: "Mona Sans:SemiBold", sans-serif;
+  font-weight: 600;
+}
+.book-now-page .detailed-layout {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 48px;
+  align-items: start;
+}
+.book-now-page .advisor {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.book-now-page .portrait {
+  position: relative;
+  width: 68px;
+  height: 84px;
+  flex: 0 0 68px;
+  overflow: hidden;
+}
+.book-now-page .portrait img {
+  position: absolute;
+  top: -0.52%;
+  left: 7.87%;
+  width: 84.03%;
+  height: 100%;
+  object-fit: cover;
+}
+.book-now-page .advisor > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.book-now-page .advisor strong {
+  font-family: "Mona Sans:SemiBold", sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+}
+.book-now-page .advisor small, .book-now-page .privacy {
+  color: #b9c4c8;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.book-now-page .companion hr {
+  background: rgb(255 255 255 / 15%);
+}
+.book-now-page .switch-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: #c9a963;
+  font-size: 13px;
+  text-align: left;
+}
+.book-now-page .section-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.book-now-page .section-heading h3 {
+  font-family: "Mona Sans:SemiBold", sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+}
+.book-now-page .section-heading p {
+  color: #59666b;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.book-now-page .actions {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 16px;
+  border-top: 1px solid #d9d5cb;
+  padding-top: 24px;
+}
+.book-now-page .field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.book-now-page .label {
+  font-family: "Mona Sans:Medium", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+}
+.book-now-page .topic-choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.book-now-page .topic {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+  border: 1px solid #d9d5cb;
+  border-radius: 10px;
+  background: #fffdfa;
+  padding: 16px;
+  text-align: left;
+}
+.book-now-page .topic.selected {
+  border: 2px solid #c9a963;
+  background: #eee3cb;
+  padding: 15px;
+}
+.book-now-page .topic img {
+  width: 18px;
+  height: 18px;
+}
+.book-now-page .topic strong {
+  font-family: "Mona Sans:SemiBold", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.book-now-page .topic small {
+  color: #59666b;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.book-now-page .priority-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.book-now-page .priority-list button {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid #d9d5cb;
+  border-radius: 8px;
+  background: #fffdfa;
+  padding: 12px 14px;
+  font-size: 13px;
+}
+.book-now-page .priority-list button.selected {
+  border-color: #081d2b;
+  background: #081d2b;
+  color: #fffdfa;
+}
+.book-now-page .priority-list img {
+  width: 16px;
+  height: 16px;
+}
+.book-now-page .notice {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  border-radius: 10px;
+  background: #f5f1e8;
+  padding: 16px;
+  color: #59666b;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.book-now-page .notice img {
+  width: 20px;
+  height: 20px;
+}
+.book-now-page .review-form {
+  gap: 24px;
+}
+.book-now-page .review-section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  border: 1px solid #d9d5cb;
+  border-radius: 10px;
+  padding: 24px;
+}
+.book-now-page .review-section header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.book-now-page .review-section h3 {
+  font-family: "Mona Sans:SemiBold", sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+}
+.book-now-page .review-section header button {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: #886526;
+  font-family: "Mona Sans:SemiBold", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+}
+.book-now-page .review-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+.book-now-page .review-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.book-now-page .review-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.book-now-page .review-detail small {
+  color: #59666b;
+  font-size: 12px;
+}
+.book-now-page .review-detail span {
+  font-size: 14px;
+  line-height: 1.55;
+}
+.book-now-page .permissions {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.book-now-page .permissions h3 {
+  font-family: "Mona Sans:SemiBold", sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+}
+.book-now-page .received-page {
+  min-height: 100vh;
+  background: #f5f1e8;
+}
+.book-now-page .confirmation {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 520px;
+  gap: 80px;
+  align-items: center;
+  padding: 80px;
+}
+.book-now-page .confirmation-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 28px;
+}
+.book-now-page .received-status {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  color: #886526;
+  font-family: "Mona Sans:SemiBold", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.book-now-page .received-status img {
+  width: 22px;
+  height: 22px;
+}
+.book-now-page .confirmation h1 {
+  font-family: "Mona Sans:SemiBold", sans-serif;
+  font-size: 68px;
+  font-weight: 600;
+  letter-spacing: -2.72px;
+  line-height: 1.05;
+}
+.book-now-page .confirmation h1 span {
+  display: block;
+  color: #886526;
+  font-family: "DM Serif Display:Regular", serif;
+  font-weight: 400;
+}
+.book-now-page .lead {
+  color: #59666b;
+  font-size: 18px;
+  line-height: 1.6;
+}
+.book-now-page .summary {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border: 1px solid #d9d5cb;
+  border-radius: 10px;
+  background: #fffdfa;
+  padding: 24px;
+}
+.book-now-page .summary h3 {
+  font-family: "Mona Sans:SemiBold", sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+}
+.book-now-page .summary > p:not(.eyebrow) {
+  font-size: 14px;
+  line-height: 1.6;
+}
+.book-now-page .summary small {
+  color: #59666b;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.book-now-page .confirmation-actions {
+  display: flex;
+  gap: 16px;
+}
+.book-now-page .confirmation-actions .primary {
+  width: 240px;
+}
+.book-now-page .confirmation-actions .secondary {
+  width: 200px;
+}
+.book-now-page .confirmation figure {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.book-now-page .confirmation figure img {
+  width: 100%;
+  height: 500px;
+  border-radius: 20px;
+  object-fit: cover;
+}
+.book-now-page .confirmation figcaption {
+  color: #886526;
+  font-family: "Mona Sans:SemiBold", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.book-now-page .while-wait {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 64px;
+  background: #eee3cb;
+  padding: 56px 80px;
+}
+.book-now-page .while-wait > div {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.book-now-page .while-wait h2 {
+  font-family: "Mona Sans:SemiBold", sans-serif;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -1.28px;
+  line-height: 1.08;
+}
+.book-now-page .while-wait > div > p:last-child {
+  color: #59666b;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+@media (max-width: 1050px) {
+  .book-page,
+  .detailed-layout {
+    grid-template-columns: 300px minmax(0, 1fr);
+    gap: 28px;
+  }
+
+  .book-page,
+  .detailed-page {
+    padding-right: 32px;
+    padding-left: 32px;
+  }
+
+  .confirmation {
+    grid-template-columns: minmax(0, 1fr) 40%;
+    gap: 40px;
+    padding: 56px 32px;
+  }
+
+  .confirmation h1 {
+    font-size: 52px;
+  }
+}
+
+@media (max-width: 760px) {
+  .book-page,
+  .detailed-layout,
+  .confirmation {
+    grid-template-columns: 1fr;
+  }
+
+  .book-page,
+  .detailed-page,
+  .confirmation {
+    padding: 24px 18px 40px;
+  }
+
+  .book-intro,
+  .companion {
+    padding: 26px;
+  }
+
+  .companion {
+    order: 2;
+  }
+
+  .detailed-form {
+    order: 1;
+  }
+
+  .flow-head > p:last-child {
+    display: none;
+  }
+
+  .progress {
+    gap: 8px;
+  }
+
+  .progress > div {
+    font-size: 11px;
+  }
+
+  .surface {
+    padding: 26px 20px;
+  }
+
+  .route-options,
+  .two-col,
+  .topic-choices,
+  .review-grid,
+  .while-wait {
+    grid-template-columns: 1fr;
+  }
+
+  .step-heading h1 {
+    font-size: 36px;
+  }
+
+  .confirmation h1 {
+    font-size: 45px;
+    letter-spacing: -1.8px;
+  }
+
+  .confirmation figure img {
+    height: auto;
+    aspect-ratio: 1.04;
+  }
+
+  .confirmation-actions {
+    flex-direction: column;
+  }
+
+  .confirmation-actions .primary,
+  .confirmation-actions .secondary {
+    width: 100%;
+  }
+
+  .while-wait {
+    gap: 40px;
+    padding: 40px 18px;
+  }
+}
+
+/* Native date/time pickers: match the form's field styling and keep the
+   calendar/clock affordance visible. */
+.book-now-page .field input[type="date"],
+.book-now-page .field input[type="time"] {
+  cursor: pointer;
+  color: #081d2b;
+}
+
+.book-now-page .field input[type="date"]::-webkit-calendar-picker-indicator,
+.book-now-page .field input[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.65;
+}
+
+.book-now-page .field input[type="date"]:hover::-webkit-calendar-picker-indicator,
+.book-now-page .field input[type="time"]:hover::-webkit-calendar-picker-indicator {
+  opacity: 1;
+}
+
+/* Top nav: the Work dropdown button must match the landing page's treatment
+   (transparent, not the navy pill that .button-navy would give it). */
+.book-now-page .nav-work,
+.nav-work {
+  background: transparent !important;
+}
+.nav-calculator-wrap:has(.nav-work) {
+  margin-right: -15px;
+}

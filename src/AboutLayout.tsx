@@ -93,7 +93,7 @@ export function AboutLayout({
             </div>
           </nav>
           <div className="flex items-center gap-3">
-            <a href="https://calendly.com/kay-business360/discovery_call" className="button button-navy header-book">Book a Session</a>
+            <a href="/book-now" className="button button-navy header-book">Book a Session</a>
             <button className="menu-toggle" aria-label={mobileMenu ? "Close navigation" : "Open navigation"} aria-expanded={mobileMenu} aria-controls="mobile-navigation" onClick={() => setMobileMenu(!mobileMenu)}>
               {mobileMenu ? "×" : "☰"}
             </button>

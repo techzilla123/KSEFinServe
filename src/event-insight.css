@@ -1,0 +1,349 @@
+@font-face {
+  font-family: 'Anton:Regular';
+  src: url('https://static.figma.com/font/Anton-Regular_2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Coiny:Regular';
+  src: url('https://static.figma.com/font/Coiny-Regular_2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Inter:Bold';
+  src: url('https://static.figma.com/font/Inter_1') format('woff2');
+  font-style: normal;
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: 'Inter:Medium';
+  src: url('https://static.figma.com/font/Inter_1') format('woff2');
+  font-style: normal;
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: 'Inter:Regular';
+  src: url('https://static.figma.com/font/Inter_1') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Inter:Semi Bold';
+  src: url('https://static.figma.com/font/Inter_1') format('woff2');
+  font-style: normal;
+  font-weight: 600;
+}
+
+@font-face {
+  font-family: 'Lora:Italic';
+  src: url('https://static.figma.com/font/Lora-Italic_wght__2') format('woff2');
+  font-style: italic;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Manrope:Bold';
+  src: url('https://static.figma.com/font/Manrope_wght__1') format('woff2');
+  font-style: normal;
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: 'Mona Sans:Medium';
+  src: url('https://static.figma.com/font/MonaSans_wdth_wght__1') format('woff2');
+  font-style: normal;
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: 'Mona Sans:Regular';
+  src: url('https://static.figma.com/font/MonaSans_wdth_wght__1') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Mona Sans:SemiBold';
+  src: url('https://static.figma.com/font/MonaSans_wdth_wght__1') format('woff2');
+  font-style: normal;
+  font-weight: 600;
+}
+
+@font-face {
+  font-family: 'Noto Sans Math:Regular';
+  src: url('https://static.figma.com/font/NotoSansMath-Regular_1') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Noto Sans Symbols2:Regular';
+  src: url('https://static.figma.com/font/NotoSansSymbols2-Regular_5') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Noto Sans Symbols:Regular';
+  src: url('https://static.figma.com/font/NotoSansSymbols-VF_2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Noto Sans:Regular';
+  src: url('https://static.figma.com/font/NotoSans-VF_3') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Oswald:SemiBold';
+  src: url('https://static.figma.com/font/Oswald_wght__2') format('woff2');
+  font-style: normal;
+  font-weight: 600;
+}
+
+@font-face {
+  font-family: 'Roboto:Bold';
+  src: url('https://static.figma.com/font/Roboto_wdth_wght__3') format('woff2');
+  font-style: normal;
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: 'Roboto:Regular';
+  src: url('https://static.figma.com/font/Roboto_wdth_wght__3') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Roboto:Thin';
+  src: url('https://static.figma.com/font/Roboto_wdth_wght__3') format('woff2');
+  font-style: normal;
+  font-weight: 100;
+}
+
+@font-face {
+  font-family: 'Special Elite:Regular';
+  src: url('https://static.figma.com/font/SpecialElite-Regular_2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+html {
+  background: #f6f3ec;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  overflow-x: hidden;
+  background: #f6f3ec;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.design-viewport {
+  width: 100%;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* Wrapper that reserves the scaled height of the fixed-size design canvas so
+   the page scrolls correctly at any zoom level. */
+.design-scale-shell {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.design-source {
+  position: relative;
+  width: 1440px;
+  transform-origin: top left;
+}
+
+.design-source [data-node-id='1:650'],
+.design-source [data-node-id='1:895'] {
+  position: relative;
+}
+
+.design-source [data-node-id='1:1219'] {
+  position: absolute;
+  top: 822px;
+  left: 731px;
+  z-index: 20;
+}
+
+.design-source [data-node-id='1:1220'] {
+  position: absolute;
+  top: 822px;
+  left: 576px;
+  z-index: 20;
+}
+
+.design-source [data-node-id='1:1221'] {
+  position: absolute;
+  top: 64px;
+  left: 50%;
+  z-index: 20;
+  transform: translateX(-50%);
+}
+
+.design-source button {
+  transition:
+    transform 160ms ease,
+    filter 160ms ease;
+}
+
+.design-source button:hover {
+  filter: brightness(0.97);
+}
+
+.design-source button:active {
+  transform: scale(0.98);
+}
+
+.design-source button:focus-visible {
+  outline: 3px solid #0d2b42;
+  outline-offset: 3px;
+}
+
+.design-source button {
+  cursor: pointer;
+  transition: transform 160ms ease, filter 160ms ease, background-color 200ms ease, box-shadow 200ms ease;
+}
+
+.design-source button[data-name="Article link"] {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.design-source button[data-name="Article link"]:hover {
+  background: transparent !important;
+  box-shadow: none !important;
+  filter: none !important;
+  transform: none !important;
+  color: #b98b2e !important;
+}
+
+.design-source button[data-name="Article link"]:hover span {
+  color: #b98b2e !important;
+}
+
+.design-source button[data-name="Article link"]:active {
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: scale(0.98) !important;
+  filter: none !important;
+}
+
+.design-source button[data-name="Article link"] span {
+  transition: color 200ms ease, transform 200ms ease;
+}
+
+.design-source button[data-name="Article link"]:hover span:last-child {
+  transform: translateX(4px) translateY(-4px);
+}
+
+.design-source button[data-name="Article link"]:active span:last-child {
+  transform: translateX(2px) translateY(-2px);
+}
+
+/* Article filtering */
+.design-source [data-name="Article rows"] [data-category] {
+  transition: opacity 300ms ease, transform 300ms ease;
+}
+
+/* Make the React wrapper divs transparent to layout */
+.design-source [data-name="Article rows"] > *:not([data-name]) {
+  display: contents;
+}
+
+/* Filtering: hide every card whose topic is not the active one.
+   Written as explicit per-topic rules so no specificity arms race occurs. */
+.design-source [data-name="Article rows"][data-active-filter="INVESTING"] [data-category]:not([data-category="INVESTING"]),
+.design-source [data-name="Article rows"][data-active-filter="WEALTH FOUNDATIONS"] [data-category]:not([data-category="WEALTH FOUNDATIONS"]),
+.design-source [data-name="Article rows"][data-active-filter="RETIREMENT"] [data-category]:not([data-category="RETIREMENT"]),
+.design-source [data-name="Article rows"][data-active-filter="PROTECTION"] [data-category]:not([data-category="PROTECTION"]),
+.design-source [data-name="Article rows"][data-active-filter="LIFE & LEGACY"] [data-category]:not([data-category="LIFE & LEGACY"]) {
+  display: none;
+}
+
+/* Keep visible cards at the same width they have in "All insights" (3 per row)
+   instead of letting flex-grow stretch a lone card across the whole row. */
+.design-source [data-name="Article rows"]:not([data-active-filter="all"]) [data-name="Article card"] {
+  flex: 0 0 calc((100% - 64px) / 3);
+  max-width: calc((100% - 64px) / 3);
+}
+
+/* When filtering, flatten the two hard-coded rows into one wrapping grid so the
+   matching cards always flow 3 per line (otherwise a topic whose cards are split
+   across both rows shows 2 on one line and 1 on the next). */
+.design-source [data-name="Article rows"]:not([data-active-filter="all"]) {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-content: flex-start;
+}
+.design-source [data-name="Article rows"]:not([data-active-filter="all"]) [data-name="Article collection"] {
+  display: contents;
+}
+
+.design-source button:hover {
+  filter: brightness(1.15);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+
+.design-source button:active {
+  transform: scale(0.95) translateY(0);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  filter: brightness(0.9) saturate(0.8);
+}
+
+/* Article link buttons - transparent hover */
+.design-source button[data-name="Article link"]:hover {
+  background: transparent !important;
+  box-shadow: none !important;
+  filter: none !important;
+  transform: none !important;
+  color: #b98b2e !important;
+}
+
+.design-source button[data-name="Article link"]:hover span {
+  color: #b98b2e !important;
+}
+
+.design-source button[data-name="Article link"]:active {
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: scale(0.98) !important;
+  filter: none !important;
+}
+
+.design-source button[data-name="Article link"] span {
+  transition: color 200ms ease, transform 200ms ease;
+}
+
+.design-source button[data-name="Article link"]:hover span:last-child {
+  transform: translateX(4px) translateY(-4px);
+}
+
+.design-source button[data-name="Article link"]:active span:last-child {
+  transform: translateX(2px) translateY(-2px);
+}
+

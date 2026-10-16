@@ -1052,3 +1052,5 @@ h1, h2, h3 { text-wrap: balance; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { transition: none !important; }
 }
+
+/* Insight page: topic filter — implemented in event-insight.css (.design-source scope) */

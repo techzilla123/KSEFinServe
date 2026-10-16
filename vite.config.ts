@@ -23,6 +23,7 @@ export default defineConfig(({ mode }) => {
           about: path.resolve(__dirname, "./about.html"),
           service: path.resolve(__dirname, "./service.html"),
           career: path.resolve(__dirname, "./career.html"),
+          "event-insight": path.resolve(__dirname, "./event-insight.html"),
         },
       },
     },
@@ -61,6 +62,17 @@ export default defineConfig(({ mode }) => {
           server.middlewares.use((req, res, next) => {
             if (req.url?.split("?")[0] === "/career") {
               req.url = "/career.html"
+            }
+            next()
+          })
+        },
+      },
+      {
+        name: "event-insight-page-middleware",
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            if (req.url?.split("?")[0] === "/events" || req.url?.split("?")[0] === "/insights") {
+              req.url = "/event-insight.html"
             }
             next()
           })

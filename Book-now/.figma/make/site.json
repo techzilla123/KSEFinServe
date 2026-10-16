@@ -1,0 +1,10 @@
+{
+  "description": "Facilitates seamless multi-step session booking with guided forms for personal details, interests, review, and confirmation in a single-page flow.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

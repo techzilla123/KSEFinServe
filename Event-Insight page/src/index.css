@@ -1,0 +1,216 @@
+@import 'tailwindcss';
+
+@font-face {
+  font-family: 'Anton:Regular';
+  src: url('https://static.figma.com/font/Anton-Regular_2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Coiny:Regular';
+  src: url('https://static.figma.com/font/Coiny-Regular_2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Inter:Bold';
+  src: url('https://static.figma.com/font/Inter_1') format('woff2');
+  font-style: normal;
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: 'Inter:Medium';
+  src: url('https://static.figma.com/font/Inter_1') format('woff2');
+  font-style: normal;
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: 'Inter:Regular';
+  src: url('https://static.figma.com/font/Inter_1') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Inter:Semi Bold';
+  src: url('https://static.figma.com/font/Inter_1') format('woff2');
+  font-style: normal;
+  font-weight: 600;
+}
+
+@font-face {
+  font-family: 'Lora:Italic';
+  src: url('https://static.figma.com/font/Lora-Italic_wght__2') format('woff2');
+  font-style: italic;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Manrope:Bold';
+  src: url('https://static.figma.com/font/Manrope_wght__1') format('woff2');
+  font-style: normal;
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: 'Mona Sans:Medium';
+  src: url('https://static.figma.com/font/MonaSans_wdth_wght__1') format('woff2');
+  font-style: normal;
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: 'Mona Sans:Regular';
+  src: url('https://static.figma.com/font/MonaSans_wdth_wght__1') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Mona Sans:SemiBold';
+  src: url('https://static.figma.com/font/MonaSans_wdth_wght__1') format('woff2');
+  font-style: normal;
+  font-weight: 600;
+}
+
+@font-face {
+  font-family: 'Noto Sans Math:Regular';
+  src: url('https://static.figma.com/font/NotoSansMath-Regular_1') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Noto Sans Symbols2:Regular';
+  src: url('https://static.figma.com/font/NotoSansSymbols2-Regular_5') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Noto Sans Symbols:Regular';
+  src: url('https://static.figma.com/font/NotoSansSymbols-VF_2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Noto Sans:Regular';
+  src: url('https://static.figma.com/font/NotoSans-VF_3') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Oswald:SemiBold';
+  src: url('https://static.figma.com/font/Oswald_wght__2') format('woff2');
+  font-style: normal;
+  font-weight: 600;
+}
+
+@font-face {
+  font-family: 'Roboto:Bold';
+  src: url('https://static.figma.com/font/Roboto_wdth_wght__3') format('woff2');
+  font-style: normal;
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: 'Roboto:Regular';
+  src: url('https://static.figma.com/font/Roboto_wdth_wght__3') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Roboto:Thin';
+  src: url('https://static.figma.com/font/Roboto_wdth_wght__3') format('woff2');
+  font-style: normal;
+  font-weight: 100;
+}
+
+@font-face {
+  font-family: 'Special Elite:Regular';
+  src: url('https://static.figma.com/font/SpecialElite-Regular_2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+html {
+  background: #f6f3ec;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  overflow-x: hidden;
+  background: #f6f3ec;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.design-viewport {
+  width: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+}
+
+.design-source {
+  position: relative;
+  width: 1440px;
+  transform-origin: top left;
+}
+
+.design-source [data-node-id='1:650'],
+.design-source [data-node-id='1:895'] {
+  position: relative;
+}
+
+.design-source [data-node-id='1:1219'] {
+  position: absolute;
+  top: 822px;
+  left: 731px;
+  z-index: 20;
+}
+
+.design-source [data-node-id='1:1220'] {
+  position: absolute;
+  top: 822px;
+  left: 576px;
+  z-index: 20;
+}
+
+.design-source [data-node-id='1:1221'] {
+  position: absolute;
+  top: 64px;
+  left: 50%;
+  z-index: 20;
+  transform: translateX(-50%);
+}
+
+.design-source button {
+  transition:
+    transform 160ms ease,
+    filter 160ms ease;
+}
+
+.design-source button:hover {
+  filter: brightness(0.97);
+}
+
+.design-source button:active {
+  transform: scale(0.98);
+}
+
+.design-source button:focus-visible {
+  outline: 3px solid #0d2b42;
+  outline-offset: 3px;
+}

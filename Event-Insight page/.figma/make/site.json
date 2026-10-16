@@ -1,0 +1,10 @@
+{
+  "description": "Toggle seamlessly between event and insight views on a single page to access detailed information and updates efficiently.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

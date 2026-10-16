@@ -109,6 +109,7 @@ interface SiteLayoutProps {
   hideServiceNav?: boolean
   hideCareerNav?: boolean
   isLanding?: boolean
+  hideCareerNavOnly?: boolean
 }
 
 export default function SiteLayout({
@@ -134,6 +135,7 @@ export default function SiteLayout({
   hideServiceNav = false,
   hideCareerNav = false,
   isLanding = false,
+  hideCareerNavOnly = false,
 }: SiteLayoutProps) {
   useEffect(() => {
     if (!calcMenuOpen) return
@@ -194,7 +196,7 @@ export default function SiteLayout({
                 Service
               </Link>
             )}
-            {!hideCareerNav && (
+            {!hideCareerNav && !hideCareerNavOnly && (
               <Link href="/career" className="nav-item" onClick={(e) => { e.preventDefault(); navigate("/career") }}>
                 Career
               </Link>
@@ -264,7 +266,7 @@ export default function SiteLayout({
               {eventsMenuOpen && (
                 <div className="nav-calculator-menu" role="menu">
                   <Link
-                    href="#insights"
+                    href="/events"
                     role="menuitem"
                     className="nav-calculator-item"
                     onClick={() => setEventsMenuOpen(false)}
@@ -272,7 +274,7 @@ export default function SiteLayout({
                     Events
                   </Link>
                   <Link
-                    href="#insights"
+                    href="/insights"
                     role="menuitem"
                     className="nav-calculator-item"
                     onClick={() => setEventsMenuOpen(false)}
@@ -362,7 +364,7 @@ export default function SiteLayout({
               {eventsMenuOpen && (
                 <div className="mobile-dropdown-menu" role="menu">
                   <Link
-                    href="#insights"
+                    href="/events"
                     role="menuitem"
                     onClick={() => {
                       setEventsMenuOpen(false)
@@ -372,7 +374,7 @@ export default function SiteLayout({
                     Events
                   </Link>
                   <Link
-                    href="#insights"
+                    href="/insights"
                     role="menuitem"
                     onClick={() => {
                       setEventsMenuOpen(false)

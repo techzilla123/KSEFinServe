@@ -1,0 +1,10 @@
+{
+  "description": "This financial tools application offers users interactive calculators for tax estimation, college savings, and debt repayment, all designed for easy navigation and accuracy.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

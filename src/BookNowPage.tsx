@@ -163,20 +163,55 @@ function AvailableTime({
   onTime: (value: string) => void;
   required?: boolean;
 }) {
+  // Local (not UTC) today, so the boundary matches the user's own clock.
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  const currentTime = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  const isToday = date === today;
+
+  const handleDate = (value: string) => {
+    onDate(value);
+    // If the newly chosen date is today and the time already picked has passed,
+    // clear it so a stale past time can't be submitted.
+    if (value === today && time && time < currentTime) onTime("");
+  };
+
+  const handleTime = (value: string) => {
+    if (isToday && value && value < currentTime) return;
+    onTime(value);
+  };
+
   return (
     <div className="field-group">
       <p className="label">Available time{required ? " *" : ""}</p>
       <div className="two-col">
         <label className="field">
           <span>Preferred date{required ? " *" : ""}</span>
-          <input type="date" required={required} value={date} onChange={(event) => onDate(event.target.value)} />
+          <input
+            type="date"
+            required={required}
+            min={today}
+            value={date}
+            onChange={(event) => handleDate(event.target.value)}
+          />
         </label>
         <label className="field">
           <span>Preferred time{required ? " *" : ""}</span>
-          <input type="time" required={required} value={time} onChange={(event) => onTime(event.target.value)} />
+          <input
+            type="time"
+            required={required}
+            min={isToday ? currentTime : undefined}
+            value={time}
+            onChange={(event) => handleTime(event.target.value)}
+          />
         </label>
       </div>
-      <small>Pick a slot that suits you. We’ll confirm the exact time when we get in touch.</small>
+      <small>
+        {isToday
+          ? "Times earlier than now aren’t available today. Pick a later slot, or choose another date."
+          : "Pick a slot that suits you. We’ll confirm the exact time when we get in touch."}
+      </small>
     </div>
   );
 }
@@ -210,36 +245,42 @@ const sidebarCopy = {
 function Companion({ step }: { step: "about" | "interests" | "review" }) {
   return (
     <aside className="companion">
-      <p className="eyebrow gold">BOOK A SESSION / THE DETAILED ROUTE</p>
-      <h2>{sidebarCopy[step]}</h2>
-      <p className="muted-light">
-        You don’t need a perfect plan. Just a starting point we can explore together.
-      </p>
-      <img
-        className="companion-art"
-        src={`${A}/6d2cd.png`}
-        alt="Two sculptural forms connected by a gold arc"
-      />
-      <div className="advisor">
-        <span className="portrait">
-          <img src={`${A}/eab0f.png`} alt="Kayode Samson Elepe" />
-        </span>
-        <span>
-          <strong>Kayode Samson Elepe, RR</strong>
-          <small>A people-first conversation.</small>
-        </span>
+      <div className="companion-main">
+        <p className="eyebrow gold">BOOK A SESSION / THE DETAILED ROUTE</p>
+        <div className="companion-head">
+          <h2>{sidebarCopy[step]}</h2>
+          <img
+            className="companion-art"
+            src={`${A}/6d2cd.png`}
+            alt="Two sculptural forms connected by a gold arc"
+          />
+        </div>
+        <p className="muted-light">
+          You don’t need a perfect plan. Just a starting point we can explore together.
+        </p>
       </div>
-      <hr />
-      <p className="privacy">
-        Please don’t share account numbers, passwords or sensitive identifiers.
-      </p>
-      <button
-        type="button"
-        className="switch-link"
-        onClick={() => { window.location.href = "/book-now" }}
-      >
-        Prefer the short form? Switch route
-      </button>
+      <div className="companion-tail">
+        <div className="advisor">
+          <span className="portrait">
+            <img src={`${A}/eab0f.png`} alt="Kayode Samson Elepe" />
+          </span>
+          <span>
+            <strong>Kayode Samson Elepe, RR</strong>
+            <small>A people-first conversation.</small>
+          </span>
+        </div>
+        <hr />
+        <p className="privacy">
+          Please don’t share account numbers, passwords or sensitive identifiers.
+        </p>
+        <button
+          type="button"
+          className="switch-link"
+          onClick={() => { window.location.href = "/book-now" }}
+        >
+          Prefer the short form? Switch route
+        </button>
+      </div>
     </aside>
   );
 }
@@ -300,25 +341,31 @@ function BookPage({
   return (
     <main className="book-page">
       <aside className="book-intro">
-        <p className="eyebrow gold">KSEFINSERVE / BOOK A SESSION</p>
-        <h1>
-          Your next chapter.
-          <span>Let’s talk.</span>
-        </h1>
-        <p className="muted-light">
-          Your wealth. Your ambitions. Your questions. A considered conversation with
-          Kayode Samson Elepe, RR — starting wherever you are.
-        </p>
-        <img
-          className="book-art"
-          src={`${A}/e4cfd.png`}
-          alt="Two sculptural forms connected by a gold arc"
-        />
-        <p className="art-caption">ONE CONVERSATION. YOUR POSSIBILITIES.</p>
-        <p className="muted-light">
-          You don’t need to have it all figured out. We’ll begin with what matters to
-          you.
-        </p>
+        <div className="book-intro-main">
+          <p className="eyebrow gold">KSEFINSERVE / BOOK A SESSION</p>
+          <div className="book-intro-head">
+            <h1>
+              Your next chapter.
+              <span>Let’s talk.</span>
+            </h1>
+            <img
+              className="book-art"
+              src={`${A}/e4cfd.png`}
+              alt="Two sculptural forms connected by a gold arc"
+            />
+          </div>
+          <p className="muted-light">
+            Your wealth. Your ambitions. Your questions. A considered conversation with
+            Kayode Samson Elepe, RR — starting wherever you are.
+          </p>
+        </div>
+        <div className="book-intro-tail">
+          <p className="art-caption">ONE CONVERSATION. YOUR POSSIBILITIES.</p>
+          <p className="muted-light">
+            You don’t need to have it all figured out. We’ll begin with what matters to
+            you.
+          </p>
+        </div>
       </aside>
       <section className="surface booking-surface">
         <div>
@@ -498,14 +545,13 @@ function InterestsPage({
 }) {
   const [priorities, setPriorities] = useState<string[]>(details.priorities ?? []);
   const [path, setPath] = useState(details.path || "Wealth planning");
-  const toggle = (priority: string) =>
-    setPriorities((current) => {
-      const next = current.includes(priority)
-        ? current.filter((item) => item !== priority)
-        : [...current, priority];
-      setDetails({ ...details, priorities: next });
-      return next;
-    });
+  const toggle = (priority: string) => {
+    const next = priorities.includes(priority)
+      ? priorities.filter((item) => item !== priority)
+      : [...priorities, priority];
+    setPriorities(next);
+    setDetails({ ...details, priorities: next });
+  };
   const choosePath = (next: string) => {
     setPath(next);
     setDetails({ ...details, path: next });

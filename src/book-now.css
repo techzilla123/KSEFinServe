@@ -340,6 +340,7 @@
   font-family: "Mona Sans:SemiBold", sans-serif;
   font-size: 14px;
   font-weight: 600;
+  white-space: nowrap;
 }
 .book-now-page .primary {
   border: 1px solid #c9a963;
@@ -744,103 +745,67 @@
 }
 
 @media (max-width: 1050px) {
-  .book-page,
-  .detailed-layout {
+    .book-now-page .book-page, .book-now-page .detailed-layout {
     grid-template-columns: 300px minmax(0, 1fr);
     gap: 28px;
   }
-
-  .book-page,
-  .detailed-page {
+    .book-now-page .book-page, .book-now-page .detailed-page {
     padding-right: 32px;
     padding-left: 32px;
   }
-
-  .confirmation {
+    .book-now-page .confirmation {
     grid-template-columns: minmax(0, 1fr) 40%;
     gap: 40px;
     padding: 56px 32px;
   }
-
-  .confirmation h1 {
+    .book-now-page .confirmation h1 {
     font-size: 52px;
   }
 }
 
 @media (max-width: 760px) {
-  .book-page,
-  .detailed-layout,
-  .confirmation {
+    .book-now-page .book-page, .book-now-page .detailed-layout, .book-now-page .confirmation {
     grid-template-columns: 1fr;
   }
-
-  .book-page,
-  .detailed-page,
-  .confirmation {
+    .book-now-page .book-page, .book-now-page .detailed-page, .book-now-page .confirmation {
     padding: 24px 18px 40px;
   }
-
-  .book-intro,
-  .companion {
+    .book-now-page .book-intro, .book-now-page .companion {
     padding: 26px;
   }
-
-  .companion {
-    order: 2;
-  }
-
-  .detailed-form {
-    order: 1;
-  }
-
-  .flow-head > p:last-child {
+    .book-now-page .flow-head > p:last-child {
     display: none;
   }
-
-  .progress {
+    .book-now-page .progress {
     gap: 8px;
   }
-
-  .progress > div {
+    .book-now-page .progress > div {
     font-size: 11px;
   }
-
-  .surface {
+    .book-now-page .surface {
     padding: 26px 20px;
   }
-
-  .route-options,
-  .two-col,
-  .topic-choices,
-  .review-grid,
-  .while-wait {
+    .book-now-page .route-options, .book-now-page .two-col, .book-now-page .topic-choices, .book-now-page .review-grid, .book-now-page .while-wait {
     grid-template-columns: 1fr;
   }
-
-  .step-heading h1 {
+    .book-now-page .step-heading h1 {
     font-size: 36px;
   }
-
-  .confirmation h1 {
+    .book-now-page .confirmation h1 {
     font-size: 45px;
     letter-spacing: -1.8px;
   }
-
-  .confirmation figure img {
+    .book-now-page .confirmation figure img {
     height: auto;
     aspect-ratio: 1.04;
   }
-
-  .confirmation-actions {
+    .book-now-page .confirmation-actions {
     flex-direction: column;
   }
-
-  .confirmation-actions .primary,
-  .confirmation-actions .secondary {
+    .book-now-page .confirmation-actions .primary, .book-now-page .confirmation-actions .secondary {
     width: 100%;
   }
-
-  .while-wait {
+    .book-now-page .while-wait {
     gap: 40px;
     padding: 40px 18px;
   }
@@ -873,4 +838,227 @@
 }
 .nav-calculator-wrap:has(.nav-work) {
   margin-right: -15px;
+}
+
+/* Grouping wrappers used only by the mobile layout. On desktop they are
+   transparent to layout (display: contents), so the intro renders exactly
+   as the original Figma markup did. */
+.book-now-page .book-intro-main,
+.book-now-page .book-intro-head,
+.book-now-page .book-intro-tail,
+.book-now-page .companion-main,
+.book-now-page .companion-head,
+.book-now-page .companion-tail {
+  display: contents;
+}
+
+/* ============================================================
+   MOBILE — Book a Session page (<=760px only).
+   The intro is dissolved so its pieces can be ordered around the
+   form; the navy is painted on the pieces themselves so the blue
+   still covers the intro and the closing lines.
+   Desktop layout is untouched.
+   ============================================================ */
+@media (max-width: 760px) {
+  /* Single column; the intro's children become siblings of the form. */
+  .book-now-page .book-page {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .book-now-page .book-intro {
+    display: contents;
+  }
+
+  /* Navy backdrop: ONE element (book-intro-main) so there are no seams
+     between the eyebrow, heading and lead paragraph. */
+  .book-now-page .book-intro-main {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    order: 1;
+    width: 100%;
+    align-self: stretch;
+    background: #081d2b;
+    border-radius: 20px 20px 0 0;
+    padding: 26px 26px 26px;
+  }
+  /* The inner pieces are transparent; the panel above provides the navy.
+     Original text colours (gold eyebrow, muted lead) are preserved. */
+  .book-now-page .book-intro-main > .eyebrow,
+  .book-now-page .book-intro-head,
+  .book-now-page .book-intro-main > .muted-light {
+    background: transparent;
+    width: 100%;
+    align-self: stretch;
+    margin: 0;
+  }
+  .book-now-page .book-intro-main > .eyebrow {
+    order: 1;
+  }
+  .book-now-page .book-intro-head {
+    order: 2;
+    margin-top: 10px;
+  }
+  .book-now-page .book-intro-main > .muted-light {
+    order: 3;
+    margin-top: 14px;
+  }
+
+  /* Heading and image side by side, heading a little smaller. */
+  .book-now-page .book-intro-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 34%;
+    gap: 14px;
+    align-items: center;
+  }
+  .book-now-page .book-intro-head h1 {
+    font-size: 30px;
+    letter-spacing: -0.6px;
+    margin: 0;
+  }
+  .book-now-page .book-intro-head .book-art {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    margin: 0;
+    border-radius: 12px;
+  }
+
+  /* The form keeps its own card, right after the intro. */
+  .book-now-page .booking-surface {
+    order: 4;
+    margin-top: 24px;
+  }
+
+  /* Closing lines: after the form, side by side, on their own navy block.
+     Original text colours (gold caption, muted paragraph) are preserved. */
+  .book-now-page .book-intro-tail {
+    order: 5;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    background: #081d2b;
+    padding: 20px 26px 26px;
+    border-radius: 20px;
+    margin-top: 24px;
+  }
+  .book-now-page .book-intro-tail .art-caption {
+    font-size: 11px;
+    line-height: 1.35;
+    margin: 0;
+  }
+  .book-now-page .book-intro-tail .muted-light {
+    font-size: 12px;
+    line-height: 1.45;
+    margin: 0;
+  }
+
+  /* The two route cards sit side by side. */
+  .book-now-page .route-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .book-now-page .route {
+    padding: 16px 14px;
+  }
+  .book-now-page .route strong {
+    font-size: 16px;
+  }
+  .book-now-page .route small {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .book-now-page .route b {
+    font-size: 10px;
+  }
+
+  /* ---- Detailed route: companion block ----
+     Same treatment as the booking page: the companion's navy panel is one
+     element, the heading sits beside the image, and the advisor/privacy/
+     switch block moves below the form. */
+  .book-now-page .detailed-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .book-now-page .companion {
+    display: contents;
+  }
+
+  /* One navy panel for eyebrow + heading + lead (no seams). */
+  .book-now-page .companion-main {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    order: 1;
+    width: 100%;
+    align-self: stretch;
+    background: #081d2b;
+    border-radius: 20px 20px 0 0;
+    padding: 26px 26px 26px;
+  }
+  .book-now-page .companion-main > .eyebrow,
+  .book-now-page .companion-head,
+  .book-now-page .companion-main > .muted-light {
+    background: transparent;
+    width: 100%;
+    align-self: stretch;
+    margin: 0;
+  }
+  .book-now-page .companion-main > .eyebrow {
+    order: 1;
+  }
+  .book-now-page .companion-head {
+    order: 2;
+    margin-top: 10px;
+  }
+  .book-now-page .companion-main > .muted-light {
+    order: 3;
+    margin-top: 14px;
+  }
+
+  /* Heading and image side by side, heading a little smaller. */
+  .book-now-page .companion-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 34%;
+    gap: 14px;
+    align-items: center;
+  }
+  .book-now-page .companion-head h2 {
+    font-size: 26px;
+    letter-spacing: -0.5px;
+    margin: 0;
+  }
+  .book-now-page .companion-head .companion-art {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    margin: 0;
+    border-radius: 12px;
+  }
+
+  /* The form keeps its own card, right after the companion panel. */
+  .book-now-page .detailed-form {
+    order: 2;
+    margin-top: 24px;
+  }
+
+  /* Advisor, privacy note and switch link move below the form, still navy. */
+  .book-now-page .companion-tail {
+    order: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    width: 100%;
+    align-self: stretch;
+    background: #081d2b;
+    border-radius: 20px;
+    padding: 24px 26px 26px;
+    margin-top: 24px;
+  }
+  .book-now-page .companion-tail .switch-link {
+    align-self: flex-start;
+  }
 }

@@ -22,6 +22,15 @@ const calculators = [
 ] as const
 
 type CalculatorKind = typeof calculators[number]
+
+/* Clean URL for each financial tool. */
+const calculatorRoutes: Record<CalculatorKind, string> = {
+  "Tax Calculator": "/tax-calculator",
+  "College Savings": "/college-savings",
+  "Debt Repayment": "/debt-repayment",
+  "Retirement Planning": "/retirement-planning",
+  "Compound Interest": "/compound-interest",
+}
 type Panel = { kind: "story" } | {
   kind: "insight"
   index: number
@@ -305,7 +314,7 @@ export default function SiteLayout({
                       className="nav-calculator-item"
                       onClick={() => {
                         setCalcMenuOpen(false)
-                        setPanel({ kind: "calculator", calculator })
+                        navigate(calculatorRoutes[calculator])
                       }}
                     >
                       {calculator}

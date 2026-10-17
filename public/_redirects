@@ -1,6 +1,11 @@
 /events      /event-insight.html   200
 /insights    /event-insight.html   200
 /book-now    /book-now.html        200
+/tax-calculator        /calculator.html   200
+/college-savings       /calculator.html   200
+/debt-repayment        /calculator.html   200
+/retirement-planning   /calculator.html   200
+/compound-interest     /calculator.html   200
 /about       /about.html           200
 /service     /service.html         200
 /career      /career.html          200

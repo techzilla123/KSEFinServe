@@ -25,6 +25,7 @@ export default defineConfig(({ mode }) => {
           career: path.resolve(__dirname, "./career.html"),
           "event-insight": path.resolve(__dirname, "./event-insight.html"),
           "book-now": path.resolve(__dirname, "./book-now.html"),
+          calculator: path.resolve(__dirname, "./calculator.html"),
         },
       },
     },
@@ -85,6 +86,24 @@ export default defineConfig(({ mode }) => {
           server.middlewares.use((req, res, next) => {
             if (req.url?.split("?")[0] === "/book-now") {
               req.url = "/book-now.html"
+            }
+            next()
+          })
+        },
+      },
+      {
+        name: "calculator-page-middleware",
+        configureServer(server) {
+          const routes = [
+            "/tax-calculator",
+            "/college-savings",
+            "/debt-repayment",
+            "/retirement-planning",
+            "/compound-interest",
+          ]
+          server.middlewares.use((req, res, next) => {
+            if (routes.includes(req.url?.split("?")[0] ?? "")) {
+              req.url = "/calculator.html"
             }
             next()
           })

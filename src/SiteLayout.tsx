@@ -120,6 +120,9 @@ interface SiteLayoutProps {
   isLanding?: boolean
   hideCareerNavOnly?: boolean
   workDropdownNav?: boolean
+  /* Mobile only: group Career + Testimonial under a "Work" dropdown.
+     Used by the landing, events/insights and book-now pages. */
+  mobileWorkDropdown?: boolean
 }
 
 export default function SiteLayout({
@@ -147,12 +150,18 @@ export default function SiteLayout({
   isLanding = false,
   hideCareerNavOnly = false,
   workDropdownNav = false,
+  mobileWorkDropdown = false,
 }: SiteLayoutProps) {
   useEffect(() => {
     if (!calcMenuOpen) return
     const onPointerDown = (event: PointerEvent) => {
-      if (calcMenuRef.current?.contains(event.target as Node)) return
-      if ((event.target as HTMLElement).closest("dialog")) return
+      const target = event.target as HTMLElement
+      if (calcMenuRef.current?.contains(target)) return
+      // The mobile menu renders its own dropdowns, so a tap inside them must
+      // not be treated as an outside click (it would close the menu before the
+      // item's click handler runs).
+      if (target.closest(".mobile-nav")) return
+      if (target.closest("dialog")) return
       setCalcMenuOpen(false)
     }
     document.addEventListener("pointerdown", onPointerDown)
@@ -162,8 +171,10 @@ export default function SiteLayout({
   useEffect(() => {
     if (!eventsMenuOpen) return
     const onPointerDown = (event: PointerEvent) => {
-      if (eventsMenuRef.current?.contains(event.target as Node)) return
-      if ((event.target as HTMLElement).closest("dialog")) return
+      const target = event.target as HTMLElement
+      if (eventsMenuRef.current?.contains(target)) return
+      if (target.closest(".mobile-nav")) return
+      if (target.closest("dialog")) return
       setEventsMenuOpen(false)
     }
     document.addEventListener("pointerdown", onPointerDown)
@@ -173,8 +184,10 @@ export default function SiteLayout({
   useEffect(() => {
     if (!workMenuOpen) return
     const onPointerDown = (event: PointerEvent) => {
-      if (workMenuRef.current?.contains(event.target as Node)) return
-      if ((event.target as HTMLElement).closest("dialog")) return
+      const target = event.target as HTMLElement
+      if (workMenuRef.current?.contains(target)) return
+      if (target.closest(".mobile-nav")) return
+      if (target.closest("dialog")) return
       setWorkMenuOpen(false)
     }
     document.addEventListener("pointerdown", onPointerDown)
@@ -347,8 +360,10 @@ export default function SiteLayout({
             {[
               ...(hideAboutNav ? [] : [["About", "/about"]] as const),
               ...(hideServiceNav ? [] : [["Service", "/service"]] as const),
-              ...(hideCareerNav ? [] : [["Career", "/career"]] as const),
-              ["Testimonial", "/#testimonials"],
+              // Career and Testimonial live inside the Work dropdown on the
+              // pages that opt in, so they are not listed separately there.
+              ...(mobileWorkDropdown || hideCareerNav ? [] : [["Career", "/career"]] as const),
+              ...(mobileWorkDropdown ? [] : [["Testimonial", "/#testimonials"]] as const),
               ...(hideContactNav ? [] : [["Contact", "/contact"]] as const),
             ].map(([label, id]) => (
               <Link
@@ -359,6 +374,53 @@ export default function SiteLayout({
                 {label}
               </Link>
             ))}
+            {mobileWorkDropdown && (
+              <div className="mobile-dropdown">
+                <Button
+                  variant="text"
+                  aria-haspopup="true"
+                  aria-expanded={workMenuOpen}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    // Only one mobile dropdown open at a time.
+                    setEventsMenuOpen(false)
+                    setCalcMenuOpen(false)
+                    setWorkMenuOpen((v) => !v)
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  Work <Art src={artwork.chevron} className="mobile-chevron" />
+                </Button>
+                {workMenuOpen && (
+                  <div className="mobile-dropdown-menu" role="menu">
+                    <Link
+                      href="/career"
+                      role="menuitem"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setWorkMenuOpen(false)
+                        setMobileMenu(false)
+                        navigate("/career")
+                      }}
+                    >
+                      Career
+                    </Link>
+                    <Link
+                      href="/#testimonials"
+                      role="menuitem"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setWorkMenuOpen(false)
+                        setMobileMenu(false)
+                        navigate("/#testimonials")
+                      }}
+                    >
+                      Testimonial
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
             <div className="mobile-dropdown">
               <Button
                 variant="text"
@@ -366,6 +428,9 @@ export default function SiteLayout({
                 aria-expanded={eventsMenuOpen}
                 onClick={(e) => {
                   e.stopPropagation()
+                  // Only one mobile dropdown open at a time.
+                  setWorkMenuOpen(false)
+                  setCalcMenuOpen(false)
                   setEventsMenuOpen((v) => !v)
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
@@ -377,9 +442,11 @@ export default function SiteLayout({
                   <Link
                     href="/events"
                     role="menuitem"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.preventDefault()
                       setEventsMenuOpen(false)
                       setMobileMenu(false)
+                      navigate("/events")
                     }}
                   >
                     Events
@@ -387,9 +454,11 @@ export default function SiteLayout({
                   <Link
                     href="/insights"
                     role="menuitem"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.preventDefault()
                       setEventsMenuOpen(false)
                       setMobileMenu(false)
+                      navigate("/insights")
                     }}
                   >
                     Insights
@@ -404,6 +473,9 @@ export default function SiteLayout({
                 aria-expanded={calcMenuOpen}
                 onClick={(e) => {
                   e.stopPropagation()
+                  // Only one mobile dropdown open at a time.
+                  setWorkMenuOpen(false)
+                  setEventsMenuOpen(false)
                   setCalcMenuOpen((v) => !v)
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
@@ -420,7 +492,7 @@ export default function SiteLayout({
                       onClick={() => {
                         setCalcMenuOpen(false)
                         setMobileMenu(false)
-                        setPanel({ kind: "calculator", calculator })
+                        navigate(calculatorRoutes[calculator])
                       }}
                     >
                       {calculator}

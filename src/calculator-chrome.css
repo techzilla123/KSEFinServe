@@ -201,6 +201,18 @@
 
 .mobile-chevron { filter: brightness(0) saturate(100%) invert(13%) sepia(8%) saturate(500%) hue-rotate(180deg); }
 
+/* Overlay so opening the menu doesn't push the page content down. */
+.mobile-nav {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  background: #fffffff2;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 18px 30px -18px #00000040;
+  z-index: 40;
+}
+
 .button.work-card { transition: transform .45s cubic-bezier(.22,.61,.36,1), box-shadow .45s cubic-bezier(.22,.61,.36,1), background-color .45s ease; }
 
 .button.work-card:hover, .work-card:focus-visible { transform: translateY(-10px); }

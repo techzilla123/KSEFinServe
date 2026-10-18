@@ -673,8 +673,12 @@ export default function App() {
   useEffect(() => {
     if (!calcMenuOpen) return
     const onPointerDown = (event: PointerEvent) => {
-      if (calcMenuRef.current?.contains(event.target as Node)) return
-      if ((event.target as HTMLElement).closest("dialog")) return
+      const target = event.target as HTMLElement
+      if (calcMenuRef.current?.contains(target)) return
+      // Taps inside the mobile menu must not be treated as outside clicks,
+      // or the menu closes before the item's click handler runs.
+      if (target.closest(".mobile-nav")) return
+      if (target.closest("dialog")) return
       setCalcMenuOpen(false)
     }
     document.addEventListener("pointerdown", onPointerDown)
@@ -685,7 +689,9 @@ export default function App() {
   useEffect(() => {
     if (!eventsMenuOpen) return
     const onPointerDown = (event: PointerEvent) => {
-      if (eventsMenuRef.current?.contains(event.target as Node)) return
+      const target = event.target as HTMLElement
+      if (eventsMenuRef.current?.contains(target)) return
+      if (target.closest(".mobile-nav")) return
       setEventsMenuOpen(false)
     }
     document.addEventListener("pointerdown", onPointerDown)
@@ -785,6 +791,7 @@ export default function App() {
       socials={[]}
       hideCareerNav
       isLanding
+      mobileWorkDropdown
     >
       <Link href="#main" className="skip-link">
         Skip to content

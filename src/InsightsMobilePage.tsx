@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { insightArticles, InsightModal, type InsightArticle } from "./insightArticles";
 const assetPathPrefix = "/assets";
 const imgCoralSculpture = `${assetPathPrefix}/ced68.png`;
 const imgBlueSculpture = `${assetPathPrefix}/10be3.png`;
@@ -27,6 +28,12 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
   // Topic filter: "all" or a category name. Cards carry data-category and
   // the collection carries data-active-filter; CSS hides the non-matches.
   const [activeFilter, setActiveFilter] = useState("all");
+  // The article shown in the modal when "Read article" is tapped.
+  const [selectedArticle, setSelectedArticle] = useState<InsightArticle | null>(null);
+  const openArticle = (id: string) => {
+    const found = insightArticles.find((a) => a.id === id);
+    if (found) setSelectedArticle(found);
+  };
   const topics: Array<{ key: string; label: string }> = [
     { key: "all", label: "All insights" },
     { key: "WEALTH FOUNDATIONS", label: "Wealth foundations" },
@@ -37,6 +44,7 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
   ];
 
   return (
+    <>
     <div className="bg-[#f6f3ec] content-stretch flex flex-col items-start relative size-full" data-node-id="1:550" data-name="KSE Insight — Mobile">
       <div className="bg-[#f4f4f4] content-stretch flex flex-col gap-[24px] items-center overflow-clip pb-[40px] pt-[32px] px-[24px] relative shrink-0 w-full" data-node-id="1:551" data-name="Insight hero">
         <div className="absolute h-[265px] left-[-27px] top-0 w-[92px]" data-node-id="1:552" data-name="Coral sculpture">
@@ -215,7 +223,7 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
               <p className="font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[#56646c] text-[16px] w-[min-content]" data-node-id="1:602" style={{ fontVariationSettings: '"wdth" 100' }}>
                 How artisanal investing can help you build a more resilient financial future.
               </p>
-              <button type="button" className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:603" data-name="Article link">
+              <button type="button" onClick={() => openArticle("craft-of-wealth")} className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:603" data-name="Article link">
                 <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:604" style={{ fontVariationSettings: '"wdth" 100' }}>
                   Read article
                 </p>
@@ -243,7 +251,7 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
               <p className="font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[#56646c] text-[16px] w-[min-content]" data-node-id="1:612" style={{ fontVariationSettings: '"wdth" 100' }}>
                 Timing the market is hard, but timing your financial goals doesn’t have to be.
               </p>
-              <button type="button" className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:613" data-name="Article link">
+              <button type="button" onClick={() => openArticle("rhythm-of-returns")} className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:613" data-name="Article link">
                 <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:614" style={{ fontVariationSettings: '"wdth" 100' }}>
                   Read article
                 </p>
@@ -271,7 +279,7 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
               <p className="font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[#56646c] text-[16px] w-[min-content]" data-node-id="1:622" style={{ fontVariationSettings: '"wdth" 100' }}>
                 Mixing the right ingredients to turn your savings into long-term wealth.
               </p>
-              <button type="button" className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:623" data-name="Article link">
+              <button type="button" onClick={() => openArticle("recipe-for-growth")} className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:623" data-name="Article link">
                 <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:624" style={{ fontVariationSettings: '"wdth" 100' }}>
                   Read article
                 </p>
@@ -299,7 +307,7 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
               <p className="font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[#56646c] text-[16px] w-[min-content]" data-node-id="1:632" style={{ fontVariationSettings: '"wdth" 100' }}>
                 Turning everyday income into a retirement plan that actually works.
               </p>
-              <button type="button" className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:633" data-name="Article link">
+              <button type="button" onClick={() => openArticle("workers-edge")} className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:633" data-name="Article link">
                 <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:634" style={{ fontVariationSettings: '"wdth" 100' }}>
                   Read article
                 </p>
@@ -327,7 +335,7 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
               <p className="font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[#56646c] text-[16px] w-[min-content]" data-node-id="1:642" style={{ fontVariationSettings: '"wdth" 100' }}>
                 Finding peace of mind in a financial plan that’s built to last.
               </p>
-              <button type="button" className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:643" data-name="Article link">
+              <button type="button" onClick={() => openArticle("taste-of-security")} className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:643" data-name="Article link">
                 <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:644" style={{ fontVariationSettings: '"wdth" 100' }}>
                   Read article
                 </p>
@@ -355,7 +363,7 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
               <p className="font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[#56646c] text-[16px] w-[min-content]" data-node-id="1:652" style={{ fontVariationSettings: '"wdth" 100' }}>
                 Why spreading your assets across different classes can protect your future.
               </p>
-              <button type="button" className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:653" data-name="Article link">
+              <button type="button" onClick={() => openArticle("art-of-diversity")} className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:653" data-name="Article link">
                 <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:654" style={{ fontVariationSettings: '"wdth" 100' }}>
                   Read article
                 </p>
@@ -370,12 +378,12 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
           <p className="font-['Special_Elite:Regular'] leading-[1.5] min-w-full not-italic relative shrink-0 text-[11px] w-[min-content]" data-node-id="1:657">
             MORE PERSPECTIVES, FURTHER DOWN THE PAGE
           </p>
-          <div className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 whitespace-nowrap" data-node-id="1:658" data-name="Article link">
+          <button type="button" onClick={() => openArticle("art-of-diversity")} className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 whitespace-nowrap article-link" data-node-id="1:658" data-name="Article link">
             <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:659" style={{ fontVariationSettings: '"wdth" 100' }}>{`Explore life & legacy`}</p>
             <p className="font-['Inter:Regular'] font-normal leading-[normal] not-italic relative shrink-0 text-[22px]" data-node-id="1:660">
               ↗
             </p>
-          </div>
+          </button>
         </div>
       </div>
       <div className="bg-[#d4bcfa] content-stretch flex flex-col gap-[28px] items-start overflow-clip px-[24px] py-[56px] relative shrink-0 w-full" data-node-id="1:661" data-name="Life and legacy reading trail">
@@ -408,14 +416,14 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
           <p className="[word-break:break-word] font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[#081d2b] text-[16px] w-[min-content]" data-node-id="1:670" style={{ fontVariationSettings: '"wdth" 100' }}>
             Turning everyday conversations into a clear path to financial freedom.
           </p>
-          <div className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap" data-node-id="1:671" data-name="Article link">
+          <button type="button" onClick={() => openArticle("kitchen-table-plan")} className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:671" data-name="Article link">
             <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:672" style={{ fontVariationSettings: '"wdth" 100' }}>
               Read article
             </p>
             <p className="font-['Inter:Regular'] font-normal leading-[normal] not-italic relative shrink-0 text-[22px]" data-node-id="1:673">
               ↗
             </p>
-          </div>
+          </button>
         </div>
         <div className="content-stretch flex flex-col gap-[24px] items-start overflow-clip relative shrink-0 w-full" data-node-id="1:674" data-name="Related reading">
           <div className="bg-[#fffdfa] content-stretch flex flex-col gap-[18px] items-start overflow-clip p-[20px] relative rounded-[20px] shrink-0 w-full" data-node-id="1:675" data-name="Related story">
@@ -430,14 +438,14 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
             <p className="[word-break:break-word] font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[#56646c] text-[16px] w-[min-content]" data-node-id="1:678" style={{ fontVariationSettings: '"wdth" 100' }}>
               Planning for the next decade with a financial strategy that adapts.
             </p>
-            <div className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap" data-node-id="1:679" data-name="Article link">
+            <button type="button" onClick={() => openArticle("menu-for-tomorrow")} className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:679" data-name="Article link">
               <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:680" style={{ fontVariationSettings: '"wdth" 100' }}>
                 Read article
               </p>
               <p className="font-['Inter:Regular'] font-normal leading-[normal] not-italic relative shrink-0 text-[22px]" data-node-id="1:681">
                 ↗
               </p>
-            </div>
+            </button>
           </div>
           <div className="bg-[#fffdfa] content-stretch flex flex-col gap-[18px] items-start overflow-clip p-[20px] relative rounded-[20px] shrink-0 w-full" data-node-id="1:682" data-name="Related story">
             <div className="h-[220px] relative rounded-[12px] shrink-0 w-full" data-node-id="1:683" data-name="Story photograph">
@@ -451,14 +459,14 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
             <p className="[word-break:break-word] font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[#56646c] text-[16px] w-[min-content]" data-node-id="1:685" style={{ fontVariationSettings: '"wdth" 100' }}>
               Balancing protection and growth so your plan stays in tune.
             </p>
-            <div className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap" data-node-id="1:686" data-name="Article link">
+            <button type="button" onClick={() => openArticle("harmony-of-risk")} className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:686" data-name="Article link">
               <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:687" style={{ fontVariationSettings: '"wdth" 100' }}>
                 Read article
               </p>
               <p className="font-['Inter:Regular'] font-normal leading-[normal] not-italic relative shrink-0 text-[22px]" data-node-id="1:688">
                 ↗
               </p>
-            </div>
+            </button>
           </div>
         </div>
       </div>
@@ -491,14 +499,14 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
             <p className="[word-break:break-word] font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[16px] text-[rgba(255,255,255,0.8)] w-[min-content]" data-node-id="1:699" style={{ fontVariationSettings: '"wdth" 100' }}>
               What exceptional service looks like when your money is on the line.
             </p>
-            <div className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#e6ba65] whitespace-nowrap" data-node-id="1:700" data-name="Article link">
+            <button type="button" onClick={() => openArticle("service-standard")} className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#e6ba65] whitespace-nowrap article-link" data-node-id="1:700" data-name="Article link">
               <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:701" style={{ fontVariationSettings: '"wdth" 100' }}>
                 Read article
               </p>
               <p className="font-['Inter:Regular'] font-normal leading-[normal] not-italic relative shrink-0 text-[22px]" data-node-id="1:702">
                 ↗
               </p>
-            </div>
+            </button>
           </div>
           <div className="content-stretch flex flex-col gap-[20px] items-start overflow-clip relative shrink-0 w-full" data-node-id="1:703" data-name="Perspective card">
             <div className="bg-[#ae7a41] content-stretch flex flex-col items-start overflow-clip p-[10px] relative shrink-0 w-full" data-node-id="1:704" data-name="Portrait print">
@@ -517,14 +525,14 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
             <p className="[word-break:break-word] font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[16px] text-[rgba(255,255,255,0.8)] w-[min-content]" data-node-id="1:708" style={{ fontVariationSettings: '"wdth" 100' }}>
               How local relationships can strengthen your long-term financial outlook.
             </p>
-            <div className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#e6ba65] whitespace-nowrap" data-node-id="1:709" data-name="Article link">
+            <button type="button" onClick={() => openArticle("community-effect")} className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#e6ba65] whitespace-nowrap article-link" data-node-id="1:709" data-name="Article link">
               <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:710" style={{ fontVariationSettings: '"wdth" 100' }}>
                 Read article
               </p>
               <p className="font-['Inter:Regular'] font-normal leading-[normal] not-italic relative shrink-0 text-[22px]" data-node-id="1:711">
                 ↗
               </p>
-            </div>
+            </button>
           </div>
           <div className="content-stretch flex flex-col gap-[20px] items-start overflow-clip relative shrink-0 w-full" data-node-id="1:712" data-name="Perspective card">
             <div className="bg-[#ae7a41] content-stretch flex flex-col items-start overflow-clip p-[10px] relative shrink-0 w-full" data-node-id="1:713" data-name="Portrait print">
@@ -543,14 +551,14 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
             <p className="[word-break:break-word] font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[16px] text-[rgba(255,255,255,0.8)] w-[min-content]" data-node-id="1:717" style={{ fontVariationSettings: '"wdth" 100' }}>
               What the next generation of wealth-building looks like in practice.
             </p>
-            <div className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#e6ba65] whitespace-nowrap" data-node-id="1:718" data-name="Article link">
+            <button type="button" onClick={() => openArticle("future-of-finance")} className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#e6ba65] whitespace-nowrap article-link" data-node-id="1:718" data-name="Article link">
               <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:719" style={{ fontVariationSettings: '"wdth" 100' }}>
                 Read article
               </p>
               <p className="font-['Inter:Regular'] font-normal leading-[normal] not-italic relative shrink-0 text-[22px]" data-node-id="1:720">
                 ↗
               </p>
-            </div>
+            </button>
           </div>
         </div>
       </div>
@@ -678,5 +686,7 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
         </div>
       </div>
     </div>
+    <InsightModal article={selectedArticle} onClose={() => setSelectedArticle(null)} />
+    </>
   );
 }

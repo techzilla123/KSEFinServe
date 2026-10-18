@@ -1,0 +1,402 @@
+@import 'tailwindcss';
+
+@font-face {
+  font-family: 'Anton:Regular';
+  src: url('https://static.figma.com/font/Anton-Regular_2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Coiny:Regular';
+  src: url('https://static.figma.com/font/Coiny-Regular_2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Inter:Bold';
+  src: url('https://static.figma.com/font/Inter_1') format('woff2');
+  font-style: normal;
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: 'Inter:Medium';
+  src: url('https://static.figma.com/font/Inter_1') format('woff2');
+  font-style: normal;
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: 'Inter:Regular';
+  src: url('https://static.figma.com/font/Inter_1') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Inter:Semi Bold';
+  src: url('https://static.figma.com/font/Inter_1') format('woff2');
+  font-style: normal;
+  font-weight: 600;
+}
+
+@font-face {
+  font-family: 'Lora:Italic';
+  src: url('https://static.figma.com/font/Lora-Italic_wght__2') format('woff2');
+  font-style: italic;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Manrope:Bold';
+  src: url('https://static.figma.com/font/Manrope_wght__1') format('woff2');
+  font-style: normal;
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: 'Mona Sans:Medium';
+  src: url('https://static.figma.com/font/MonaSans_wdth_wght__1') format('woff2');
+  font-style: normal;
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: 'Mona Sans:Regular';
+  src: url('https://static.figma.com/font/MonaSans_wdth_wght__1') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Mona Sans:SemiBold';
+  src: url('https://static.figma.com/font/MonaSans_wdth_wght__1') format('woff2');
+  font-style: normal;
+  font-weight: 600;
+}
+
+@font-face {
+  font-family: 'Noto Sans Math:Regular';
+  src: url('https://static.figma.com/font/NotoSansMath-Regular_1') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Noto Sans Symbols2:Regular';
+  src: url('https://static.figma.com/font/NotoSansSymbols2-Regular_5') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Noto Sans Symbols:Regular';
+  src: url('https://static.figma.com/font/NotoSansSymbols-VF_2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Noto Sans:Regular';
+  src: url('https://static.figma.com/font/NotoSans-VF_3') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Oswald:SemiBold';
+  src: url('https://static.figma.com/font/Oswald_wght__2') format('woff2');
+  font-style: normal;
+  font-weight: 600;
+}
+
+@font-face {
+  font-family: 'Special Elite:Regular';
+  src: url('https://static.figma.com/font/SpecialElite-Regular_2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+html {
+  background: #f6f3ec;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100dvh;
+}
+
+button {
+  font: inherit;
+}
+
+/* ============================================================
+   Interactive effects for the mobile Events / Insights pages.
+   Mirrors the desktop behaviour: button hover/press feedback,
+   article-link hover, working topic filters, styled email input.
+   ============================================================ */
+
+/* ---- Buttons: hover / press feedback ---- */
+.hero-action,
+.page-action,
+.topic-pill {
+  transition:
+    transform 160ms ease,
+    filter 160ms ease,
+    box-shadow 200ms ease,
+    background-color 200ms ease,
+    color 200ms ease;
+}
+
+.hero-action:hover,
+.page-action:hover {
+  filter: brightness(1.12);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(13, 43, 66, 0.18);
+}
+
+.hero-action:active,
+.page-action:active {
+  transform: scale(0.98) translateY(0);
+  filter: brightness(0.94);
+  box-shadow: 0 1px 2px rgba(13, 43, 66, 0.12);
+}
+
+.hero-action:focus-visible,
+.page-action:focus-visible,
+.topic-pill:focus-visible,
+.article-link:focus-visible {
+  outline: 3px solid #0d2b42;
+  outline-offset: 3px;
+}
+
+/* ---- Topic filter pills ---- */
+.topic-pill:hover {
+  filter: brightness(0.96);
+}
+
+.topic-pill[aria-pressed="true"]:hover {
+  filter: brightness(1.15);
+}
+
+/* Filtering: hide every card whose topic is not the active one. */
+[data-name="Article collection"][data-active-filter="INVESTING"] [data-category]:not([data-category="INVESTING"]),
+[data-name="Article collection"][data-active-filter="WEALTH FOUNDATIONS"] [data-category]:not([data-category="WEALTH FOUNDATIONS"]),
+[data-name="Article collection"][data-active-filter="RETIREMENT"] [data-category]:not([data-category="RETIREMENT"]),
+[data-name="Article collection"][data-active-filter="PROTECTION"] [data-category]:not([data-category="PROTECTION"]),
+[data-name="Article collection"][data-active-filter="LIFE & LEGACY"] [data-category]:not([data-category="LIFE & LEGACY"]) {
+  display: none;
+}
+
+/* ---- Article links ("Read article ↗") ---- */
+.article-link {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: color 200ms ease;
+}
+
+.article-link:hover {
+  color: #b98b2e;
+}
+
+.article-link:hover p {
+  color: #b98b2e;
+}
+
+.article-link p:last-child {
+  transition: transform 200ms ease;
+}
+
+.article-link:hover p:last-child {
+  transform: translateX(4px) translateY(-4px);
+}
+
+.article-link:active p:last-child {
+  transform: translateX(2px) translateY(-2px);
+}
+
+/* ---- Email input ---- */
+[data-name="Email field"] input {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  width: 100%;
+  min-width: 0;
+}
+
+[data-name="Email field"] input::placeholder {
+  color: #56646c;
+  opacity: 1;
+}
+
+[data-name="Email field"]:focus-within {
+  border-color: #0d2b42;
+  box-shadow: 0 0 0 3px rgba(13, 43, 66, 0.12);
+}
+
+/* ---- Carousel arrows ---- */
+[data-name="Previous event"],
+[data-name="Next event"] {
+  cursor: pointer;
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+
+[data-name="Previous event"]:hover,
+[data-name="Next event"]:hover {
+  transform: scale(1.08);
+  opacity: 0.85;
+}
+
+[data-name="Previous event"]:active,
+[data-name="Next event"]:active {
+  transform: scale(0.96);
+}
+
+/* ---- Play video ---- */
+[data-name="Play video"] {
+  cursor: pointer;
+  transition: transform 180ms ease;
+}
+
+[data-name="Play video"]:hover {
+  transform: translate(-50%, -50%) scale(1.08);
+}
+
+/* ---- Consent checkbox ---- */
+[data-name="Consent checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  flex: 0 0 auto;
+  border: 1px solid #081d2b;
+  border-radius: 4px;
+  background: #fffdfa;
+  cursor: pointer;
+  position: relative;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+[data-name="Consent checkbox"]:hover {
+  border-color: #0d2b42;
+  background: #f2f6f9;
+}
+
+[data-name="Consent checkbox"]:checked {
+  background: #081d2b;
+  border-color: #081d2b;
+}
+
+/* The tick. */
+[data-name="Consent checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 5px;
+  height: 10px;
+  border: solid #fffdfa;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+[data-name="Consent checkbox"]:focus-visible {
+  outline: 3px solid #0d2b42;
+  outline-offset: 2px;
+}
+
+/* The label should be clickable too. */
+[data-name="Subscription consent"] {
+  cursor: pointer;
+}
+
+/* ---- Programme concepts carousel ---- */
+[data-name="Session carousel navigation"] {
+  padding-inline: 100px;
+}
+
+.session-nav {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.session-nav:hover {
+  transform: scale(1.08);
+  opacity: 0.85;
+}
+
+.session-nav:active {
+  transform: scale(0.94);
+}
+
+.session-nav:focus-visible {
+  outline: 3px solid #0d2b42;
+  outline-offset: 3px;
+  border-radius: 50%;
+}
+
+/* The visible session slides in when it changes. */
+[data-name="Session preview"]:not([hidden]) {
+  animation: sessionSlideIn 320ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@keyframes sessionSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-name="Session preview"]:not([hidden]) {
+    animation: none;
+  }
+}
+
+/* ---- Upcoming events carousel ---- */
+[data-name="Event carousel navigation bottom"] {
+  padding-inline: 100px;
+}
+
+/* The visible event concept slides in when it changes. */
+[data-name="Event concept"]:not([hidden]) {
+  animation: sessionSlideIn 320ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-name="Event concept"]:not([hidden]) {
+    animation: none;
+  }
+}
+
+/* ---- Tighten the gap between the event card and the carousel arrows ---- */
+[data-name="Upcoming events"] [data-name="Programme flourish"] {
+  height: 8px;
+  min-height: 0;
+  margin-top: -8px;
+}
+
+[data-name="Upcoming events"] [data-name="Programme flourish"] > * {
+  height: 8px;
+}
+
+/* Pull the arrows up closer to the card. */
+[data-name="Upcoming events"] [data-name="Event carousel navigation bottom"] {
+  margin-top: -16px;
+}

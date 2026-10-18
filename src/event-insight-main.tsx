@@ -3,8 +3,11 @@ import ReactDOM from "react-dom/client";
 import SiteLayout from "./SiteLayout";
 import EventPage from "./EventPage";
 import InsightPage from "./InsightPage";
+import EventsMobilePage from "./EventsMobilePage";
+import InsightsMobilePage from "./InsightsMobilePage";
 import "./index.css";
 import "./event-insight.css";
+import "./event-insight-mobile.css";
 
 const assetPathPrefix = "/assets";
 const socials = [
@@ -16,8 +19,8 @@ const socials = [
 type Mode = "event" | "insight";
 
 function getInitialMode(): Mode {
-  const path = window.location.pathname;
-  if (path === "/events") return "event";
+  const path = window.location.pathname.replace(/\.html$/, "");
+  if (path === "/events" || path === "/event-insight") return "event";
   if (path === "/insights") return "insight";
   return "insight";
 }
@@ -42,12 +45,23 @@ function EventInsightApp() {
   const [scaledHeight, setScaledHeight] = useState<number | undefined>(undefined);
   const sourceRef = useRef<HTMLDivElement>(null);
 
+  // Below this width we render the purpose-built mobile layout instead of the
+  // scaled desktop canvas. The desktop path is untouched above the breakpoint.
+  const MOBILE_BREAKPOINT = 900;
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== "undefined" && window.innerWidth <= MOBILE_BREAKPOINT,
+  );
+
   useEffect(() => {
     const measure = () => {
+      const mobile = window.innerWidth <= MOBILE_BREAKPOINT;
+      setIsMobile(mobile);
+      // The desktop canvas scaling only applies above the breakpoint.
       const s = window.innerWidth / 1440;
       setScale(s);
       const h = sourceRef.current?.scrollHeight;
-      if (h) setScaledHeight(h * s);
+      if (h && !mobile) setScaledHeight(h * s);
+      else setScaledHeight(undefined);
     };
     measure();
     window.addEventListener("resize", measure);
@@ -62,10 +76,14 @@ function EventInsightApp() {
   const navigate = (path: string) => { window.location.href = path };
   const setPanel = (_panel: any) => {};
 
-  // Update URL when mode changes
+  // Keep the URL in step with the mode, but only rewrite clean routes.
+  // A direct load of /event-insight.html (the built filename) is left alone so
+  // it does not bounce to a path the host may not serve.
   useEffect(() => {
+    const current = window.location.pathname;
+    if (current.endsWith(".html")) return;
     const target = mode === "event" ? "/events" : "/insights";
-    if (window.location.pathname !== target) {
+    if (current !== target) {
       window.history.pushState({}, "", target);
     }
   }, [mode]);
@@ -77,24 +95,35 @@ function EventInsightApp() {
 
   return (
     <SiteLayout navigate={navigate} setPanel={setPanel} setMobileMenu={setMobileMenu} mobileMenu={mobileMenu} eventsMenuOpen={eventsMenuOpen} setEventsMenuOpen={setEventsMenuOpen} calcMenuOpen={calcMenuOpen} setCalcMenuOpen={setCalcMenuOpen} eventsMenuRef={eventsMenuRef} workMenuOpen={workMenuOpen} setWorkMenuOpen={setWorkMenuOpen} workMenuRef={workMenuRef} calcMenuRef={calcMenuRef} growing={growing} setGrowing={setGrowing} socials={socials} isLanding hideCareerNavOnly>
-      <main className={`design-viewport design-viewport--${mode}`}>
-        <div
-          className="design-scale-shell"
-          style={scaledHeight ? { height: scaledHeight } : undefined}
-        >
+      {isMobile ? (
+        /* Purpose-built mobile layout (native flow, no canvas scaling). */
+        <main className={`mobile-viewport mobile-viewport--${mode}`}>
+          {mode === "event" ? (
+            <EventsMobilePage onShowInsights={() => changeMode("insight")} />
+          ) : (
+            <InsightsMobilePage onShowEvents={() => changeMode("event")} />
+          )}
+        </main>
+      ) : (
+        <main className={`design-viewport design-viewport--${mode}`}>
           <div
-            className="design-source"
-            ref={sourceRef}
-            style={{ transform: `scale(${scale})` }}
+            className="design-scale-shell"
+            style={scaledHeight ? { height: scaledHeight } : undefined}
           >
-            {mode === "event" ? (
-              <EventPage onModeChange={changeMode} />
-            ) : (
-              <InsightPage onModeChange={changeMode} />
-            )}
+            <div
+              className="design-source"
+              ref={sourceRef}
+              style={{ transform: `scale(${scale})` }}
+            >
+              {mode === "event" ? (
+                <EventPage onModeChange={changeMode} />
+              ) : (
+                <InsightPage onModeChange={changeMode} />
+              )}
+            </div>
           </div>
-        </div>
-      </main>
+        </main>
+      )}
     </SiteLayout>
   );
 }

@@ -1,0 +1,10 @@
+{
+  "description": "A mobile-optimized single-page app that toggles between events and insights on button click, providing streamlined access to key information.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

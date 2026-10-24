@@ -199,6 +199,20 @@
   font-size: 12px;
   line-height: 1.6;
 }
+.book-now-page .submit-error {
+  padding: 12px 14px;
+  border: 1px solid #e6c4c0;
+  border-radius: 8px;
+  background: #fdf1ef;
+  color: #8f2f24;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.book-now-page .loc-note {
+  color: #59666b;
+  font-size: 12px;
+  line-height: 1.6;
+}
 .book-now-page hr {
   width: 100%;
   height: 1px;

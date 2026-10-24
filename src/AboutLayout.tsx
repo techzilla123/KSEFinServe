@@ -13,6 +13,15 @@ const artwork = {
   linkedin: `${assetPathPrefix}/d6da3.svg`,
 }
 
+/* Clean URL for each financial tool. */
+const calculatorRoutes: Record<string, string> = {
+  "Tax Calculator": "/tax-calculator",
+  "College Savings": "/college-savings",
+  "Debt Repayment": "/debt-repayment",
+  "Retirement Planning": "/retirement-planning",
+  "Compound Interest": "/compound-interest",
+}
+
 const calculators = [
   "Compound Interest",
   "Retirement Planning",
@@ -151,9 +160,9 @@ export function AboutLayout({
             <a href="/" aria-label="Home" onClick={(e) => { e.preventDefault(); navigate("/") }}><img src={artwork.footerLogo} alt="Kayode Samson Elepe" className="footer-logo" /></a>
             <nav aria-label="Footer navigation" className="flex flex-wrap gap-6">
               <a href="/about" onClick={(e) => { e.preventDefault(); navigate("/about") }}>About</a>
-              <a href="/" onClick={(e) => { e.preventDefault(); navigate("/service") }}>How I Can Help</a>
-              <a href="/" onClick={(e) => { e.preventDefault(); navigate("/#testimonials") }}>Testimonial</a>
-              <a href="/" onClick={(e) => { e.preventDefault(); navigate("/") }}>Events</a>
+              <a href="/service" onClick={(e) => { e.preventDefault(); navigate("/service") }}>How I Can Help</a>
+              <a href="/#testimonials" onClick={(e) => { e.preventDefault(); navigate("/#testimonials") }}>Testimonial</a>
+              <a href="/events" onClick={(e) => { e.preventDefault(); navigate("/events") }}>Events</a>
               <a href="/contact" onClick={(e) => { e.preventDefault(); navigate("/contact") }}>Contact Us</a>
             </nav>
             <div className="footer-socials">
@@ -168,7 +177,7 @@ export function AboutLayout({
             <span className="footer-calculators-title">Financial Calculators</span>
             <div className="flex flex-wrap gap-6">
               {calculators.map((calculator) => (
-                <button key={calculator} type="button" onClick={() => setPanel({ kind: "calculator", calculator })}>{calculator}</button>
+                <a key={calculator} href={calculatorRoutes[calculator]} onClick={(e) => { e.preventDefault(); navigate(calculatorRoutes[calculator]) }} className="footer-calculator-link">{calculator}</a>
               ))}
             </div>
           </div>

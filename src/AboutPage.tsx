@@ -200,7 +200,7 @@ function App() {
             </div>
             <div className="identity-card">
               <strong>Kayode Samson Elepe, RR</strong>
-              <span>KSEFinServe · Wealth &amp; Leadership Development</span>
+              <span>KSEFinServe · Financial Coach, Registered Rep</span>
             </div>
             <div className="float-card">
               <strong><CountUp value="7-fig" /></strong>
@@ -213,9 +213,9 @@ function App() {
       <section className="trust-strip page-pad">
         <div className="trust-label">
           <img src={asset("90719.svg")} alt="" />
-          <span>Trusted organisations</span>
+          <span>Clarity · Purpose · Legacy</span>
         </div>
-        <div className="logos" aria-label="Trusted organisations">
+        <div className="logos" aria-label="Clarity, purpose and legacy">
           <div className="trusted-marquee">
             <div className="trusted-marquee-track">
               {[
@@ -260,7 +260,7 @@ function App() {
                 For individuals, professionals and families planning for retirement, growing their assets and
                 making more confident financial decisions.
               </p>
-              <a className="button service-button-light" href="#contact">Book a Strategy Session</a>
+              <a className="button service-button-light" href="/book-now">Book a Strategy Session</a>
             </div>
           </article>
           <article className="service-card business-card">
@@ -456,7 +456,7 @@ function App() {
             have a conversation.
           </p>
           <div className="button-row">
-            <a className="button button-gold" href="mailto:hello@ksefinserve.com">Book a Session</a>
+            <a className="button button-gold" href="/book-now">Book a Session</a>
             <a className="button button-dark" href="/service">Explore our process →</a>
           </div>
         </div>

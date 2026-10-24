@@ -1,4 +1,26 @@
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import {
+  eventWhen,
+  upcomingEvents,
+  useEvents,
+  type KseEvent,
+} from "./admin/eventsDirectory";
+
 const assetPathPrefix = "/assets"
+/**
+ * Placeholder artwork for events that have no image yet.
+ *
+ * The carousel cycles through these so the picture visibly changes as you step
+ * between events — falling back to a single static image makes the arrows look
+ * broken even though the state is advancing.
+ */
+const FALLBACK_HERO = [
+  `${assetPathPrefix}/d0f2a.png`,
+  `${assetPathPrefix}/8e421.png`,
+  `${assetPathPrefix}/ce1b2.png`,
+  `${assetPathPrefix}/d1795.png`,
+]
 const imgVariant8 = `${assetPathPrefix}/e9f5d.svg`
 const imgVariant9 = `${assetPathPrefix}/9d30f.svg`
 const imgDivEventParentGraphic = `${assetPathPrefix}/ced68.png`
@@ -62,7 +84,236 @@ function Component1({ className, variant = "8" }: Component1Props) {
 
 type EventPageProps = { onModeChange: (mode: "event" | "insight") => void }
 
+/** Full detail modal — everything the admin saved for one event. */
+function EventModal({ event, onClose }: { event: KseEvent; onClose: () => void }) {
+  const { registerInterest } = useEvents()
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [done, setDone] = useState(false)
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose()
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [onClose])
+
+  const submit = async () => {
+    if (busy) return
+    setError(null)
+    if (!name.trim() || !email.trim() || !phone.trim()) {
+      setError("Please add your name, email and phone number.")
+      return
+    }
+    setBusy(true)
+    const result = await registerInterest(event.id, { name, email, phone })
+    setBusy(false)
+    if (result.error) {
+      setError(result.error)
+      return
+    }
+    setDone(true)
+  }
+
+  const media = event.imageUrl || event.videoUrl
+
+  return (
+    <div className="modal-layer" role="dialog" aria-modal="true" aria-labelledby="event-modal-title">
+      <button className="modal-scrim" aria-label="Close" onClick={onClose} />
+      <section className="event-modal">
+        <button className="event-modal-close" onClick={onClose} aria-label="Close">
+          <svg className="size-[16px]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M2 2l12 12M14 2L2 14" stroke="#081d2b" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        </button>
+        <div className="event-modal-media">
+          {event.videoUrl && !event.imageUrl ? (
+            <video className="absolute inset-0 size-full object-cover" src={event.videoUrl} controls />
+          ) : (
+            <img
+              className="absolute inset-0 size-full object-cover"
+              src={media || imgRoundtableExperience}
+              alt={event.imageAlt || event.title}
+            />
+          )}
+        </div>
+        <div className="event-modal-body">
+          <p className="text-[11px] font-semibold text-[#876728]">
+            {event.category || "KSEFinServe event"}
+          </p>
+          <h2 id="event-modal-title" className="mt-2 text-[30px] font-semibold leading-tight">
+            {event.title}
+          </h2>
+          {event.tagline && (
+            <p className="mt-3 text-[15px] leading-[1.6] text-[#56646c]">{event.tagline}</p>
+          )}
+
+          <dl className="mt-6 grid grid-cols-2 gap-4 text-[13px]">
+            <div>
+              <dt className="text-[11px] text-[#66757d]">When</dt>
+              <dd className="mt-1">{eventWhen(event)}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] text-[#66757d]">Format</dt>
+              <dd className="mt-1">{event.format || "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] text-[#66757d]">Where</dt>
+              <dd className="mt-1">
+                {[event.venueName, event.city, event.country].filter(Boolean).join(", ") ||
+                  "To be announced"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[11px] text-[#66757d]">Cost</dt>
+              <dd className="mt-1">{event.cost || "Free"}</dd>
+            </div>
+          </dl>
+
+          {event.description && (
+            <div className="mt-6">
+              <h3 className="text-[13px] font-semibold">About this gathering</h3>
+              <p className="mt-2 text-[14px] leading-[1.7] text-[#404040]">{event.description}</p>
+            </div>
+          )}
+          {event.whoFor && (
+            <div className="mt-5">
+              <h3 className="text-[13px] font-semibold">Who this is for</h3>
+              <p className="mt-2 text-[14px] leading-[1.7] text-[#404040]">{event.whoFor}</p>
+            </div>
+          )}
+          {event.preparation && (
+            <div className="mt-5">
+              <h3 className="text-[13px] font-semibold">Preparation & accessibility</h3>
+              <p className="mt-2 text-[14px] leading-[1.7] text-[#404040]">{event.preparation}</p>
+            </div>
+          )}
+          {event.howToApply && (
+            <div className="mt-5">
+              <h3 className="text-[13px] font-semibold">How to apply</h3>
+              <p className="mt-2 text-[14px] leading-[1.7] text-[#404040]">{event.howToApply}</p>
+            </div>
+          )}
+
+          <hr className="my-6 border-[#e5e1d8]" />
+          <h3 className="text-[14px] font-semibold">Register your interest</h3>
+          <p className="mt-1 text-[12px] text-[#66757d]">
+            Leave your details and we will be in touch about this gathering.
+          </p>
+
+          {done ? (
+            <p className="interest-success">
+              Thank you, {name.trim() || "there"}. Your interest has been recorded and we will be in touch.
+            </p>
+          ) : (
+            <div className="interest-form">
+              <label>
+                Your name
+                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Amara Okafor" />
+              </label>
+              <label>
+                Email address
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+              </label>
+              <label>
+                Phone number
+                <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 416 555 0142" />
+              </label>
+              {error && <p className="interest-error">{error}</p>}
+              <button type="button" className="gold-button" onClick={submit} disabled={busy}>
+                {busy ? "Sending…" : "Register interest →"}
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+    </div>
+  )
+}
+
+/** One modal listing every published event. */
+function AllEventsModal({ events, onClose, onSelect }: { events: KseEvent[]; onClose: () => void; onSelect: (e: KseEvent) => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose()
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [onClose])
+
+  return (
+    <div className="modal-layer" role="dialog" aria-modal="true" aria-labelledby="all-events-title">
+      <button className="modal-scrim" aria-label="Close" onClick={onClose} />
+      <section className="event-modal event-modal--compact">
+        <button className="event-modal-close" onClick={onClose} aria-label="Close">
+          <svg className="size-[16px]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M2 2l12 12M14 2L2 14" stroke="#081d2b" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        </button>
+        <div className="event-modal-body">
+          <h2 id="all-events-title" className="text-[28px] font-semibold">
+            Every gathering
+          </h2>
+          <p className="mt-2 text-[14px] text-[#66757d]">
+            {events.length} event{events.length === 1 ? "" : "s"} in the programme.
+          </p>
+          <div className="mt-6 space-y-4">
+            {events.map((e) => (
+              <button
+                key={e.id}
+                type="button"
+                onClick={() => onSelect(e)}
+                className="flex w-full gap-4 rounded-[12px] border border-[#e5e1d8] p-4 text-left transition-colors hover:border-[#c9a963] hover:bg-[#fffdfa]"
+              >
+                <div className="relative h-[84px] w-[112px] shrink-0 overflow-hidden rounded-[8px]">
+                  <img
+                    className="absolute inset-0 size-full object-cover"
+                    src={e.imageUrl || e.videoUrl || imgEventImage}
+                    alt={e.imageAlt || e.title}
+                  />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold text-[#876728]">{e.category || "Event"}</p>
+                  <h3 className="mt-1 text-[16px] font-semibold">{e.title}</h3>
+                  <p className="mt-1 text-[12px] text-[#66757d]">{eventWhen(e)}</p>
+                </div>
+              </button>
+            ))}
+            {events.length === 0 && (
+              <p className="text-[14px] text-[#66757d]">No events have been published yet.</p>
+            )}
+          </div>
+        </div>
+      </section>
+    </div>
+  )
+}
+
 export default function EventPage({ onModeChange }: EventPageProps) {
+  const { events } = useEvents()
+  const [heroIndex, setHeroIndex] = useState(0)
+  const [openEvent, setOpenEvent] = useState<KseEvent | null>(null)
+  const [showAll, setShowAll] = useState(false)
+
+  // Only published events that have not happened yet are public, soonest
+  // first, so the hero and the upcoming list always lead with what is next.
+  const published = upcomingEvents(events)
+  const featured = published.find((e) => e.featured) ?? published[0] ?? null
+  const hero = published[heroIndex] ?? null
+
+  useEffect(() => {
+    if (heroIndex >= published.length) setHeroIndex(0)
+  }, [published.length, heroIndex])
+
+  const step = (delta: number) => {
+    if (published.length === 0) return
+    setHeroIndex((i) => (i + delta + published.length) % published.length)
+  }
+
   return (
     <div className="contents relative size-full" data-node-id="1:894">
       <div
@@ -191,7 +442,7 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                                             <img
                                               alt=""
                                               className="absolute inset-0 max-w-none object-cover pointer-events-none size-full"
-                                              src={imgDivPlayerControls}
+                                              src={hero?.imageUrl || hero?.videoUrl || FALLBACK_HERO[heroIndex % FALLBACK_HERO.length]}
                                             />
                                             <div
                                               className="absolute content-stretch flex items-start left-[10.5px] right-[18px] top-0"
@@ -240,7 +491,7 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                                                             }}
                                                           >
                                                             <p className="leading-[21px]">
-                                                              thegameawards
+                                                              KSEFinServe
                                                             </p>
                                                           </div>
                                                         </div>
@@ -260,7 +511,7 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                                                         }}
                                                       >
                                                         <p className="leading-[9.9px]">
-                                                          thegameawards
+                                                          KSEFinServe
                                                         </p>
                                                       </div>
                                                     </div>
@@ -422,13 +673,9 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                                                 </div>
                                               </div>
                                             </div>
-                                            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                                              <img
-                                                alt=""
-                                                className="absolute left-0 max-w-none size-full top-0"
-                                                src={imgDivPlayerControls1}
-                                              />
-                                            </div>
+                                            {/* The live hero image already fills this frame (see the
+                                                object-cover <img> above), so no static poster is drawn
+                                                on top of it — that overlay hid the carousel. */}
                                             <div
                                               className="absolute bg-gradient-to-b from-[rgba(0,0,0,0.8)] h-[52.5px] left-0 to-[rgba(0,0,0,0)] top-0 via-1/2 via-[rgba(0,0,0,0.6)] w-[576px]"
                                               data-node-id="1:944"
@@ -467,7 +714,7 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                                     data-node-id="1:947"
                                   >
                                     <p className="leading-[31.5px]">
-                                      KSEFinServe Summer Fest 2026
+                                      {hero?.title || "KSEFinServe Summer Fest 2026"}
                                     </p>
                                   </div>
                                 </div>
@@ -493,8 +740,11 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                   </div>
                 </div>
               </div>
-              <div
-                className="absolute bg-white border-[0.75px] border-[rgba(36,24,44,0.1)] border-solid content-stretch drop-shadow-[0px_6px_9px_rgba(0,0,0,0.08)] flex flex-col items-center justify-center left-[354px] rounded-[27px] size-[54px] top-[510px]"
+              <button
+                type="button"
+                aria-label="Previous event"
+                onClick={() => step(-1)}
+                className="absolute bg-white border-[0.75px] border-[rgba(36,24,44,0.1)] border-solid content-stretch drop-shadow-[0px_6px_9px_rgba(0,0,0,0.08)] flex flex-col items-center justify-center left-[354px] rounded-[27px] size-[54px] top-[510px] cursor-pointer"
                 data-node-id="1:949"
                 data-name="Previous event"
               >
@@ -509,9 +759,12 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                     src={imgChevronLeft}
                   />
                 </div>
-              </div>
-              <div
-                className="absolute bg-white content-stretch drop-shadow-[0px_6px_9px_rgba(0,0,0,0.08)] flex flex-col items-center justify-center left-[1032px] rounded-[27px] size-[54px] top-[510px]"
+              </button>
+              <button
+                type="button"
+                aria-label="Next event"
+                onClick={() => step(1)}
+                className="absolute bg-white content-stretch drop-shadow-[0px_6px_9px_rgba(0,0,0,0.08)] flex flex-col items-center justify-center left-[1032px] rounded-[27px] size-[54px] top-[510px] cursor-pointer"
                 data-node-id="1:952"
                 data-name="Next event"
               >
@@ -526,7 +779,7 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                     src={imgChevronRight}
                   />
                 </div>
-              </div>
+              </button>
             </div>
             <div
               className="bg-[#f6f3ec] col-1 content-stretch flex flex-col gap-[48px] items-start ml-0 mt-[1075.48px] overflow-clip px-[80px] py-[104px] relative row-1 w-[1440px]"
@@ -586,7 +839,7 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                     <img
                       alt=""
                       className="absolute inset-0 max-w-none object-cover pointer-events-none size-full"
-                      src={imgRoundtableExperience}
+                      src={featured?.imageUrl || featured?.videoUrl || imgRoundtableExperience}
                     />
                   </div>
                   <div
@@ -643,17 +896,16 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                     data-node-id="1:971"
                     style={{ fontVariationSettings: '"wdth" 100' }}
                   >
-                    <p className="leading-[1.02] mb-0">The Clarity</p>
-                    <p className="leading-[1.02]">Room</p>
+                    <p className="leading-[1.02] mb-0">{featured?.title || "The Clarity"}</p>
+                    <p className="leading-[1.02]">{featured?.title ? "" : "Room"}</p>
                   </div>
                   <p
                     className="[word-break:break-word] font-['Mona_Sans:Regular'] font-normal leading-[1.55] relative shrink-0 text-[#56646c] text-[17px] w-full"
                     data-node-id="1:972"
                     style={{ fontVariationSettings: '"wdth" 100' }}
                   >
-                    A thoughtfully guided gathering connecting financial
-                    perspective, purposeful work and the life you want to
-                    create.
+                    {featured?.introduction ||
+                      "A thoughtfully guided gathering connecting financial perspective, purposeful work and the life you want to create."}
                   </p>
                   <p
                     className="[word-break:break-word] font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[#081d2b] text-[14px] w-full"
@@ -672,9 +924,9 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                       data-node-id="1:975"
                       style={{ fontVariationSettings: '"wdth" 100' }}
                     >
-                      Dates to be announced
+                      {featured?.startDate ? eventWhen(featured) : "Dates to be announced"}
                     </p>
-                    <button type="button" className="bg-[#081d2b] content-stretch flex h-[52px] items-center justify-center pb-[13.5px] pt-[12.5px] px-[16px] relative rounded-[100px] shrink-0 [word-break:break-word] flex-col font-['Mona_Sans:Medium'] font-medium justify-center leading-[0] text-[15px] text-center text-white whitespace-nowrap leading-[20px]" style={{ fontVariationSettings: '"wdth" 100' }}>Join the interest list</button>
+                    <button type="button" onClick={() => featured && setOpenEvent(featured)} className="bg-[#081d2b] content-stretch flex h-[52px] items-center justify-center pb-[13.5px] pt-[12.5px] px-[16px] relative rounded-[100px] shrink-0 [word-break:break-word] flex-col font-['Mona_Sans:Medium'] font-medium justify-center leading-[0] text-[15px] text-center text-white whitespace-nowrap leading-[20px] cursor-pointer" style={{ fontVariationSettings: '"wdth" 100' }}>Join the interest list</button>
                   </div>
                 </div>
               </div>
@@ -734,11 +986,13 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                   data-node-id="1:985"
                   data-name="Session preview"
                 >
-                  <div
-                    className="bg-[#42b9fa] content-stretch flex flex-col h-[290px] items-start overflow-clip p-[22px] relative rounded-[24px] shrink-0 w-full"
-                    data-node-id="1:986"
-                    data-name="Session artwork"
-                  >
+                  <button
+                                    type="button"
+                                    onClick={() => published.find((e) => /wealth/i.test(`${e.category} ${e.title}`)) && setOpenEvent(published.find((e) => /wealth/i.test(`${e.category} ${e.title}`))!)}
+                                    className="bg-[#42b9fa] content-stretch flex flex-col h-[290px] items-start overflow-clip p-[22px] relative rounded-[24px] shrink-0 w-full text-left cursor-pointer"
+                                    data-node-id="1:986"
+                                    data-name="Session artwork"
+                                  >
                     <p
                       className="[word-break:break-word] font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[#081d2b] text-[14px] whitespace-nowrap"
                       data-node-id="1:987"
@@ -753,9 +1007,9 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                         alt=""
                         className="absolute inset-0 max-w-none object-cover pointer-events-none size-full"
                         src={imgPillarSculpture}
-                      />
-                    </div>
-                  </div>
+                                              />
+                                            </div>
+                                          </button>
                   <div
                     className="[word-break:break-word] content-stretch flex flex-col gap-[16px] items-start overflow-clip relative shrink-0 w-full"
                     data-node-id="1:989"
@@ -790,7 +1044,9 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                       data-node-id="1:993"
                       style={{ fontVariationSettings: '"wdth" 100' }}
                     >
-                      Dates to be announced
+                      {published.find((e) => /wealth/i.test(`${e.category} ${e.title}`))?.startDate
+                        ? eventWhen(published.find((e) => /wealth/i.test(`${e.category} ${e.title}`))!)
+                        : "Dates to be announced"}
                     </p>
                   </div>
                 </div>
@@ -799,11 +1055,13 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                   data-node-id="1:994"
                   data-name="Session preview"
                 >
-                  <div
-                    className="bg-[#ff806f] content-stretch flex flex-col h-[290px] items-start overflow-clip p-[22px] relative rounded-[24px] shrink-0 w-full"
-                    data-node-id="1:995"
-                    data-name="Session artwork"
-                  >
+                  <button
+                                    type="button"
+                                    onClick={() => published.find((e) => /leadership|advisor/i.test(`${e.category} ${e.title}`)) && setOpenEvent(published.find((e) => /leadership|advisor/i.test(`${e.category} ${e.title}`))!)}
+                                    className="bg-[#ff806f] content-stretch flex flex-col h-[290px] items-start overflow-clip p-[22px] relative rounded-[24px] shrink-0 w-full text-left cursor-pointer"
+                                    data-node-id="1:995"
+                                    data-name="Session artwork"
+                                  >
                     <p
                       className="[word-break:break-word] font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[#081d2b] text-[14px] whitespace-nowrap"
                       data-node-id="1:996"
@@ -818,9 +1076,9 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                         alt=""
                         className="absolute inset-0 max-w-none object-cover pointer-events-none size-full"
                         src={imgPillarSculpture1}
-                      />
-                    </div>
-                  </div>
+                                              />
+                                            </div>
+                                          </button>
                   <div
                     className="[word-break:break-word] content-stretch flex flex-col gap-[16px] items-start overflow-clip relative shrink-0 w-full"
                     data-node-id="1:998"
@@ -864,11 +1122,13 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                   data-node-id="1:1003"
                   data-name="Session preview"
                 >
-                  <div
-                    className="bg-[#d4bcfa] content-stretch flex flex-col h-[290px] items-start overflow-clip p-[22px] relative rounded-[24px] shrink-0 w-full"
-                    data-node-id="1:1004"
-                    data-name="Session artwork"
-                  >
+                  <button
+                                    type="button"
+                                    onClick={() => published.find((e) => /legacy|family/i.test(`${e.category} ${e.title}`)) && setOpenEvent(published.find((e) => /legacy|family/i.test(`${e.category} ${e.title}`))!)}
+                                    className="bg-[#d4bcfa] content-stretch flex flex-col h-[290px] items-start overflow-clip p-[22px] relative rounded-[24px] shrink-0 w-full text-left cursor-pointer"
+                                    data-node-id="1:1004"
+                                    data-name="Session artwork"
+                                  >
                     <p
                       className="[word-break:break-word] font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[#081d2b] text-[14px] whitespace-nowrap"
                       data-node-id="1:1005"
@@ -883,9 +1143,9 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                         alt=""
                         className="absolute inset-0 max-w-none object-cover pointer-events-none size-full"
                         src={imgPillarSculpture2}
-                      />
-                    </div>
-                  </div>
+                                              />
+                                            </div>
+                                          </button>
                   <div
                     className="[word-break:break-word] content-stretch flex flex-col gap-[16px] items-start overflow-clip relative shrink-0 w-full"
                     data-node-id="1:1007"
@@ -1040,11 +1300,13 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                     </div>
                   </div>
                 </div>
-                <div
-                  className="bg-[#ffedd5] content-stretch flex gap-[24px] items-start p-[24px] relative rounded-[16px] shrink-0 w-full"
-                  data-node-id="1:1031"
-                  data-name="Event row 1"
-                >
+                <button
+                                  type="button"
+                                  onClick={() => published[0] && setOpenEvent(published[0]!)}
+                                  className="bg-[#ffedd5] content-stretch flex gap-[24px] items-start p-[24px] relative rounded-[16px] shrink-0 w-full text-left cursor-pointer"
+                                  data-node-id="1:1031"
+                                  data-name="Event row 1"
+                                >
                   <div
                     className="content-stretch flex flex-col items-start justify-center overflow-clip relative rounded-[12px] shrink-0 size-[140px]"
                     data-node-id="1:1032"
@@ -1058,13 +1320,13 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                       <img
                         alt=""
                         className="absolute inset-0 max-w-none object-cover pointer-events-none size-full"
-                        src={imgEventImage}
-                      />
-                    </div>
-                  </div>
-                  <div
-                    className="content-stretch flex flex-[1_0_0] flex-col gap-[12px] items-start min-w-px relative"
-                    data-node-id="1:1034"
+                        src={published[0]?.imageUrl || published[0]?.videoUrl || imgEventImage}
+                                              />
+                                            </div>
+                                          </div>
+                                          <div
+                                            className="content-stretch flex flex-[1_0_0] flex-col gap-[12px] items-start min-w-px relative"
+                                            data-node-id="1:1034"
                     data-name="div.flex"
                   >
                     <div
@@ -1076,7 +1338,7 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                         className="[word-break:break-word] flex flex-col font-['Inter:Bold'] font-bold justify-center leading-[0] not-italic relative shrink-0 text-[#0c0a09] text-[24px] w-full"
                         data-node-id="1:1036"
                       >
-                        <p className="leading-[32px]">The Clarity Room</p>
+                        <p className="leading-[32px]">{published[0]?.title || "The Clarity Room"}</p>
                       </div>
                     </div>
                     <div
@@ -1088,19 +1350,19 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                         className="[word-break:break-word] flex flex-col font-['Inter:Medium'] font-medium justify-center leading-[0] not-italic relative shrink-0 text-[#44403c] text-[16px] w-full"
                         data-node-id="1:1038"
                       >
-                        <p className="leading-[24px]">To be announced</p>
-                      </div>
-                    </div>
-                    <div
-                      className="content-stretch flex flex-col items-start relative shrink-0 w-full"
-                      data-node-id="1:1039"
+                        <p className="leading-[24px]">{published[0] ? eventWhen(published[0]) : "To be announced"}</p>
+                                              </div>
+                                            </div>
+                                            <div
+                                              className="content-stretch flex flex-col items-start relative shrink-0 w-full"
+                                              data-node-id="1:1039"
                       data-name="p.text-xs"
                     >
                       <div
                         className="[word-break:break-word] flex flex-col font-['Inter:Semi_Bold'] font-semibold justify-center leading-[0] not-italic relative shrink-0 text-[#57534e] text-[14px] tracking-[0.35px] uppercase w-full"
                         data-node-id="1:1040"
                       >
-                        <p className="leading-[20px]">featured preview</p>
+                        <p className="leading-[20px]">{published[0]?.category || "featured preview"}</p>
                       </div>
                     </div>
                     <div
@@ -1113,12 +1375,9 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                         data-node-id="1:1042"
                       >
                         <p className="leading-[24px]">
-                          A thoughtfully guided gathering connecting financial
-                          perspective, purposeful work and the life you want to
-                          create. Explore how clarity can help you make better
-                          decisions, build confidence and move toward the future
-                          you value most.
-                        </p>
+                                                  {published[0]?.introduction ||
+                                                    "A thoughtfully guided gathering connecting financial perspective, purposeful work and the life you want to create."}
+                                                </p>
                       </div>
                     </div>
                     <div
@@ -1130,16 +1389,18 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                         className="[word-break:break-word] flex flex-col font-['Inter:Semi_Bold'] font-semibold justify-center leading-[0] not-italic relative shrink-0 text-[#0c0a09] text-[16px] whitespace-nowrap"
                         data-node-id="1:1044"
                       >
-                        <p className="leading-[24px]">To be announced</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div
-                  className="bg-[#f3e8ff] content-stretch flex gap-[24px] items-start p-[24px] relative rounded-[16px] shrink-0 w-full"
-                  data-node-id="1:1045"
-                  data-name="Event row 2"
-                >
+                        <p className="leading-[24px]">{published[0]?.format || "Format to be announced"}</p>
+                                              </div>
+                                            </div>
+                                          </div>
+                                                                                  </button>
+                                                          <button
+                                                                            type="button"
+                                                                            onClick={() => published[1] && setOpenEvent(published[1]!)}
+                                  className="bg-[#f3e8ff] content-stretch flex gap-[24px] items-start p-[24px] relative rounded-[16px] shrink-0 w-full text-left cursor-pointer"
+                                  data-node-id="1:1045"
+                                  data-name="Event row 2"
+                                >
                   <div
                     className="content-stretch flex flex-col items-start justify-center overflow-clip relative rounded-[12px] shrink-0 size-[140px]"
                     data-node-id="1:1046"
@@ -1153,7 +1414,7 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                       <img
                         alt=""
                         className="absolute inset-0 max-w-none object-cover pointer-events-none size-full"
-                        src={imgEventImage1}
+                        src={published[1]?.imageUrl || published[1]?.videoUrl || imgEventImage1}
                       />
                     </div>
                   </div>
@@ -1172,8 +1433,8 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                         data-node-id="1:1050"
                       >
                         <p className="leading-[32px]">
-                          Your wealth. Your next chapter.
-                        </p>
+                                                  {published[1]?.title || "Your wealth. Your next chapter."}
+                                                </p>
                       </div>
                     </div>
                     <div
@@ -1185,7 +1446,7 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                         className="[word-break:break-word] flex flex-col font-['Inter:Medium'] font-medium justify-center leading-[0] not-italic relative shrink-0 text-[#44403c] text-[16px] w-full"
                         data-node-id="1:1052"
                       >
-                        <p className="leading-[24px]">To be announced</p>
+                        <p className="leading-[24px]">{published[1] ? eventWhen(published[1]) : "To be announced"}</p>
                       </div>
                     </div>
                     <div
@@ -1198,7 +1459,7 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                         data-node-id="1:1054"
                       >
                         <p className="leading-[20px]">
-                          wealth clarity workshop
+                          {published[1]?.category || "Programme concept"}
                         </p>
                       </div>
                     </div>
@@ -1212,11 +1473,8 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                         data-node-id="1:1056"
                       >
                         <p className="leading-[24px]">
-                          A workshop concept designed to connect financial
-                          decisions to what matters most. Explore priorities,
-                          planning and the practical steps that help wealth
-                          support the life you want to build — not the other way
-                          around.
+                          {published[1]?.introduction ||
+                            "Connect your financial decisions to what matters most. Explore priorities, planning and a more intentional path forward."}
                         </p>
                       </div>
                     </div>
@@ -1229,16 +1487,18 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                         className="[word-break:break-word] flex flex-col font-['Inter:Semi_Bold'] font-semibold justify-center leading-[0] not-italic relative shrink-0 text-[#0c0a09] text-[16px] whitespace-nowrap"
                         data-node-id="1:1058"
                       >
-                        <p className="leading-[24px]">To be announced</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div
-                  className="bg-[#dbeafe] content-stretch flex gap-[24px] items-start p-[24px] relative rounded-[16px] shrink-0 w-full"
-                  data-node-id="1:1059"
-                  data-name="Event row 3"
-                >
+                        <p className="leading-[24px]">{published[1]?.format || "Format to be announced"}</p>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </button>
+                                        <button
+                                                          type="button"
+                                                          onClick={() => published[2] && setOpenEvent(published[2]!)}
+                                  className="bg-[#dbeafe] content-stretch flex gap-[24px] items-start p-[24px] relative rounded-[16px] shrink-0 w-full text-left cursor-pointer"
+                                  data-node-id="1:1059"
+                                  data-name="Event row 3"
+                                >
                   <div
                     className="content-stretch flex flex-col items-start justify-center overflow-clip relative rounded-[12px] shrink-0 size-[140px]"
                     data-node-id="1:1060"
@@ -1252,7 +1512,7 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                       <img
                         alt=""
                         className="absolute inset-0 max-w-none object-cover pointer-events-none size-full"
-                        src={imgEventImage2}
+                        src={published[2]?.imageUrl || published[2]?.videoUrl || imgEventImage2}
                       />
                     </div>
                   </div>
@@ -1271,8 +1531,8 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                         data-node-id="1:1064"
                       >
                         <p className="leading-[32px]">
-                          Lead with more purpose.
-                        </p>
+                                                  {published[2]?.title || "Lead with more purpose."}
+                                                </p>
                       </div>
                     </div>
                     <div
@@ -1284,7 +1544,7 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                         className="[word-break:break-word] flex flex-col font-['Inter:Medium'] font-medium justify-center leading-[0] not-italic relative shrink-0 text-[#44403c] text-[16px] w-full"
                         data-node-id="1:1066"
                       >
-                        <p className="leading-[24px]">To be announced</p>
+                        <p className="leading-[24px]">{published[2] ? eventWhen(published[2]) : "To be announced"}</p>
                       </div>
                     </div>
                     <div
@@ -1297,7 +1557,7 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                         data-node-id="1:1068"
                       >
                         <p className="leading-[20px]">
-                          leadership conversation
+                          {published[2]?.category || "Programme concept"}
                         </p>
                       </div>
                     </div>
@@ -1328,16 +1588,18 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                         className="[word-break:break-word] flex flex-col font-['Inter:Semi_Bold'] font-semibold justify-center leading-[0] not-italic relative shrink-0 text-[#0c0a09] text-[16px] whitespace-nowrap"
                         data-node-id="1:1072"
                       >
-                        <p className="leading-[24px]">To be announced</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div
-                  className="bg-[#fce7f3] content-stretch flex gap-[24px] items-start p-[24px] relative rounded-[16px] shrink-0 w-full"
-                  data-node-id="1:1073"
-                  data-name="Event row 4"
-                >
+                        <p className="leading-[24px]">{published[2]?.format || "Format to be announced"}</p>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </button>
+                                        <button
+                                                          type="button"
+                                                          onClick={() => published[3] && setOpenEvent(published[3]!)}
+                                  className="bg-[#fce7f3] content-stretch flex gap-[24px] items-start p-[24px] relative rounded-[16px] shrink-0 w-full text-left cursor-pointer"
+                                  data-node-id="1:1073"
+                                  data-name="Event row 4"
+                                >
                   <div
                     className="content-stretch flex flex-col items-start justify-center overflow-clip relative rounded-[12px] shrink-0 size-[140px]"
                     data-node-id="1:1074"
@@ -1351,7 +1613,7 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                       <img
                         alt=""
                         className="absolute inset-0 max-w-none object-cover pointer-events-none size-full"
-                        src={imgEventImage3}
+                        src={published[3]?.imageUrl || published[3]?.videoUrl || imgEventImage3}
                       />
                     </div>
                   </div>
@@ -1369,7 +1631,7 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                         className="[word-break:break-word] flex flex-col font-['Inter:Bold'] font-bold justify-center leading-[0] not-italic relative shrink-0 text-[#0c0a09] text-[24px] w-full"
                         data-node-id="1:1078"
                       >
-                        <p className="leading-[32px]">Think beyond the now.</p>
+                        <p className="leading-[32px]">{published[3]?.title || "Think beyond the now."}</p>
                       </div>
                     </div>
                     <div
@@ -1381,7 +1643,7 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                         className="[word-break:break-word] flex flex-col font-['Inter:Medium'] font-medium justify-center leading-[0] not-italic relative shrink-0 text-[#44403c] text-[16px] w-full"
                         data-node-id="1:1080"
                       >
-                        <p className="leading-[24px]">To be announced</p>
+                        <p className="leading-[24px]">{published[3] ? eventWhen(published[3]) : "To be announced"}</p>
                       </div>
                     </div>
                     <div
@@ -1393,7 +1655,7 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                         className="[word-break:break-word] flex flex-col font-['Inter:Semi_Bold'] font-semibold justify-center leading-[0] not-italic relative shrink-0 text-[#57534e] text-[14px] tracking-[0.35px] uppercase w-full"
                         data-node-id="1:1082"
                       >
-                        <p className="leading-[20px]">legacy roundtable</p>
+                        <p className="leading-[20px]">{published[3]?.category || "Programme concept"}</p>
                       </div>
                     </div>
                     <div
@@ -1422,12 +1684,12 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                         className="[word-break:break-word] flex flex-col font-['Inter:Semi_Bold'] font-semibold justify-center leading-[0] not-italic relative shrink-0 text-[#0c0a09] text-[16px] whitespace-nowrap"
                         data-node-id="1:1086"
                       >
-                        <p className="leading-[24px]">To be announced</p>
+                        <p className="leading-[24px]">{published[3]?.format || "Format to be announced"}</p>
                       </div>
                     </div>
                   </div>
-                </div>
-                <button type="button" className="bg-[#7c3aed] content-stretch flex items-center justify-center px-[24px] py-[14px] relative rounded-[8px] shrink-0 [word-break:break-word] flex-col font-['Inter:Semi_Bold'] font-semibold justify-center leading-[0] not-italic text-[16px] text-center text-white whitespace-nowrap leading-[24px]">See More</button>
+                </button>
+                <button type="button" onClick={() => setShowAll(true)} className="bg-[#7c3aed] content-stretch flex items-center justify-center px-[24px] py-[14px] relative rounded-[8px] shrink-0 [word-break:break-word] flex-col font-['Inter:Semi_Bold'] font-semibold justify-center leading-[0] not-italic text-[16px] text-center text-white whitespace-nowrap leading-[24px] cursor-pointer">See More</button>
               </div>
               <div
                 className="absolute bottom-[6.75px] content-stretch flex flex-col items-start left-[9.38%] right-[9.38%]"
@@ -1685,7 +1947,7 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                   </p>
                   <p className="leading-[1.3]">Build Leaders with Purpose.</p>
                 </div>
-                <button type="button" className="bg-[#081d2b] content-stretch flex h-[52px] items-center justify-center pb-[13.5px] pt-[12.5px] px-[16px] relative rounded-[100px] shrink-0 [word-break:break-word] flex-col font-['Mona_Sans:Medium'] font-medium justify-center leading-[0] text-[15px] text-center text-white whitespace-nowrap leading-[20px]" style={{ fontVariationSettings: '"wdth" 100' }}>Meet Kayode</button>
+                <button type="button" onClick={() => { window.location.href = "/about" }} className="bg-[#081d2b] content-stretch flex h-[52px] items-center justify-center pb-[13.5px] pt-[12.5px] px-[16px] relative rounded-[100px] shrink-0 [word-break:break-word] flex-col font-['Mona_Sans:Medium'] font-medium justify-center leading-[0] text-[15px] text-center text-white whitespace-nowrap leading-[20px] cursor-pointer" style={{ fontVariationSettings: '"wdth" 100' }}>Meet Kayode</button>
               </div>
             </div>
             <div
@@ -2304,12 +2566,8 @@ export default function EventPage({ onModeChange }: EventPageProps) {
             </button>
             <button
               type="button"
-              onClick={() =>
-                document
-                  .querySelector('[data-name="Featured experience"]')
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
-              className="absolute bg-[#6e8add] content-stretch flex h-[46px] items-center justify-center left-0 pb-[13.5px] pt-[12.5px] px-[16px] rounded-[24px] top-0"
+              onClick={() => hero && setOpenEvent(hero)}
+              className="absolute bg-[#6e8add] content-stretch flex h-[46px] items-center justify-center left-0 pb-[13.5px] pt-[12.5px] px-[16px] rounded-[24px] top-0 cursor-pointer"
               data-node-id="1:1220"
               data-name="Component 8"
             >
@@ -2360,6 +2618,16 @@ export default function EventPage({ onModeChange }: EventPageProps) {
           </div>
         </div>
       </div>
+      {openEvent &&
+        createPortal(
+          <EventModal event={openEvent} onClose={() => setOpenEvent(null)} />,
+          document.body,
+        )}
+      {showAll &&
+        createPortal(
+          <AllEventsModal events={published} onClose={() => setShowAll(false)} onSelect={(e) => { setShowAll(false); setOpenEvent(e) }} />,
+          document.body,
+        )}
     </div>
   )
 }

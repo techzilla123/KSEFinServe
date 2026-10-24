@@ -172,7 +172,7 @@ function Companion({ step }: { step: "about" | "interests" | "review" }) {
       />
       <div className="advisor">
         <span className="portrait">
-          <img src={`${A}/eab0f.png`} alt="Kayode Samson Elepe" />
+          <img src={`${A}/pix-removebg-preview.png`} alt="Kayode Samson Elepe" />
         </span>
         <span>
           <strong>Kayode Samson Elepe, RR</strong>

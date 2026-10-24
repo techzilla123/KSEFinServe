@@ -50,11 +50,11 @@
 .address p { margin: 0; font-family: "Mona Sans:Medium", sans-serif; font-size: 16px; font-variation-settings: "wdth" 100; font-weight: 500; }
 .address span { color: #a7b2b9; font-size: 13px; font-variation-settings: "wdth" 100; }
 .location-preview { display: flex; width: 100%; flex-direction: column; gap: 10px; }
-.map-preview { position: relative; width: 280px; height: 156px; overflow: hidden; border-radius: 12px; background: #eae9e1; }
-.street-map { position: absolute; z-index: 1; inset: 0; width: 280px; height: 156px; object-fit: cover; }
-.preview-badge { position: absolute; z-index: 2; top: 126px; left: 10px; padding: 4px 8px; border-radius: 4px; color: #061621; background: rgba(255,255,255,.9); font-family: "Inter:Medium", sans-serif; font-size: 10px; font-weight: 500; line-height: normal; }
-.map-controls { position: absolute; z-index: 2; top: 12px; left: 245px; display: flex; padding: 5px; flex-direction: column; gap: 8px; border-radius: 4px; background: #ffffff; }
-.location-marker { position: absolute; z-index: 2; top: 53px; left: 123px; display: flex; width: 36px; height: 36px; align-items: center; justify-content: center; border-radius: 999px; background: #061621; }
+.map-preview { position: relative; display: block; width: 280px; height: 156px; overflow: hidden; border-radius: 12px; background: #eae9e1; }
+.street-map { position: absolute; z-index: 1; inset: 0; width: 280px; height: 156px; border: 0; object-fit: cover; }
+.preview-badge { position: absolute; z-index: 2; right: 8px; bottom: 8px; padding: 4px 8px; border-radius: 999px; background: rgba(255,255,255,0.92); color: #102b3e; font-size: 10px; font-weight: 600; }
+.location-marker { position: absolute; z-index: 2; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; width: 36px; height: 36px; align-items: center; justify-content: center; border-radius: 999px; background: #061621; }
+.map-preview:hover .preview-badge { background: #ffffff; }
 .location-preview > p { margin: 0; color: #a7b2b9; font-size: 11px; font-variation-settings: "wdth" 100; line-height: 1.4; }
 .contact-hero { display: none; }
 .contact-action { display: flex; width: 100%; flex-direction: column; align-items: center; gap: 14px; }
@@ -156,7 +156,7 @@
   .contact-hero .halo-outline { display: none; }
   .contact-hero .telephone-halo { display: none; }
   .map-preview { width: 100%; }
-  .street-map { width: 100%; }
+  .street-map { width: 100%; height: 100%; }
   .contact-dialog { padding: 32px 24px; border-radius: 16px; }
   .dialog-heading { padding-right: 36px; }
   .dialog-heading h2 { font-size: 32px; }

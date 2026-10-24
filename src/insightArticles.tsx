@@ -1,5 +1,7 @@
 /* Shared insight-article data + modal, used by both the desktop and the
    mobile Insights pages so they stay in sync. */
+import { type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 const assetPathPrefix = "/assets";
 
@@ -33,9 +35,111 @@ export const insightArticles = [
   { id: "different-lens", category: "WEALTH FOUNDATIONS", title: "WHERE ARE ALL YOUR ASSETS?", description: "A closer look at hidden wealth and the gaps in your current portfolio.", image: imgStoryPhotograph12, color: "#ffd4b8", readTime: "7 min read", content: "A closer look at hidden wealth and the gaps in your current portfolio.\n\nStart with what you own, what you owe and what matters most. A clearer picture is the first step towards a more intentional plan.\n\nThis featured essay takes a different lens on everyday wealth, exploring the hidden assets and gaps in your current portfolio.\n\nDiscover how to get a clearer picture of your financial situation." },
 ];
 
-export type InsightArticle = typeof insightArticles[number];
+export type InsightArticle = {
+  id: string;
+  category: string;
+  title: string;
+  description: string;
+  image: string;
+  color: string;
+  readTime: string;
+  content: string;
+};
 
-/* The article modal, shared by the desktop and mobile insights pages. */
+/** Render the stored markdown (headings, quotes, lists, emphasis, links). */
+function renderMarkdown(source: string) {
+  // Some rows arrive with the two characters "\n" instead of a real newline
+  // (a pasted JSON string, for example). Normalise first so the modal never
+  // shows "\n\n" as visible text.
+  const normalised = source.replace(/\\n/g, "\n")
+  const blocks = normalised.split(/\n{2,}/).map((b) => b.trim()).filter(Boolean)
+  return blocks.map((block, i) => {
+    const lines = block.split('\n')
+    // Heading
+    const h = lines[0].match(/^(#{2,3})\s+(.*)$/)
+    if (h && lines.length === 1) {
+      const Tag = h[1].length === 2 ? 'h2' : 'h3'
+      return <Tag key={i} className={h[1].length === 2 ? 'mt-6 text-[22px] font-semibold text-[#081d2b]' : 'mt-5 text-[18px] font-semibold text-[#081d2b]'}>{inline(h[2])}</Tag>
+    }
+    // Quote
+    if (lines.every((l) => l.startsWith('>'))) {
+      return (
+        <blockquote key={i} className="mt-4 border-l-2 border-[#c9a963] pl-4 text-[15px] italic text-[#56646c]">
+          {lines.map((l, j) => <p key={j} className={j > 0 ? 'mt-2' : ''}>{inline(l.replace(/^>\s?/, ''))}</p>)}
+        </blockquote>
+      )
+    }
+    // Lists
+    if (lines.every((l) => /^[-*]\s+/.test(l) || /^\d+\.\s+/.test(l))) {
+      const ordered = /^\d+\./.test(lines[0])
+      const Tag = ordered ? 'ol' : 'ul'
+      return (
+        <Tag key={i} className={`mt-4 pl-5 text-[16px] leading-[1.7] text-[#56646c] ${ordered ? 'list-decimal' : 'list-disc'}`}>
+          {lines.map((l, j) => <li key={j}>{inline(l.replace(/^([-*]|\d+\.)\s+/, ''))}</li>)}
+        </Tag>
+      )
+    }
+    // Divider
+    if (/^-{3,}$/.test(lines[0])) return <hr key={i} className="my-5 border-[#e5e1d8]" />
+    // Paragraph
+    return (
+      <div key={i}>
+        {lines.map((l, j) => <p key={j} className={j > 0 ? 'mt-4' : ''}>{inline(l)}</p>)}
+      </div>
+    )
+  })
+}
+
+/** Inline markdown: bold, italic, underline and links. */
+function inline(text: string) {
+  const parts: ReactNode[] = []
+  const re = /(\*\*[^*]+\*\*|\*[^*]+\*|_[^_]+_|\[[^\]]+\]\([^)]+\))/g
+  let last = 0
+  let m: RegExpExecArray | null
+  let k = 0
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) parts.push(text.slice(last, m.index))
+    const tok = m[0]
+    if (tok.startsWith('**')) parts.push(<strong key={k++}>{tok.slice(2, -2)}</strong>)
+    else if (tok.startsWith('[')) {
+      const lm = tok.match(/\[([^\]]+)\]\(([^)]+)\)/)!
+      parts.push(<a key={k++} href={lm[2]} target="_blank" rel="noreferrer" className="text-[#876728] underline">{lm[1]}</a>)
+    }
+    else if (tok.startsWith('_')) parts.push(<u key={k++}>{tok.slice(1, -1)}</u>)
+    else parts.push(<em key={k++}>{tok.slice(1, -1)}</em>)
+    last = m.index + tok.length
+  }
+  if (last < text.length) parts.push(text.slice(last))
+  return parts
+}
+
+export function toInsightArticle(a: {
+  id: string;
+  category: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  color: string;
+  readTime: string;
+  content: string;
+}): InsightArticle {
+  return {
+    id: a.id,
+    category: a.category,
+    title: a.title,
+    description: a.description,
+    image: a.imageUrl,
+    color: a.color,
+    readTime: a.readTime,
+    content: a.content,
+  };
+}
+
+/* The article modal, shared by the desktop and mobile insights pages.
+   Rendered through a portal onto document.body: the desktop page lives inside
+   a `transform: scale()` canvas, and a transform makes an ancestor the
+   containing block for `position: fixed`, which would otherwise place the
+   modal relative to the 1440px design canvas instead of the viewport. */
 export function InsightModal({
   article,
   onClose,
@@ -44,7 +148,7 @@ export function InsightModal({
   onClose: () => void;
 }) {
   if (!article) return null;
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <div
@@ -68,9 +172,7 @@ export function InsightModal({
           </div>
           <h2 className="font-['Oswald:SemiBold'] text-[32px] leading-[1.15] text-[#081d2b] mb-6">{article.title}</h2>
           <div className="font-['Mona_Sans:Regular'] text-[16px] leading-[1.7] text-[#56646c] mb-8">
-            {article.content.split("\n\n").map((paragraph, i) => (
-              <p key={i} className={i > 0 ? "mt-4" : ""}>{paragraph}</p>
-            ))}
+            {renderMarkdown(article.content)}
           </div>
           <button
             onClick={onClose}
@@ -80,6 +182,7 @@ export function InsightModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

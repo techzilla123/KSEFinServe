@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { submitCareerApplication } from "./admin/careerDirectory";
 
 const A = "/assets/";
 
@@ -216,6 +217,7 @@ function ApplicationForm() {
   const [contact, setContact] = useState("WhatsApp");
   const [interests, setInterests] = useState<string[]>([]);
   const [sent, setSent] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
   // Controlled step-1 fields: keeps the values when the user goes back, and
@@ -246,6 +248,37 @@ function ApplicationForm() {
     scrollToFormTop();
   };
 
+  // Save the completed application to Supabase. The consent checkboxes are
+  // read straight from the form so the stored record reflects what was ticked.
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    const form = e.currentTarget as HTMLFormElement;
+    const boxes = Array.from(form.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
+    const result = await submitCareerApplication({
+      name: details.name,
+      email: details.email,
+      phone: details.phone,
+      location: details.location,
+      preferredContact: contact,
+      role: background.role,
+      background: [
+        background.experience,
+        background.availability ? `Available: ${background.availability}` : '',
+        background.commitment ? `Commitment: ${background.commitment}` : '',
+        background.motivation,
+      ].filter(Boolean).join('\n\n'),
+      interests,
+      licences: background.licences,
+      consentContact: boxes[0]?.checked ?? false,
+      consentData: boxes[1]?.checked ?? false,
+    });
+    if (result.error) {
+      setSubmitError(result.error);
+      return;
+    }
+    setSent(true);
+  };
+
   return (
     <section className="application dark" id="application">
       <div className="container application-grid">
@@ -261,7 +294,7 @@ function ApplicationForm() {
         <div className="form-card" ref={formRef}>
           <h2>Express your interest</h2><p>Fields marked * are required.</p>
           {sent ? <div className="success"><h3>Thank you for your interest.</h3><p>Your details have been received. If there is a potential fit, the KSEFinServe team may contact you through your preferred channel.</p></div> :
-          <form onSubmit={step === 1 ? next : (e) => { e.preventDefault(); setSent(true); }}>
+          <form onSubmit={step === 1 ? next : submit}>
             <div className="form-step-row">
               {step === 2 && (
                 <button type="button" className="back-btn" onClick={back}>
@@ -293,6 +326,7 @@ function ApplicationForm() {
                 <Field label="What motivates you to explore this career? *" full><textarea required name="motivation" value={background.motivation} onChange={setBg("motivation")} placeholder="Tell us about your goals, strengths and what meaningful work looks like to you…" /><small>A short, thoughtful response is enough.</small></Field>
               </div>
               <hr />
+              {submitError && <p className="form-error" role="alert">{submitError}</p>}
               <div className="consents"><label><input type="checkbox" required /><span>I agree that KSEFinServe may contact me by email, phone or WhatsApp about my career enquiry. *</span></label><label><input type="checkbox" required /><span>I consent to the collection and use of the information in this form to review my career enquiry and arrange relevant follow-up. *</span></label></div>
               <button className="submit form-nav-submit" type="submit">Send my career interest</button>
             </div>}

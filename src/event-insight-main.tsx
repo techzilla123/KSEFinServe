@@ -7,6 +7,7 @@ import EventsMobilePage from "./EventsMobilePage";
 import InsightsMobilePage from "./InsightsMobilePage";
 import "./index.css";
 import "./event-insight.css";
+import "./event-live.css";
 import "./event-insight-mobile.css";
 
 const assetPathPrefix = "/assets";

@@ -26,6 +26,7 @@ export default defineConfig(({ mode }) => {
           "event-insight": path.resolve(__dirname, "./event-insight.html"),
           "book-now": path.resolve(__dirname, "./book-now.html"),
           calculator: path.resolve(__dirname, "./calculator.html"),
+          admin: path.resolve(__dirname, "./admin.html"),
         },
       },
     },
@@ -104,6 +105,39 @@ export default defineConfig(({ mode }) => {
           server.middlewares.use((req, res, next) => {
             if (routes.includes(req.url?.split("?")[0] ?? "")) {
               req.url = "/calculator.html"
+            }
+            next()
+          })
+        },
+      },
+      {
+        name: "admin-page-middleware",
+        configureServer(server) {
+          const routes = [
+            "/admin",
+            "/admin/auth/login",
+            "/admin/auth/forget",
+            "/admin/auth/reset",
+            "/admin/dashboard",
+            "/admin/insights",
+            "/admin/insights/editor",
+            "/admin/insights/preview",
+            "/admin/events",
+            "/admin/events/new",
+            "/admin/events/editor",
+            "/admin/monitoring",
+            "/admin/bookings",
+            "/admin/bookings/detail",
+            "/admin/settings",
+          ]
+          server.middlewares.use((req, res, next) => {
+            // Only rewrite real admin paths. Stripping a trailing slash from
+            // "/" yields "", which must NOT fall back to "/admin" — that would
+            // send the site's home page to the admin console.
+            const path = (req.url ?? "").split("?")[0]
+            const clean = path.length > 1 ? path.replace(/\/+$/, "") : path
+            if (clean === "/admin" || clean.startsWith("/admin/")) {
+              req.url = "/admin.html"
             }
             next()
           })

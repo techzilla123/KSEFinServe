@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { insightArticles, InsightModal, type InsightArticle } from "./insightArticles";
+import { InsightModal, toInsightArticle } from "./insightArticles";
+import { useInsights, type Insight } from "./admin/insightsDirectory";
 const assetPathPrefix = "/assets";
 const imgCoralSculpture = `${assetPathPrefix}/ced68.png`;
 const imgBlueSculpture = `${assetPathPrefix}/10be3.png`;
@@ -29,9 +30,13 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
   // the collection carries data-active-filter; CSS hides the non-matches.
   const [activeFilter, setActiveFilter] = useState("all");
   // The article shown in the modal when "Read article" is tapped.
-  const [selectedArticle, setSelectedArticle] = useState<InsightArticle | null>(null);
+  const [selectedArticle, setSelectedArticle] = useState<Insight | null>(null);
+  const { insights } = useInsights();
+  const published = insights.filter((a) => a.status === "Published");
+  const byTitle = (title: string) => published.find((a) => a.title.toLowerCase() === title) ?? null;
+  const featured = published.find((a) => a.featured) ?? published[published.length - 1] ?? null;
   const openArticle = (id: string) => {
-    const found = insightArticles.find((a) => a.id === id);
+    const found = published.find((a) => a.id === id) ?? published.find((a) => a.title.toLowerCase() === id);
     if (found) setSelectedArticle(found);
   };
   const topics: Array<{ key: string; label: string }> = [
@@ -135,7 +140,7 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
         <div className="content-stretch flex flex-col items-start overflow-clip relative rounded-[20px] shrink-0 w-full" data-node-id="1:574" data-name="Feature spread">
           <div className="h-[275px] relative shrink-0 w-full" data-node-id="1:575" data-name="Story photograph">
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-              <img alt="" className="absolute left-0 max-w-none size-full top-0" src={imgStoryPhotograph2} />
+              <img alt="" className="absolute left-0 max-w-none size-full top-0" src={featured?.imageUrl || imgStoryPhotograph2} />
             </div>
           </div>
           <div className="bg-[#e6ba65] content-stretch flex items-start overflow-clip px-[16px] py-[12px] relative shrink-0 w-full" data-node-id="1:576" data-name="Photo caption">
@@ -148,16 +153,16 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
               WEALTH FOUNDATIONS / FEATURED ESSAY
             </p>
             <div className="[word-break:break-word] font-['Oswald:SemiBold'] font-semibold leading-[0] relative shrink-0 text-[#081d2b] text-[40px] w-full" data-node-id="1:580">
-              <p className="leading-[1.05] mb-0">WHERE ARE ALL</p>
-              <p className="leading-[1.05]">YOUR ASSETS?</p>
+              <p className="leading-[1.05] mb-0">{(featured?.title || "WHERE ARE ALL YOUR ASSETS?").split(" ").slice(0, 2).join(" ")}</p>
+              <p className="leading-[1.05]">{(featured?.title || "WHERE ARE ALL YOUR ASSETS?").split(" ").slice(2).join(" ")}</p>
             </div>
             <p className="[word-break:break-word] font-['Mona_Sans:Regular'] font-normal leading-[1.55] relative shrink-0 text-[#56646c] text-[16px] w-full" data-node-id="1:581" style={{ fontVariationSettings: '"wdth" 100' }}>
-              A closer look at hidden wealth and the gaps in your current portfolio.
+              {featured?.description || "A closer look at hidden wealth and the gaps in your current portfolio."}
             </p>
             <p className="[word-break:break-word] font-['Mona_Sans:Regular'] font-normal leading-[1.55] relative shrink-0 text-[#081d2b] text-[16px] w-full" data-node-id="1:582" style={{ fontVariationSettings: '"wdth" 100' }}>
-              Start with what you own, what you owe and what matters most. A clearer picture is the first step towards a more intentional plan.
+              {featured?.content?.split("\n\n")[1] || "Start with what you own, what you owe and what matters most. A clearer picture is the first step towards a more intentional plan."}
             </p>
-            <button type="button" className="bg-[#081d2b] content-stretch flex h-[52px] items-center justify-center pb-[13.5px] pt-[12.5px] px-[16px] relative rounded-[100px] shrink-0 w-full page-action" data-node-id="1:583" data-name="Page action">
+            <button type="button" onClick={() => featured && setSelectedArticle(featured)} className="bg-[#081d2b] content-stretch flex h-[52px] items-center justify-center pb-[13.5px] pt-[12.5px] px-[16px] relative rounded-[100px] shrink-0 w-full page-action" data-node-id="1:583" data-name="Page action">
               <div className="[word-break:break-word] flex flex-col font-['Mona_Sans:Regular'] font-normal justify-center leading-[0] relative shrink-0 text-[15px] text-center text-white whitespace-nowrap" data-node-id="I1:583;30:2199" style={{ fontVariationSettings: '"wdth" 100' }}>
                 <p className="leading-[20px]">Read the featured article</p>
               </div>
@@ -205,25 +210,25 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
           })}
         </div>
         <div className="content-stretch flex flex-col gap-[24px] items-start overflow-clip relative shrink-0 w-full" data-node-id="1:595" data-name="Article collection" data-active-filter={activeFilter}>
-          <div className="bg-[#fffdfa] content-stretch flex flex-col items-start overflow-clip relative rounded-[20px] shrink-0 w-full" data-node-id="1:596" data-name="Article card" data-category="INVESTING">
-            <div className="bg-[#d4bcfa] content-stretch flex flex-col items-start overflow-clip p-[14px] relative shrink-0 w-full" data-node-id="1:597" data-name="Article artwork">
+          <div className="bg-[#fffdfa] content-stretch flex flex-col items-start overflow-clip relative rounded-[20px] shrink-0 w-full" data-node-id="1:596" data-name="Article card" data-category={published[0]?.category?.toUpperCase() || "INVESTING"}>
+            <div className="content-stretch flex flex-col items-start overflow-clip p-[14px] relative shrink-0 w-full" style={{ backgroundColor: published[0]?.color || "#d4bcfa" }} data-node-id="1:597" data-name="Article artwork">
               <div className="h-[220px] relative rounded-[12px] shrink-0 w-full" data-node-id="1:598" data-name="Story photograph">
                 <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[12px]">
-                  <img alt="" className="absolute left-0 max-w-none size-full top-0" src={imgStoryPhotograph} />
+                  <img alt="" className="absolute left-0 max-w-none size-full top-0" src={published[0]?.imageUrl || imgStoryPhotograph} />
                 </div>
               </div>
             </div>
             <div className="[word-break:break-word] content-stretch flex flex-col gap-[16px] items-start overflow-clip p-[24px] relative shrink-0 w-full" data-node-id="1:599" data-name="Article summary">
               <p className="font-['Special_Elite:Regular'] leading-[1.5] min-w-full not-italic relative shrink-0 text-[#081d2b] text-[11px] w-[min-content]" data-node-id="1:600">
-                INVESTING
+                {published[0]?.category?.toUpperCase() || "INVESTING"}
               </p>
               <p className="font-['Oswald:SemiBold'] font-semibold leading-[1.15] min-w-full relative shrink-0 text-[#081d2b] text-[29px] w-[min-content]" data-node-id="1:601">
-                THE CRAFT OF WEALTH
+                {published[0]?.title || "THE CRAFT OF WEALTH"}
               </p>
               <p className="font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[#56646c] text-[16px] w-[min-content]" data-node-id="1:602" style={{ fontVariationSettings: '"wdth" 100' }}>
-                How artisanal investing can help you build a more resilient financial future.
+                {published[0]?.description || "How artisanal investing can help you build a more resilient financial future."}
               </p>
-              <button type="button" onClick={() => openArticle("craft-of-wealth")} className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:603" data-name="Article link">
+              <button type="button" onClick={() => openArticle(published[0]?.id || "craft-of-wealth")} className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:603" data-name="Article link">
                 <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:604" style={{ fontVariationSettings: '"wdth" 100' }}>
                   Read article
                 </p>
@@ -233,25 +238,25 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
               </button>
             </div>
           </div>
-          <div className="bg-[#fffdfa] content-stretch flex flex-col items-start overflow-clip relative rounded-[20px] shrink-0 w-full" data-node-id="1:606" data-name="Article card" data-category="INVESTING">
-            <div className="bg-[#dfeff8] content-stretch flex flex-col items-start overflow-clip p-[14px] relative shrink-0 w-full" data-node-id="1:607" data-name="Article artwork">
+          <div className="bg-[#fffdfa] content-stretch flex flex-col items-start overflow-clip relative rounded-[20px] shrink-0 w-full" data-node-id="1:606" data-name="Article card" data-category={published[1]?.category?.toUpperCase() || "INVESTING"}>
+            <div className="content-stretch flex flex-col items-start overflow-clip p-[14px] relative shrink-0 w-full" style={{ backgroundColor: published[1]?.color || "#dfeff8" }} data-node-id="1:607" data-name="Article artwork">
               <div className="h-[220px] relative rounded-[12px] shrink-0 w-full" data-node-id="1:608" data-name="Story photograph">
                 <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[12px]">
-                  <img alt="" className="absolute left-0 max-w-none size-full top-0" src={imgStoryPhotograph1} />
+                  <img alt="" className="absolute left-0 max-w-none size-full top-0" src={published[1]?.imageUrl || imgStoryPhotograph1} />
                 </div>
               </div>
             </div>
             <div className="[word-break:break-word] content-stretch flex flex-col gap-[16px] items-start overflow-clip p-[24px] relative shrink-0 w-full" data-node-id="1:609" data-name="Article summary">
               <p className="font-['Special_Elite:Regular'] leading-[1.5] min-w-full not-italic relative shrink-0 text-[#081d2b] text-[11px] w-[min-content]" data-node-id="1:610">
-                INVESTING
+                {published[1]?.category?.toUpperCase() || "INVESTING"}
               </p>
               <p className="font-['Oswald:SemiBold'] font-semibold leading-[1.15] min-w-full relative shrink-0 text-[#081d2b] text-[29px] w-[min-content]" data-node-id="1:611">
-                THE RHYTHM OF RETURNS
+                {published[1]?.title || "THE RHYTHM OF RETURNS"}
               </p>
               <p className="font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[#56646c] text-[16px] w-[min-content]" data-node-id="1:612" style={{ fontVariationSettings: '"wdth" 100' }}>
-                Timing the market is hard, but timing your financial goals doesn’t have to be.
+                {published[1]?.description || "Timing the market is hard, but timing your financial goals doesn't have to be."}
               </p>
-              <button type="button" onClick={() => openArticle("rhythm-of-returns")} className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:613" data-name="Article link">
+              <button type="button" onClick={() => openArticle(published[1]?.id || "rhythm-of-returns")} className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:613" data-name="Article link">
                 <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:614" style={{ fontVariationSettings: '"wdth" 100' }}>
                   Read article
                 </p>
@@ -261,25 +266,25 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
               </button>
             </div>
           </div>
-          <div className="bg-[#fffdfa] content-stretch flex flex-col items-start overflow-clip relative rounded-[20px] shrink-0 w-full" data-node-id="1:616" data-name="Article card" data-category="WEALTH FOUNDATIONS">
-            <div className="bg-[#ffe6d3] content-stretch flex flex-col items-start overflow-clip p-[14px] relative shrink-0 w-full" data-node-id="1:617" data-name="Article artwork">
+          <div className="bg-[#fffdfa] content-stretch flex flex-col items-start overflow-clip relative rounded-[20px] shrink-0 w-full" data-node-id="1:616" data-name="Article card" data-category={published[2]?.category?.toUpperCase() || "WEALTH FOUNDATIONS"}>
+            <div className="content-stretch flex flex-col items-start overflow-clip p-[14px] relative shrink-0 w-full" style={{ backgroundColor: published[2]?.color || "#ffe6d3" }} data-node-id="1:617" data-name="Article artwork">
               <div className="h-[220px] relative rounded-[12px] shrink-0 w-full" data-node-id="1:618" data-name="Story photograph">
                 <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[12px]">
-                  <img alt="" className="absolute left-0 max-w-none size-full top-0" src={imgStoryPhotograph3} />
+                  <img alt="" className="absolute left-0 max-w-none size-full top-0" src={published[2]?.imageUrl || imgStoryPhotograph3} />
                 </div>
               </div>
             </div>
             <div className="[word-break:break-word] content-stretch flex flex-col gap-[16px] items-start overflow-clip p-[24px] relative shrink-0 w-full" data-node-id="1:619" data-name="Article summary">
               <p className="font-['Special_Elite:Regular'] leading-[1.5] min-w-full not-italic relative shrink-0 text-[#081d2b] text-[11px] w-[min-content]" data-node-id="1:620">
-                WEALTH FOUNDATIONS
+                {published[2]?.category?.toUpperCase() || "WEALTH FOUNDATIONS"}
               </p>
               <p className="font-['Oswald:SemiBold'] font-semibold leading-[1.15] min-w-full relative shrink-0 text-[#081d2b] text-[29px] w-[min-content]" data-node-id="1:621">
-                THE RECIPE FOR GROWTH
+                {published[2]?.title || "THE RECIPE FOR GROWTH"}
               </p>
               <p className="font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[#56646c] text-[16px] w-[min-content]" data-node-id="1:622" style={{ fontVariationSettings: '"wdth" 100' }}>
-                Mixing the right ingredients to turn your savings into long-term wealth.
+                {published[2]?.description || "Mixing the right ingredients to turn your savings into long-term wealth."}
               </p>
-              <button type="button" onClick={() => openArticle("recipe-for-growth")} className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:623" data-name="Article link">
+              <button type="button" onClick={() => openArticle(published[2]?.id || "recipe-for-growth")} className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:623" data-name="Article link">
                 <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:624" style={{ fontVariationSettings: '"wdth" 100' }}>
                   Read article
                 </p>
@@ -289,25 +294,25 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
               </button>
             </div>
           </div>
-          <div className="bg-[#fffdfa] content-stretch flex flex-col items-start overflow-clip relative rounded-[20px] shrink-0 w-full" data-node-id="1:626" data-name="Article card" data-category="RETIREMENT">
-            <div className="bg-[#dfeff8] content-stretch flex flex-col items-start overflow-clip p-[14px] relative shrink-0 w-full" data-node-id="1:627" data-name="Article artwork">
+          <div className="bg-[#fffdfa] content-stretch flex flex-col items-start overflow-clip relative rounded-[20px] shrink-0 w-full" data-node-id="1:626" data-name="Article card" data-category={published[3]?.category?.toUpperCase() || "RETIREMENT"}>
+            <div className="content-stretch flex flex-col items-start overflow-clip p-[14px] relative shrink-0 w-full" style={{ backgroundColor: published[3]?.color || "#dfeff8" }} data-node-id="1:627" data-name="Article artwork">
               <div className="h-[220px] relative rounded-[12px] shrink-0 w-full" data-node-id="1:628" data-name="Story photograph">
                 <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[12px]">
-                  <img alt="" className="absolute left-0 max-w-none size-full top-0" src={imgStoryPhotograph4} />
+                  <img alt="" className="absolute left-0 max-w-none size-full top-0" src={published[3]?.imageUrl || imgStoryPhotograph4} />
                 </div>
               </div>
             </div>
             <div className="[word-break:break-word] content-stretch flex flex-col gap-[16px] items-start overflow-clip p-[24px] relative shrink-0 w-full" data-node-id="1:629" data-name="Article summary">
               <p className="font-['Special_Elite:Regular'] leading-[1.5] min-w-full not-italic relative shrink-0 text-[#081d2b] text-[11px] w-[min-content]" data-node-id="1:630">
-                RETIREMENT
+                {published[3]?.category?.toUpperCase() || "RETIREMENT"}
               </p>
               <p className="font-['Oswald:SemiBold'] font-semibold leading-[1.15] min-w-full relative shrink-0 text-[#081d2b] text-[29px] w-[min-content]" data-node-id="1:631">
-                THE WORKER’S EDGE
+                {published[3]?.title || "THE WORKER'S EDGE"}
               </p>
               <p className="font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[#56646c] text-[16px] w-[min-content]" data-node-id="1:632" style={{ fontVariationSettings: '"wdth" 100' }}>
-                Turning everyday income into a retirement plan that actually works.
+                {published[3]?.description || "Turning everyday income into a retirement plan that actually works."}
               </p>
-              <button type="button" onClick={() => openArticle("workers-edge")} className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:633" data-name="Article link">
+              <button type="button" onClick={() => openArticle(published[3]?.id || "workers-edge")} className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:633" data-name="Article link">
                 <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:634" style={{ fontVariationSettings: '"wdth" 100' }}>
                   Read article
                 </p>
@@ -317,25 +322,25 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
               </button>
             </div>
           </div>
-          <div className="bg-[#fffdfa] content-stretch flex flex-col items-start overflow-clip relative rounded-[20px] shrink-0 w-full" data-node-id="1:636" data-name="Article card" data-category="PROTECTION">
-            <div className="bg-[#ffe6d3] content-stretch flex flex-col items-start overflow-clip p-[14px] relative shrink-0 w-full" data-node-id="1:637" data-name="Article artwork">
+          <div className="bg-[#fffdfa] content-stretch flex flex-col items-start overflow-clip relative rounded-[20px] shrink-0 w-full" data-node-id="1:636" data-name="Article card" data-category={published[4]?.category?.toUpperCase() || "PROTECTION"}>
+            <div className="content-stretch flex flex-col items-start overflow-clip p-[14px] relative shrink-0 w-full" style={{ backgroundColor: published[4]?.color || "#ffe6d3" }} data-node-id="1:637" data-name="Article artwork">
               <div className="h-[220px] relative rounded-[12px] shrink-0 w-full" data-node-id="1:638" data-name="Story photograph">
                 <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[12px]">
-                  <img alt="" className="absolute left-0 max-w-none size-full top-0" src={imgStoryPhotograph5} />
+                  <img alt="" className="absolute left-0 max-w-none size-full top-0" src={published[4]?.imageUrl || imgStoryPhotograph5} />
                 </div>
               </div>
             </div>
             <div className="[word-break:break-word] content-stretch flex flex-col gap-[16px] items-start overflow-clip p-[24px] relative shrink-0 w-full" data-node-id="1:639" data-name="Article summary">
               <p className="font-['Special_Elite:Regular'] leading-[1.5] min-w-full not-italic relative shrink-0 text-[#081d2b] text-[11px] w-[min-content]" data-node-id="1:640">
-                PROTECTION
+                {published[4]?.category?.toUpperCase() || "PROTECTION"}
               </p>
               <p className="font-['Oswald:SemiBold'] font-semibold leading-[1.15] min-w-full relative shrink-0 text-[#081d2b] text-[29px] w-[min-content]" data-node-id="1:641">
-                THE TASTE OF SECURITY
+                {published[4]?.title || "THE TASTE OF SECURITY"}
               </p>
               <p className="font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[#56646c] text-[16px] w-[min-content]" data-node-id="1:642" style={{ fontVariationSettings: '"wdth" 100' }}>
-                Finding peace of mind in a financial plan that’s built to last.
+                {published[4]?.description || "Finding peace of mind in a financial plan that's built to last."}
               </p>
-              <button type="button" onClick={() => openArticle("taste-of-security")} className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:643" data-name="Article link">
+              <button type="button" onClick={() => openArticle(published[4]?.id || "taste-of-security")} className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:643" data-name="Article link">
                 <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:644" style={{ fontVariationSettings: '"wdth" 100' }}>
                   Read article
                 </p>
@@ -345,25 +350,25 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
               </button>
             </div>
           </div>
-          <div className="bg-[#fffdfa] content-stretch flex flex-col items-start overflow-clip relative rounded-[20px] shrink-0 w-full" data-node-id="1:646" data-name="Article card" data-category="INVESTING">
-            <div className="bg-[#d4bcfa] content-stretch flex flex-col items-start overflow-clip p-[14px] relative shrink-0 w-full" data-node-id="1:647" data-name="Article artwork">
+          <div className="bg-[#fffdfa] content-stretch flex flex-col items-start overflow-clip relative rounded-[20px] shrink-0 w-full" data-node-id="1:646" data-name="Article card" data-category={published[5]?.category?.toUpperCase() || "INVESTING"}>
+            <div className="content-stretch flex flex-col items-start overflow-clip p-[14px] relative shrink-0 w-full" style={{ backgroundColor: published[5]?.color || "#d4bcfa" }} data-node-id="1:647" data-name="Article artwork">
               <div className="h-[220px] relative rounded-[12px] shrink-0 w-full" data-node-id="1:648" data-name="Story photograph">
                 <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[12px]">
-                  <img alt="" className="absolute left-0 max-w-none size-full top-0" src={imgStoryPhotograph6} />
+                  <img alt="" className="absolute left-0 max-w-none size-full top-0" src={published[5]?.imageUrl || imgStoryPhotograph6} />
                 </div>
               </div>
             </div>
             <div className="[word-break:break-word] content-stretch flex flex-col gap-[16px] items-start overflow-clip p-[24px] relative shrink-0 w-full" data-node-id="1:649" data-name="Article summary">
               <p className="font-['Special_Elite:Regular'] leading-[1.5] min-w-full not-italic relative shrink-0 text-[#081d2b] text-[11px] w-[min-content]" data-node-id="1:650">
-                INVESTING
+                {published[5]?.category?.toUpperCase() || "INVESTING"}
               </p>
               <p className="font-['Oswald:SemiBold'] font-semibold leading-[1.15] min-w-full relative shrink-0 text-[#081d2b] text-[29px] w-[min-content]" data-node-id="1:651">
-                THE ART OF DIVERSITY
+                {published[5]?.title || "THE ART OF DIVERSITY"}
               </p>
               <p className="font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[#56646c] text-[16px] w-[min-content]" data-node-id="1:652" style={{ fontVariationSettings: '"wdth" 100' }}>
-                Why spreading your assets across different classes can protect your future.
+                {published[5]?.description || "Why spreading your assets across different classes can protect your future."}
               </p>
-              <button type="button" onClick={() => openArticle("art-of-diversity")} className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:653" data-name="Article link">
+              <button type="button" onClick={() => openArticle(published[5]?.id || "art-of-diversity")} className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:653" data-name="Article link">
                 <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:654" style={{ fontVariationSettings: '"wdth" 100' }}>
                   Read article
                 </p>
@@ -378,7 +383,7 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
           <p className="font-['Special_Elite:Regular'] leading-[1.5] min-w-full not-italic relative shrink-0 text-[11px] w-[min-content]" data-node-id="1:657">
             MORE PERSPECTIVES, FURTHER DOWN THE PAGE
           </p>
-          <button type="button" onClick={() => openArticle("art-of-diversity")} className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 whitespace-nowrap article-link" data-node-id="1:658" data-name="Article link">
+          <button type="button" onClick={() => { const a = byTitle("the kitchen table plan"); if (a) setSelectedArticle(a); }} className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 whitespace-nowrap article-link" data-node-id="1:658" data-name="Article link">
             <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:659" style={{ fontVariationSettings: '"wdth" 100' }}>{`Explore life & legacy`}</p>
             <p className="font-['Inter:Regular'] font-normal leading-[normal] not-italic relative shrink-0 text-[22px]" data-node-id="1:660">
               ↗
@@ -401,7 +406,7 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
               <div className="bg-[#fffdfa] content-stretch flex flex-col items-start overflow-clip p-[10px] relative w-full" data-name="Layered photo">
                 <div className="h-[210px] relative shrink-0 w-full" data-node-id="1:667" data-name="Story photograph">
                   <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <img alt="" className="absolute left-0 max-w-none size-full top-0" src={imgStoryPhotograph7} />
+                    <img alt="" className="absolute left-0 max-w-none size-full top-0" src={byTitle("the kitchen table plan")?.imageUrl || imgStoryPhotograph7} />
                   </div>
                 </div>
               </div>
@@ -411,12 +416,12 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
             BEGIN WITH A CONVERSATION
           </p>
           <p className="[word-break:break-word] font-['Oswald:SemiBold'] font-semibold leading-[1.15] min-w-full relative shrink-0 text-[#081d2b] text-[32px] w-[min-content]" data-node-id="1:669">
-            THE KITCHEN TABLE PLAN
+            {byTitle("the kitchen table plan")?.title || "THE KITCHEN TABLE PLAN"}
           </p>
           <p className="[word-break:break-word] font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[#081d2b] text-[16px] w-[min-content]" data-node-id="1:670" style={{ fontVariationSettings: '"wdth" 100' }}>
-            Turning everyday conversations into a clear path to financial freedom.
+            {byTitle("the kitchen table plan")?.description || "Turning everyday conversations into a clear path to financial freedom."}
           </p>
-          <button type="button" onClick={() => openArticle("kitchen-table-plan")} className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:671" data-name="Article link">
+          <button type="button" onClick={() => { const a = byTitle("the kitchen table plan"); if (a) setSelectedArticle(a); }} className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:671" data-name="Article link">
             <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:672" style={{ fontVariationSettings: '"wdth" 100' }}>
               Read article
             </p>
@@ -429,16 +434,16 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
           <div className="bg-[#fffdfa] content-stretch flex flex-col gap-[18px] items-start overflow-clip p-[20px] relative rounded-[20px] shrink-0 w-full" data-node-id="1:675" data-name="Related story">
             <div className="h-[220px] relative rounded-[12px] shrink-0 w-full" data-node-id="1:676" data-name="Story photograph">
               <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[12px]">
-                <img alt="" className="absolute left-0 max-w-none size-full top-0" src={imgStoryPhotograph8} />
+                <img alt="" className="absolute left-0 max-w-none size-full top-0" src={byTitle("the menu for tomorrow")?.imageUrl || imgStoryPhotograph8} />
               </div>
             </div>
             <p className="[word-break:break-word] font-['Oswald:SemiBold'] font-semibold leading-[1.15] min-w-full relative shrink-0 text-[#081d2b] text-[29px] w-[min-content]" data-node-id="1:677">
-              THE MENU FOR TOMORROW
+              {byTitle("the menu for tomorrow")?.title || "THE MENU FOR TOMORROW"}
             </p>
             <p className="[word-break:break-word] font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[#56646c] text-[16px] w-[min-content]" data-node-id="1:678" style={{ fontVariationSettings: '"wdth" 100' }}>
-              Planning for the next decade with a financial strategy that adapts.
+              {byTitle("the menu for tomorrow")?.description || "Planning for the next decade with a financial strategy that adapts."}
             </p>
-            <button type="button" onClick={() => openArticle("menu-for-tomorrow")} className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:679" data-name="Article link">
+            <button type="button" onClick={() => { const a = byTitle("the menu for tomorrow"); if (a) setSelectedArticle(a); }} className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:679" data-name="Article link">
               <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:680" style={{ fontVariationSettings: '"wdth" 100' }}>
                 Read article
               </p>
@@ -450,16 +455,16 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
           <div className="bg-[#fffdfa] content-stretch flex flex-col gap-[18px] items-start overflow-clip p-[20px] relative rounded-[20px] shrink-0 w-full" data-node-id="1:682" data-name="Related story">
             <div className="h-[220px] relative rounded-[12px] shrink-0 w-full" data-node-id="1:683" data-name="Story photograph">
               <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[12px]">
-                <img alt="" className="absolute left-0 max-w-none size-full top-0" src={imgStoryPhotograph9} />
+                <img alt="" className="absolute left-0 max-w-none size-full top-0" src={byTitle("the harmony of risk")?.imageUrl || imgStoryPhotograph9} />
               </div>
             </div>
             <p className="[word-break:break-word] font-['Oswald:SemiBold'] font-semibold leading-[1.15] min-w-full relative shrink-0 text-[#081d2b] text-[29px] w-[min-content]" data-node-id="1:684">
-              THE HARMONY OF RISK
+              {byTitle("the harmony of risk")?.title || "THE HARMONY OF RISK"}
             </p>
             <p className="[word-break:break-word] font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[#56646c] text-[16px] w-[min-content]" data-node-id="1:685" style={{ fontVariationSettings: '"wdth" 100' }}>
-              Balancing protection and growth so your plan stays in tune.
+              {byTitle("the harmony of risk")?.description || "Balancing protection and growth so your plan stays in tune."}
             </p>
-            <button type="button" onClick={() => openArticle("harmony-of-risk")} className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:686" data-name="Article link">
+            <button type="button" onClick={() => { const a = byTitle("the harmony of risk"); if (a) setSelectedArticle(a); }} className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap article-link" data-node-id="1:686" data-name="Article link">
               <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:687" style={{ fontVariationSettings: '"wdth" 100' }}>
                 Read article
               </p>
@@ -486,20 +491,20 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
             <div className="bg-[#ae7a41] content-stretch flex flex-col items-start overflow-clip p-[10px] relative shrink-0 w-full" data-node-id="1:695" data-name="Portrait print">
               <div className="h-[230px] relative shrink-0 w-full" data-node-id="1:696" data-name="Story photograph">
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                  <img alt="" className="absolute left-0 max-w-none size-full top-0" src={imgStoryPhotograph10} />
+                  <img alt="" className="absolute left-0 max-w-none size-full top-0" src={byTitle("the service standard")?.imageUrl || imgStoryPhotograph10} />
                 </div>
               </div>
             </div>
             <p className="[word-break:break-word] font-['Special_Elite:Regular'] leading-[1.5] min-w-full not-italic relative shrink-0 text-[#e6ba65] text-[11px] w-[min-content]" data-node-id="1:697">
-              GUIDANCE
+              {byTitle("the service standard")?.category?.toUpperCase() || "GUIDANCE"}
             </p>
             <p className="[word-break:break-word] font-['Oswald:SemiBold'] font-semibold leading-[1.15] min-w-full relative shrink-0 text-[#fffdfa] text-[30px] w-[min-content]" data-node-id="1:698">
-              THE SERVICE STANDARD
+              {byTitle("the service standard")?.title || "THE SERVICE STANDARD"}
             </p>
             <p className="[word-break:break-word] font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[16px] text-[rgba(255,255,255,0.8)] w-[min-content]" data-node-id="1:699" style={{ fontVariationSettings: '"wdth" 100' }}>
-              What exceptional service looks like when your money is on the line.
+              {byTitle("the service standard")?.description || "What exceptional service looks like when your money is on the line."}
             </p>
-            <button type="button" onClick={() => openArticle("service-standard")} className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#e6ba65] whitespace-nowrap article-link" data-node-id="1:700" data-name="Article link">
+            <button type="button" onClick={() => { const a = byTitle("the service standard"); if (a) setSelectedArticle(a); }} className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#e6ba65] whitespace-nowrap article-link" data-node-id="1:700" data-name="Article link">
               <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:701" style={{ fontVariationSettings: '"wdth" 100' }}>
                 Read article
               </p>
@@ -512,20 +517,20 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
             <div className="bg-[#ae7a41] content-stretch flex flex-col items-start overflow-clip p-[10px] relative shrink-0 w-full" data-node-id="1:704" data-name="Portrait print">
               <div className="h-[230px] relative shrink-0 w-full" data-node-id="1:705" data-name="Story photograph">
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                  <img alt="" className="absolute left-0 max-w-none size-full top-0" src={imgStoryPhotograph11} />
+                  <img alt="" className="absolute left-0 max-w-none size-full top-0" src={byTitle("the community effect")?.imageUrl || imgStoryPhotograph11} />
                 </div>
               </div>
             </div>
             <p className="[word-break:break-word] font-['Special_Elite:Regular'] leading-[1.5] min-w-full not-italic relative shrink-0 text-[#e6ba65] text-[11px] w-[min-content]" data-node-id="1:706">
-              CONNECTION
+              {byTitle("the community effect")?.category?.toUpperCase() || "CONNECTION"}
             </p>
             <p className="[word-break:break-word] font-['Oswald:SemiBold'] font-semibold leading-[1.15] min-w-full relative shrink-0 text-[#fffdfa] text-[30px] w-[min-content]" data-node-id="1:707">
-              THE COMMUNITY EFFECT
+              {byTitle("the community effect")?.title || "THE COMMUNITY EFFECT"}
             </p>
             <p className="[word-break:break-word] font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[16px] text-[rgba(255,255,255,0.8)] w-[min-content]" data-node-id="1:708" style={{ fontVariationSettings: '"wdth" 100' }}>
-              How local relationships can strengthen your long-term financial outlook.
+              {byTitle("the community effect")?.description || "How local relationships can strengthen your long-term financial outlook."}
             </p>
-            <button type="button" onClick={() => openArticle("community-effect")} className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#e6ba65] whitespace-nowrap article-link" data-node-id="1:709" data-name="Article link">
+            <button type="button" onClick={() => { const a = byTitle("the community effect"); if (a) setSelectedArticle(a); }} className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#e6ba65] whitespace-nowrap article-link" data-node-id="1:709" data-name="Article link">
               <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:710" style={{ fontVariationSettings: '"wdth" 100' }}>
                 Read article
               </p>
@@ -538,20 +543,20 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
             <div className="bg-[#ae7a41] content-stretch flex flex-col items-start overflow-clip p-[10px] relative shrink-0 w-full" data-node-id="1:713" data-name="Portrait print">
               <div className="h-[230px] relative shrink-0 w-full" data-node-id="1:714" data-name="Story photograph">
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                  <img alt="" className="absolute left-0 max-w-none size-full top-0" src={imgStoryPhotograph12} />
+                  <img alt="" className="absolute left-0 max-w-none size-full top-0" src={byTitle("the future of finance")?.imageUrl || imgStoryPhotograph12} />
                 </div>
               </div>
             </div>
             <p className="[word-break:break-word] font-['Special_Elite:Regular'] leading-[1.5] min-w-full not-italic relative shrink-0 text-[#e6ba65] text-[11px] w-[min-content]" data-node-id="1:715">
-              WHAT COMES NEXT
+              {byTitle("the future of finance")?.category?.toUpperCase() || "WHAT COMES NEXT"}
             </p>
             <p className="[word-break:break-word] font-['Oswald:SemiBold'] font-semibold leading-[1.15] min-w-full relative shrink-0 text-[#fffdfa] text-[30px] w-[min-content]" data-node-id="1:716">
-              THE FUTURE OF FINANCE
+              {byTitle("the future of finance")?.title || "THE FUTURE OF FINANCE"}
             </p>
             <p className="[word-break:break-word] font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[16px] text-[rgba(255,255,255,0.8)] w-[min-content]" data-node-id="1:717" style={{ fontVariationSettings: '"wdth" 100' }}>
-              What the next generation of wealth-building looks like in practice.
+              {byTitle("the future of finance")?.description || "What the next generation of wealth-building looks like in practice."}
             </p>
-            <button type="button" onClick={() => openArticle("future-of-finance")} className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#e6ba65] whitespace-nowrap article-link" data-node-id="1:718" data-name="Article link">
+            <button type="button" onClick={() => { const a = byTitle("the future of finance"); if (a) setSelectedArticle(a); }} className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#e6ba65] whitespace-nowrap article-link" data-node-id="1:718" data-name="Article link">
               <p className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]" data-node-id="1:719" style={{ fontVariationSettings: '"wdth" 100' }}>
                 Read article
               </p>
@@ -686,7 +691,7 @@ export default function KseInsightMobile({ onShowEvents }: InsightsPageProps) {
         </div>
       </div>
     </div>
-    <InsightModal article={selectedArticle} onClose={() => setSelectedArticle(null)} />
+    <InsightModal article={selectedArticle ? toInsightArticle(selectedArticle) : null} onClose={() => setSelectedArticle(null)} />
     </>
   );
 }

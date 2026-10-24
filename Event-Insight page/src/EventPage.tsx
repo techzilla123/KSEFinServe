@@ -240,7 +240,7 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                                                             }}
                                                           >
                                                             <p className="leading-[21px]">
-                                                              thegameawards
+                                                              KSEFinServe
                                                             </p>
                                                           </div>
                                                         </div>
@@ -260,7 +260,7 @@ export default function EventPage({ onModeChange }: EventPageProps) {
                                                         }}
                                                       >
                                                         <p className="leading-[9.9px]">
-                                                          thegameawards
+                                                          KSEFinServe
                                                         </p>
                                                       </div>
                                                     </div>

@@ -1,0 +1,10 @@
+{
+  "description": "This application provides a comprehensive admin dashboard for user management, including login, password reset, and insights management features.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

@@ -5,6 +5,8 @@ import {
   type ComponentProps,
   type ReactNode,
 } from "react"
+import Chatbot from "./chat/Chatbot"
+import "./chat/chatbot.css"
 
 const assetPathPrefix = "/assets"
 const artwork = {
@@ -525,7 +527,7 @@ export default function SiteLayout({
               <Link href="/service" onClick={(e) => { e.preventDefault(); navigate("/service") }}>How I Can Help</Link>
               <Link href="/career" onClick={(e) => { e.preventDefault(); navigate("/career") }}>Career</Link>
               <Link href="/#testimonials" onClick={(e) => { e.preventDefault(); navigate("/#testimonials") }}>Testimonial</Link>
-              <Link href="/" onClick={(e) => { e.preventDefault(); navigate("/") }}>Events</Link>
+              <Link href="/events" onClick={(e) => { e.preventDefault(); navigate("/events") }}>Events</Link>
               <a href="/contact" onClick={(e) => { e.preventDefault(); navigate("/contact") }}>Contact Us</a>
             </nav>
             <div className="footer-socials">
@@ -539,7 +541,7 @@ export default function SiteLayout({
           <div className="footer-calculators flex items-center justify-between">
             <Eyebrow className="footer-calculators-title">Financial Calculators</Eyebrow>
             <div className="flex flex-wrap gap-6">
-              {calculators.map((calculator) => (<Button key={calculator} variant="text" onClick={() => setPanel({ kind: "calculator", calculator })}>{calculator}</Button>))}
+              {calculators.map((calculator) => (<Link key={calculator} href={calculatorRoutes[calculator]} onClick={(e) => { e.preventDefault(); navigate(calculatorRoutes[calculator]) }} className="footer-calculator-link">{calculator}</Link>))}
             </div>
           </div>
           <div className="footer-copyright flex flex-wrap items-center justify-between gap-3">
@@ -548,6 +550,7 @@ export default function SiteLayout({
           </div>
         </div>
       </footer>
+      <Chatbot activePath={typeof window === "undefined" ? "/" : window.location.pathname} />
     </>
   )
 }

@@ -1,5 +1,6 @@
 import { useState } from "react"
-
+import { InsightModal, toInsightArticle } from "./insightArticles"
+import { useInsights, type Insight } from "./admin/insightsDirectory"
 const assetPathPrefix = "/assets"
 const imgCoralSculpture = `${assetPathPrefix}/ced68.png`
 const imgBlueSculpture = `${assetPathPrefix}/10be3.png`
@@ -38,42 +39,25 @@ const insightArticles = [
   { id: "different-lens", category: "WEALTH FOUNDATIONS", title: "WHERE ARE ALL YOUR ASSETS?", description: "A closer look at hidden wealth and the gaps in your current portfolio.", image: imgStoryPhotograph12, color: "#ffd4b8", readTime: "7 min read", content: "A closer look at hidden wealth and the gaps in your current portfolio.\n\nStart with what you own, what you owe and what matters most. A clearer picture is the first step towards a more intentional plan.\n\nThis featured essay takes a different lens on everyday wealth, exploring the hidden assets and gaps in your current portfolio.\n\nDiscover how to get a clearer picture of your financial situation." },
 ]
 
-function InsightModal({ article, onClose }: { article: typeof insightArticles[number] | null; onClose: () => void }) {
-  if (!article) return null
-  return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-      <div className="relative bg-white rounded-[24px] max-w-[720px] w-full max-h-[90vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
-        <div className="relative h-[280px] overflow-hidden rounded-t-[24px]" style={{ backgroundColor: article.color }}>
-          <img src={article.image} alt="" className="absolute inset-0 w-full h-full object-cover rounded-t-[24px]" />
-          <button onClick={onClose} className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 flex items-center justify-center text-xl font-bold text-[#081d2b] hover:bg-white transition-colors">✕</button>
-        </div>
-        <div className="p-8 pb-10">
-          <div className="flex items-center gap-3 mb-4">
-            <p className="font-['Special_Elite:Regular'] text-[13px] text-[#081d2b]">{article.category}</p>
-            {article.readTime && <span className="text-[12px] text-[#56646c]">· {article.readTime}</span>}
-          </div>
-          <h2 className="font-['Oswald:SemiBold'] text-[32px] leading-[1.15] text-[#081d2b] mb-6">{article.title}</h2>
-          <div className="font-['Mona_Sans:Regular'] text-[16px] leading-[1.7] text-[#56646c] mb-8">
-            {article.content.split('\n\n').map((paragraph, i) => (
-              <p key={i} className={i > 0 ? 'mt-4' : ''}>{paragraph}</p>
-            ))}
-          </div>
-          <button onClick={onClose} className="bg-[#0d2b42] text-white px-8 py-3 rounded-[100px] font-['Manrope:Bold'] text-[14px] hover:brightness(1.15) transition-all">Close</button>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 export default function InsightPage({ onModeChange }: InsightPageProps) {
   const [activeFilter, setActiveFilter] = useState("all")
-  const [selectedArticle, setSelectedArticle] = useState<typeof insightArticles[number] | null>(null)
+  const [selectedArticle, setSelectedArticle] = useState<Insight | null>(null)
+
+  // Live articles from Supabase. Only Published ones are public.
+  const { insights, loading } = useInsights()
+  const published = insights.filter((a) => a.status === "Published")
 
   const openArticle = (id: string) => {
-    const article = insightArticles.find(a => a.id === id)
+    const article = published.find(a => a.id === id) ?? published.find(a => a.title.toLowerCase() === id)
     if (article) setSelectedArticle(article)
   }
+
+  // The reading-trail and perspective sections reference articles by their
+  // original slug; look them up by title so they follow the live data.
+  const byTitle = (title: string) => published.find(a => a.title.toLowerCase() === title) ?? null
+  // The featured essay is the one the admin marked as featured.
+  const featured = published.find(a => a.featured) ?? published[published.length - 1] ?? null
 
   return (
     <>
@@ -329,7 +313,7 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                   <img
                     alt=""
                     className="absolute left-0 max-w-none size-full top-0"
-                    src={imgStoryPhotograph2}
+                    src={featured?.imageUrl || imgStoryPhotograph2}
                   />
                 </div>
               </div>
@@ -367,30 +351,28 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                 className="[word-break:break-word] font-['Oswald:SemiBold'] font-semibold leading-[0] min-w-full relative shrink-0 text-[#081d2b] text-[54px] w-[min-content]"
                 data-node-id="1:685"
               >
-                <p className="leading-[1.05] mb-0">WHERE ARE ALL</p>
-                <p className="leading-[1.05]">YOUR ASSETS?</p>
+                <p className="leading-[1.05] mb-0">{(featured?.title || "WHERE ARE ALL YOUR ASSETS?").split(" ").slice(0, 2).join(" ")}</p>
+                <p className="leading-[1.05]">{(featured?.title || "WHERE ARE ALL YOUR ASSETS?").split(" ").slice(2).join(" ")}</p>
               </div>
               <p
                 className="[word-break:break-word] font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[#56646c] text-[18px] w-[min-content]"
                 data-node-id="1:686"
                 style={{ fontVariationSettings: '"wdth" 100' }}
               >
-                A closer look at hidden wealth and the gaps in your current
-                portfolio.
+                {featured?.description || "A closer look at hidden wealth and the gaps in your current portfolio."}
               </p>
               <p
                 className="[word-break:break-word] font-['Mona_Sans:Regular'] font-normal leading-[1.5] min-w-full relative shrink-0 text-[#081d2b] text-[16px] w-[min-content]"
                 data-node-id="1:687"
                 style={{ fontVariationSettings: '"wdth" 100' }}
               >
-                Start with what you own, what you owe and what matters most. A
-                clearer picture is the first step towards a more intentional
-                plan.
+                {featured?.content?.split("\n\n")[1] || "Start with what you own, what you owe and what matters most. A clearer picture is the first step towards a more intentional plan."}
               </p>
               <button
                 className="bg-[#0d2b42] content-stretch flex h-[48px] items-center justify-center px-[24px] relative rounded-[999px] shrink-0 w-[230px]"
                 data-node-id="1:688"
                 data-name="Editorial action"
+                onClick={() => featured && setSelectedArticle(featured)}
               >
                 <p
                   className="[word-break:break-word] font-['Manrope:Bold'] font-bold leading-[normal] relative shrink-0 text-[#fffdfa] text-[14px] whitespace-nowrap"
@@ -473,10 +455,11 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                 className="bg-[#fffdfa] content-stretch flex flex-[1_0_0] flex-col items-start min-w-px overflow-clip relative rounded-[24px]"
                 data-node-id="1:705"
                 data-name="Article card"
-                data-category="INVESTING"
+                data-category={published[0]?.category?.toUpperCase() || "INVESTING"}
               >
                 <div
-                  className="bg-[#d4bcfa] content-stretch flex flex-col h-[255px] items-start overflow-clip p-[16px] relative shrink-0 w-full"
+                  className="content-stretch flex flex-col h-[255px] items-start overflow-clip p-[16px] relative shrink-0 w-full"
+                  style={{ backgroundColor: published[0]?.color || "#d4bcfa" }}
                   data-node-id="1:706"
                   data-name="Article artwork"
                 >
@@ -489,7 +472,7 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                       <img
                         alt=""
                         className="absolute left-0 max-w-none size-full top-0"
-                        src={imgStoryPhotograph}
+                        src={published[0]?.imageUrl || imgStoryPhotograph}
                       />
                     </div>
                   </div>
@@ -503,13 +486,13 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                     className="[word-break:break-word] font-['Special_Elite:Regular'] leading-[1.4] not-italic relative shrink-0 text-[#081d2b] text-[13px] whitespace-nowrap"
                     data-node-id="1:709"
                   >
-                    INVESTING
+                    {published[0]?.category?.toUpperCase() || "INVESTING"}
                   </p>
                   <p
                     className="[word-break:break-word] font-['Oswald:SemiBold'] font-semibold leading-[1.15] min-w-full relative shrink-0 text-[#081d2b] text-[29px] w-[min-content]"
                     data-node-id="1:710"
                   >
-                    THE CRAFT OF WEALTH
+                    {published[0]?.title || "THE CRAFT OF WEALTH"}
                   </p>
                   <div
                     className="content-stretch flex flex-col items-start min-h-[78px] overflow-clip relative shrink-0 w-full"
@@ -521,15 +504,14 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                       data-node-id="1:712"
                       style={{ fontVariationSettings: '"wdth" 100' }}
                     >
-                      How artisanal investing can help you build a more
-                      resilient financial future.
+                      {published[0]?.description || "How artisanal investing can help you build a more resilient financial future."}
                     </p>
                   </div>
                   <button type="button"
                     className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap"
                     data-node-id="1:713"
                     data-name="Article link"
-                   onClick={() => openArticle("craft-of-wealth")}><span
+                   onClick={() => openArticle(published[0]?.id || "craft-of-wealth")}><span
                       className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]"
                       data-node-id="1:714"
                       style={{ fontVariationSettings: '"wdth" 100' }}
@@ -544,10 +526,11 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                 className="bg-[#fffdfa] content-stretch flex flex-[1_0_0] flex-col items-start min-w-px overflow-clip relative rounded-[24px]"
                 data-node-id="1:716"
                 data-name="Article card"
-                data-category="INVESTING"
+                data-category={published[1]?.category?.toUpperCase() || "INVESTING"}
               >
                 <div
-                  className="bg-[#dfeff8] content-stretch flex flex-col h-[255px] items-start overflow-clip p-[16px] relative shrink-0 w-full"
+                  className="content-stretch flex flex-col h-[255px] items-start overflow-clip p-[16px] relative shrink-0 w-full"
+                  style={{ backgroundColor: published[1]?.color || "#dfeff8" }}
                   data-node-id="1:717"
                   data-name="Article artwork"
                 >
@@ -560,7 +543,7 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                       <img
                         alt=""
                         className="absolute left-0 max-w-none size-full top-0"
-                        src={imgStoryPhotograph1}
+                        src={published[1]?.imageUrl || imgStoryPhotograph1}
                       />
                     </div>
                   </div>
@@ -574,13 +557,13 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                     className="[word-break:break-word] font-['Special_Elite:Regular'] leading-[1.4] not-italic relative shrink-0 text-[#081d2b] text-[13px] whitespace-nowrap"
                     data-node-id="1:720"
                   >
-                    INVESTING
+                    {published[1]?.category?.toUpperCase() || "INVESTING"}
                   </p>
                   <p
                     className="[word-break:break-word] font-['Oswald:SemiBold'] font-semibold leading-[1.15] min-w-full relative shrink-0 text-[#081d2b] text-[29px] w-[min-content]"
                     data-node-id="1:721"
                   >
-                    THE RHYTHM OF RETURNS
+                    {published[1]?.title || "THE RHYTHM OF RETURNS"}
                   </p>
                   <div
                     className="content-stretch flex flex-col items-start min-h-[78px] overflow-clip relative shrink-0 w-full"
@@ -592,15 +575,14 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                       data-node-id="1:723"
                       style={{ fontVariationSettings: '"wdth" 100' }}
                     >
-                      Timing the market is hard, but timing your financial goals
-                      doesn’t have to be.
+                      {published[1]?.description || "Timing the market is hard, but timing your financial goals doesn't have to be."}
                     </p>
                   </div>
                   <button type="button"
                     className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap"
                     data-node-id="1:724"
                     data-name="Article link"
-                   onClick={() => openArticle("rhythm-of-returns")}><span
+                   onClick={() => openArticle(published[1]?.id || "rhythm-of-returns")}><span
                       className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]"
                       data-node-id="1:725"
                       style={{ fontVariationSettings: '"wdth" 100' }}
@@ -615,10 +597,11 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                 className="bg-[#fffdfa] content-stretch flex flex-[1_0_0] flex-col items-start min-w-px overflow-clip relative rounded-[24px]"
                 data-node-id="1:727"
                 data-name="Article card"
-                data-category="WEALTH FOUNDATIONS"
+                data-category={published[2]?.category?.toUpperCase() || "WEALTH FOUNDATIONS"}
               >
                 <div
-                  className="bg-[#ffe6d3] content-stretch flex flex-col h-[255px] items-start overflow-clip p-[16px] relative shrink-0 w-full"
+                  className="content-stretch flex flex-col h-[255px] items-start overflow-clip p-[16px] relative shrink-0 w-full"
+                  style={{ backgroundColor: published[2]?.color || "#ffe6d3" }}
                   data-node-id="1:728"
                   data-name="Article artwork"
                 >
@@ -631,7 +614,7 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                       <img
                         alt=""
                         className="absolute left-0 max-w-none size-full top-0"
-                        src={imgStoryPhotograph3}
+                        src={published[2]?.imageUrl || imgStoryPhotograph3}
                       />
                     </div>
                   </div>
@@ -645,13 +628,13 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                     className="[word-break:break-word] font-['Special_Elite:Regular'] leading-[1.4] not-italic relative shrink-0 text-[#081d2b] text-[13px] whitespace-nowrap"
                     data-node-id="1:731"
                   >
-                    WEALTH FOUNDATIONS
+                    {published[2]?.category?.toUpperCase() || "WEALTH FOUNDATIONS"}
                   </p>
                   <p
                     className="[word-break:break-word] font-['Oswald:SemiBold'] font-semibold leading-[1.15] min-w-full relative shrink-0 text-[#081d2b] text-[29px] w-[min-content]"
                     data-node-id="1:732"
                   >
-                    THE RECIPE FOR GROWTH
+                    {published[2]?.title || "THE RECIPE FOR GROWTH"}
                   </p>
                   <div
                     className="content-stretch flex flex-col items-start min-h-[78px] overflow-clip relative shrink-0 w-full"
@@ -663,15 +646,14 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                       data-node-id="1:734"
                       style={{ fontVariationSettings: '"wdth" 100' }}
                     >
-                      Mixing the right ingredients to turn your savings into
-                      long-term wealth.
+                      {published[2]?.description || "Mixing the right ingredients to turn your savings into long-term wealth."}
                     </p>
                   </div>
                   <button type="button"
                     className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap"
                     data-node-id="1:735"
                     data-name="Article link"
-                   onClick={() => openArticle("recipe-for-growth")}><span
+                   onClick={() => openArticle(published[2]?.id || "recipe-for-growth")}><span
                       className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]"
                       data-node-id="1:736"
                       style={{ fontVariationSettings: '"wdth" 100' }}
@@ -692,10 +674,11 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                 className="bg-[#fffdfa] content-stretch flex flex-[1_0_0] flex-col items-start min-w-px overflow-clip relative rounded-[24px]"
                 data-node-id="1:739"
                 data-name="Article card"
-                data-category="RETIREMENT"
+                data-category={published[3]?.category?.toUpperCase() || "RETIREMENT"}
               >
                 <div
-                  className="bg-[#dfeff8] content-stretch flex flex-col h-[255px] items-start overflow-clip p-[16px] relative shrink-0 w-full"
+                  className="content-stretch flex flex-col h-[255px] items-start overflow-clip p-[16px] relative shrink-0 w-full"
+                  style={{ backgroundColor: published[3]?.color || "#dfeff8" }}
                   data-node-id="1:740"
                   data-name="Article artwork"
                 >
@@ -708,7 +691,7 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                       <img
                         alt=""
                         className="absolute left-0 max-w-none size-full top-0"
-                        src={imgStoryPhotograph4}
+                        src={published[3]?.imageUrl || imgStoryPhotograph4}
                       />
                     </div>
                   </div>
@@ -722,13 +705,13 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                     className="[word-break:break-word] font-['Special_Elite:Regular'] leading-[1.4] not-italic relative shrink-0 text-[#081d2b] text-[13px] whitespace-nowrap"
                     data-node-id="1:743"
                   >
-                    RETIREMENT
+                    {published[3]?.category?.toUpperCase() || "RETIREMENT"}
                   </p>
                   <p
                     className="[word-break:break-word] font-['Oswald:SemiBold'] font-semibold leading-[1.15] min-w-full relative shrink-0 text-[#081d2b] text-[29px] w-[min-content]"
                     data-node-id="1:744"
                   >
-                    THE WORKER’S EDGE
+                    {published[3]?.title || "THE WORKER'S EDGE"}
                   </p>
                   <div
                     className="content-stretch flex flex-col items-start min-h-[78px] overflow-clip relative shrink-0 w-full"
@@ -740,15 +723,14 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                       data-node-id="1:746"
                       style={{ fontVariationSettings: '"wdth" 100' }}
                     >
-                      Turning everyday income into a retirement plan that
-                      actually works.
+                      {published[3]?.description || "Turning everyday income into a retirement plan that actually works."}
                     </p>
                   </div>
                   <button type="button"
                     className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap"
                     data-node-id="1:747"
                     data-name="Article link"
-                   onClick={() => openArticle("workers-edge")}><span
+                   onClick={() => openArticle(published[3]?.id || "workers-edge")}><span
                       className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]"
                       data-node-id="1:748"
                       style={{ fontVariationSettings: '"wdth" 100' }}
@@ -763,10 +745,11 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                 className="bg-[#fffdfa] content-stretch flex flex-[1_0_0] flex-col items-start min-w-px overflow-clip relative rounded-[24px]"
                 data-node-id="1:750"
                 data-name="Article card"
-                data-category="PROTECTION"
+                data-category={published[4]?.category?.toUpperCase() || "PROTECTION"}
               >
                 <div
-                  className="bg-[#ffe6d3] content-stretch flex flex-col h-[255px] items-start overflow-clip p-[16px] relative shrink-0 w-full"
+                  className="content-stretch flex flex-col h-[255px] items-start overflow-clip p-[16px] relative shrink-0 w-full"
+                  style={{ backgroundColor: published[4]?.color || "#ffe6d3" }}
                   data-node-id="1:751"
                   data-name="Article artwork"
                 >
@@ -779,7 +762,7 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                       <img
                         alt=""
                         className="absolute left-0 max-w-none size-full top-0"
-                        src={imgStoryPhotograph5}
+                        src={published[4]?.imageUrl || imgStoryPhotograph5}
                       />
                     </div>
                   </div>
@@ -793,13 +776,13 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                     className="[word-break:break-word] font-['Special_Elite:Regular'] leading-[1.4] not-italic relative shrink-0 text-[#081d2b] text-[13px] whitespace-nowrap"
                     data-node-id="1:754"
                   >
-                    PROTECTION
+                    {published[4]?.category?.toUpperCase() || "PROTECTION"}
                   </p>
                   <p
                     className="[word-break:break-word] font-['Oswald:SemiBold'] font-semibold leading-[1.15] min-w-full relative shrink-0 text-[#081d2b] text-[29px] w-[min-content]"
                     data-node-id="1:755"
                   >
-                    THE TASTE OF SECURITY
+                    {published[4]?.title || "THE TASTE OF SECURITY"}
                   </p>
                   <div
                     className="content-stretch flex flex-col items-start min-h-[78px] overflow-clip relative shrink-0 w-full"
@@ -811,15 +794,14 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                       data-node-id="1:757"
                       style={{ fontVariationSettings: '"wdth" 100' }}
                     >
-                      Finding peace of mind in a financial plan that’s built to
-                      last.
+                      {published[4]?.description || "Finding peace of mind in a financial plan that's built to last."}
                     </p>
                   </div>
                   <button type="button"
                     className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap"
                     data-node-id="1:758"
                     data-name="Article link"
-                   onClick={() => openArticle("taste-of-security")}><span
+                   onClick={() => openArticle(published[4]?.id || "taste-of-security")}><span
                       className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]"
                       data-node-id="1:759"
                       style={{ fontVariationSettings: '"wdth" 100' }}
@@ -834,10 +816,11 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                 className="bg-[#fffdfa] content-stretch flex flex-[1_0_0] flex-col items-start min-w-px overflow-clip relative rounded-[24px]"
                 data-node-id="1:761"
                 data-name="Article card"
-                data-category="INVESTING"
+                data-category={published[5]?.category?.toUpperCase() || "INVESTING"}
               >
                 <div
-                  className="bg-[#d4bcfa] content-stretch flex flex-col h-[255px] items-start overflow-clip p-[16px] relative shrink-0 w-full"
+                  className="content-stretch flex flex-col h-[255px] items-start overflow-clip p-[16px] relative shrink-0 w-full"
+                  style={{ backgroundColor: published[5]?.color || "#d4bcfa" }}
                   data-node-id="1:762"
                   data-name="Article artwork"
                 >
@@ -850,7 +833,7 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                       <img
                         alt=""
                         className="absolute left-0 max-w-none size-full top-0"
-                        src={imgStoryPhotograph6}
+                        src={published[5]?.imageUrl || imgStoryPhotograph6}
                       />
                     </div>
                   </div>
@@ -864,13 +847,13 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                     className="[word-break:break-word] font-['Special_Elite:Regular'] leading-[1.4] not-italic relative shrink-0 text-[#081d2b] text-[13px] whitespace-nowrap"
                     data-node-id="1:765"
                   >
-                    INVESTING
+                    {published[5]?.category?.toUpperCase() || "INVESTING"}
                   </p>
                   <p
                     className="[word-break:break-word] font-['Oswald:SemiBold'] font-semibold leading-[1.15] min-w-full relative shrink-0 text-[#081d2b] text-[29px] w-[min-content]"
                     data-node-id="1:766"
                   >
-                    THE ART OF DIVERSITY
+                    {published[5]?.title || "THE ART OF DIVERSITY"}
                   </p>
                   <div
                     className="content-stretch flex flex-col items-start min-h-[78px] overflow-clip relative shrink-0 w-full"
@@ -882,15 +865,14 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                       data-node-id="1:768"
                       style={{ fontVariationSettings: '"wdth" 100' }}
                     >
-                      Why spreading your assets across different classes can
-                      protect your future.
+                      {published[5]?.description || "Why spreading your assets across different classes can protect your future."}
                     </p>
                   </div>
                   <button type="button"
                     className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap"
                     data-node-id="1:769"
                     data-name="Article link"
-                   onClick={() => openArticle("art-of-diversity")}><span
+                   onClick={() => openArticle(published[5]?.id || "art-of-diversity")}><span
                       className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]"
                       data-node-id="1:770"
                       style={{ fontVariationSettings: '"wdth" 100' }}
@@ -918,7 +900,7 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
               className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0"
               data-node-id="1:774"
               data-name="Article link"
-             onClick={() => openArticle("legacy-building")}>
+             onClick={() => { const a = byTitle("the kitchen table plan"); if (a) setSelectedArticle(a); }}>
               <p
                 className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]"
                 data-node-id="1:775"
@@ -993,12 +975,12 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                       data-name="Story photograph"
                     >
                       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                        <img
-                          alt=""
-                          className="absolute left-0 max-w-none size-full top-0"
-                          src={imgStoryPhotograph7}
-                        />
-                      </div>
+                            <img
+                              alt=""
+                              className="absolute left-0 max-w-none size-full top-0"
+                              src={byTitle("the kitchen table plan")?.imageUrl || imgStoryPhotograph7}
+                            />
+                          </div>
                     </div>
                   </div>
                 </div>
@@ -1013,21 +995,20 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                 className="[word-break:break-word] font-['Oswald:SemiBold'] font-semibold leading-[normal] min-w-full relative shrink-0 text-[#081d2b] text-[38px] w-[min-content]"
                 data-node-id="1:788"
               >
-                THE KITCHEN TABLE PLAN
+                {byTitle("the kitchen table plan")?.title || "THE KITCHEN TABLE PLAN"}
               </p>
               <p
                 className="[word-break:break-word] font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[#081d2b] text-[18px] w-[min-content]"
                 data-node-id="1:789"
                 style={{ fontVariationSettings: '"wdth" 100' }}
               >
-                Turning everyday conversations into a clear path to financial
-                freedom.
+                {byTitle("the kitchen table plan")?.description || "Turning everyday conversations into a clear path to financial freedom."}
               </p>
               <button type="button"
                 className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap"
                 data-node-id="1:790"
                 data-name="Article link"
-               onClick={() => openArticle("kitchen-table-plan")}><span
+               onClick={() => { const a = byTitle("the kitchen table plan"); if (a) setSelectedArticle(a); }}><span
                   className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]"
                   data-node-id="1:791"
                   style={{ fontVariationSettings: '"wdth" 100' }}
@@ -1056,7 +1037,7 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                     <img
                       alt=""
                       className="absolute left-0 max-w-none size-full top-0"
-                      src={imgStoryPhotograph8}
+                      src={byTitle("the menu for tomorrow")?.imageUrl || imgStoryPhotograph8}
                     />
                   </div>
                 </div>
@@ -1069,21 +1050,20 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                     className="font-['Oswald:SemiBold'] font-semibold leading-[1.15] min-w-full relative shrink-0 text-[#081d2b] text-[29px] w-[min-content]"
                     data-node-id="1:797"
                   >
-                    THE MENU FOR TOMORROW
+                    {byTitle("the menu for tomorrow")?.title || "THE MENU FOR TOMORROW"}
                   </p>
                   <p
                     className="font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[#56646c] text-[16px] w-[min-content]"
                     data-node-id="1:798"
                     style={{ fontVariationSettings: '"wdth" 100' }}
                   >
-                    Planning for the next decade with a financial strategy that
-                    adapts.
+                    {byTitle("the menu for tomorrow")?.description || "Planning for the next decade with a financial strategy that adapts."}
                   </p>
                   <button type="button"
                     className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap"
                     data-node-id="1:799"
                     data-name="Article link"
-                   onClick={() => openArticle("menu-for-tomorrow")}><span
+                   onClick={() => { const a = byTitle("the menu for tomorrow"); if (a) setSelectedArticle(a); }}><span
                       className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]"
                       data-node-id="1:800"
                       style={{ fontVariationSettings: '"wdth" 100' }}
@@ -1108,7 +1088,7 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                     <img
                       alt=""
                       className="absolute left-0 max-w-none size-full top-0"
-                      src={imgStoryPhotograph9}
+                      src={byTitle("the harmony of risk")?.imageUrl || imgStoryPhotograph9}
                     />
                   </div>
                 </div>
@@ -1121,20 +1101,20 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                     className="font-['Oswald:SemiBold'] font-semibold leading-[1.15] min-w-full relative shrink-0 text-[#081d2b] text-[29px] w-[min-content]"
                     data-node-id="1:805"
                   >
-                    THE HARMONY OF RISK
+                    {byTitle("the harmony of risk")?.title || "THE HARMONY OF RISK"}
                   </p>
                   <p
                     className="font-['Mona_Sans:Regular'] font-normal leading-[1.55] min-w-full relative shrink-0 text-[#56646c] text-[16px] w-[min-content]"
                     data-node-id="1:806"
                     style={{ fontVariationSettings: '"wdth" 100' }}
                   >
-                    Balancing protection and growth so your plan stays in tune.
+                    {byTitle("the harmony of risk")?.description || "Balancing protection and growth so your plan stays in tune."}
                   </p>
                   <button type="button"
                     className="content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#081d2b] whitespace-nowrap"
                     data-node-id="1:807"
                     data-name="Article link"
-                   onClick={() => openArticle("harmony-of-risk")}><span
+                   onClick={() => { const a = byTitle("the harmony of risk"); if (a) setSelectedArticle(a); }}><span
                       className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]"
                       data-node-id="1:808"
                       style={{ fontVariationSettings: '"wdth" 100' }}
@@ -1217,7 +1197,7 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                     <img
                       alt=""
                       className="absolute left-0 max-w-none size-full top-0"
-                      src={imgStoryPhotograph10}
+                      src={byTitle("the service standard")?.imageUrl || imgStoryPhotograph10}
                     />
                   </div>
                 </div>
@@ -1226,13 +1206,13 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                 className="[word-break:break-word] font-['Special_Elite:Regular'] leading-[1.4] not-italic relative shrink-0 text-[#e6ba65] text-[13px] whitespace-nowrap"
                 data-node-id="1:821"
               >
-                GUIDANCE
+                {byTitle("the service standard")?.category?.toUpperCase() || "GUIDANCE"}
               </p>
               <p
                 className="[word-break:break-word] font-['Oswald:SemiBold'] font-semibold leading-[1.15] min-w-full relative shrink-0 text-[#fffdfa] text-[30px] w-[min-content]"
                 data-node-id="1:822"
               >
-                THE SERVICE STANDARD
+                {byTitle("the service standard")?.title || "THE SERVICE STANDARD"}
               </p>
               <div
                 className="content-stretch flex flex-col items-start min-h-[74px] overflow-clip relative shrink-0 w-full"
@@ -1244,15 +1224,14 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                   data-node-id="1:824"
                   style={{ fontVariationSettings: '"wdth" 100' }}
                 >
-                  What exceptional service looks like when your money is on the
-                  line.
+                  {byTitle("the service standard")?.description || "What exceptional service looks like when your money is on the line."}
                 </p>
               </div>
               <button type="button"
                 className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#e6ba65] whitespace-nowrap"
                 data-node-id="1:825"
                 data-name="Article link"
-               onClick={() => openArticle("service-standard")}><span
+               onClick={() => { const a = byTitle("the service standard"); if (a) setSelectedArticle(a); }}><span
                   className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]"
                   data-node-id="1:826"
                   style={{ fontVariationSettings: '"wdth" 100' }}
@@ -1281,7 +1260,7 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                     <img
                       alt=""
                       className="absolute left-0 max-w-none size-full top-0"
-                      src={imgStoryPhotograph11}
+                      src={byTitle("the community effect")?.imageUrl || imgStoryPhotograph11}
                     />
                   </div>
                 </div>
@@ -1290,13 +1269,13 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                 className="[word-break:break-word] font-['Special_Elite:Regular'] leading-[1.4] not-italic relative shrink-0 text-[#e6ba65] text-[13px] whitespace-nowrap"
                 data-node-id="1:831"
               >
-                CONNECTION
+                {byTitle("the community effect")?.category?.toUpperCase() || "CONNECTION"}
               </p>
               <p
                 className="[word-break:break-word] font-['Oswald:SemiBold'] font-semibold leading-[1.15] min-w-full relative shrink-0 text-[#fffdfa] text-[30px] w-[min-content]"
                 data-node-id="1:832"
               >
-                THE COMMUNITY EFFECT
+                {byTitle("the community effect")?.title || "THE COMMUNITY EFFECT"}
               </p>
               <div
                 className="content-stretch flex flex-col items-start min-h-[74px] overflow-clip relative shrink-0 w-full"
@@ -1308,15 +1287,14 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                   data-node-id="1:834"
                   style={{ fontVariationSettings: '"wdth" 100' }}
                 >
-                  How local relationships can strengthen your long-term
-                  financial outlook.
+                  {byTitle("the community effect")?.description || "How local relationships can strengthen your long-term financial outlook."}
                 </p>
               </div>
               <button type="button"
                 className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#e6ba65] whitespace-nowrap"
                 data-node-id="1:835"
                 data-name="Article link"
-               onClick={() => openArticle("community-effect")}><span
+               onClick={() => { const a = byTitle("the community effect"); if (a) setSelectedArticle(a); }}><span
                   className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]"
                   data-node-id="1:836"
                   style={{ fontVariationSettings: '"wdth" 100' }}
@@ -1345,7 +1323,7 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                     <img
                       alt=""
                       className="absolute left-0 max-w-none size-full top-0"
-                      src={imgStoryPhotograph12}
+                      src={byTitle("the future of finance")?.imageUrl || imgStoryPhotograph12}
                     />
                   </div>
                 </div>
@@ -1354,13 +1332,13 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                 className="[word-break:break-word] font-['Special_Elite:Regular'] leading-[1.4] not-italic relative shrink-0 text-[#e6ba65] text-[13px] whitespace-nowrap"
                 data-node-id="1:841"
               >
-                WHAT COMES NEXT
+                {byTitle("the future of finance")?.category?.toUpperCase() || "WHAT COMES NEXT"}
               </p>
               <p
                 className="[word-break:break-word] font-['Oswald:SemiBold'] font-semibold leading-[1.15] min-w-full relative shrink-0 text-[#fffdfa] text-[30px] w-[min-content]"
                 data-node-id="1:842"
               >
-                THE FUTURE OF FINANCE
+                {byTitle("the future of finance")?.title || "THE FUTURE OF FINANCE"}
               </p>
               <div
                 className="content-stretch flex flex-col items-start min-h-[74px] overflow-clip relative shrink-0 w-full"
@@ -1372,15 +1350,14 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
                   data-node-id="1:844"
                   style={{ fontVariationSettings: '"wdth" 100' }}
                 >
-                  What the next generation of wealth-building looks like in
-                  practice.
+                  {byTitle("the future of finance")?.description || "What the next generation of wealth-building looks like in practice."}
                 </p>
               </div>
               <button type="button"
                 className="[word-break:break-word] content-stretch flex gap-[12px] items-center overflow-clip relative shrink-0 text-[#e6ba65] whitespace-nowrap"
                 data-node-id="1:845"
                 data-name="Article link"
-               onClick={() => openArticle("future-of-finance")}><span
+               onClick={() => { const a = byTitle("the future of finance"); if (a) setSelectedArticle(a); }}><span
                   className="font-['Mona_Sans:Medium'] font-medium leading-[20px] relative shrink-0 text-[14px]"
                   data-node-id="1:846"
                   style={{ fontVariationSettings: '"wdth" 100' }}
@@ -1713,7 +1690,7 @@ export default function InsightPage({ onModeChange }: InsightPageProps) {
       </div>
     </div>
     {selectedArticle && (
-      <InsightModal article={selectedArticle} onClose={() => setSelectedArticle(null)} />
+      <InsightModal article={toInsightArticle(selectedArticle)} onClose={() => setSelectedArticle(null)} />
     )}
     </>
   )

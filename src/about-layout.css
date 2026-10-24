@@ -585,6 +585,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .footer-calculators-title { color: var(--color-sun) !important; font-size: 13px !important; font-weight: 700; letter-spacing: .12em; }
 .footer-calculators .button { padding: 0; color: #ffffffcc; font-size: 14px; }
 .footer-calculators .button:hover { color: var(--color-sun); }
+.footer-calculator-link { padding: 0; color: #ffffffcc; font-size: 14px; text-decoration: none; }
+.footer-calculator-link:hover { color: var(--color-sun); }
 .footer-socials { display: flex; align-items: center; gap: 10px; }
 .footer-social { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; border: 1px solid #ffffff2e; color: #ffffffcc; transition: color .25s ease, border-color .25s ease, background-color .25s ease, transform .25s cubic-bezier(.22,.61,.36,1); }
 .footer-social:hover { color: var(--color-sun); border-color: #dbab4780; background: #dbab4714; transform: translateY(-3px); }
@@ -916,7 +918,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .footer-nav nav { gap: 18px; font-size: 13px; }
   .footer-calculators { flex-direction: column; }
   .footer-calculators > div { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 25px; }
-  .footer-calculators .button { font-size: 12px; justify-content: flex-start; }
+  .footer-calculators .button, .footer-calculator-link { font-size: 12px; justify-content: flex-start; }
   .footer-copyright { font-size: 11px; line-height: 1.5; }
   .dialog-inner { padding: 32px 24px; }
   .dialog-inner h2 { font-size: 26px; }

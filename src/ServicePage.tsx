@@ -846,9 +846,13 @@ export default function KseFinServeOurProcess() {
                 data-name="cta-row"
               >
                 <div
-                  className="bg-[#42b9fa] content-stretch flex flex-col items-center justify-center px-[28px] py-[14px] relative rounded-[100px] shrink-0"
+                  className="bg-[#42b9fa] content-stretch flex flex-col items-center justify-center px-[28px] py-[14px] relative rounded-[100px] shrink-0 cursor-pointer"
                   data-node-id="1:118"
                   data-name="Frame"
+                  role="link"
+                  tabIndex={0}
+                  onClick={() => { window.location.href = "/career" }}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.location.href = "/career" } }}
                 >
                   <p
                     className="[word-break:break-word] font-['Mona_Sans:SemiBold'] font-semibold leading-[normal] relative shrink-0 text-[#081d2b] text-[14px] whitespace-nowrap"

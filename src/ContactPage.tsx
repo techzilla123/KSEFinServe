@@ -1,9 +1,11 @@
 import { FormEvent, useEffect, useRef, useState } from "react"
+import { submitContactMessage } from "./admin/contactDirectory"
 
 const assets = "/assets"
 
 function ContactDialog({ onClose }: { onClose: () => void }) {
   const dialogRef = useRef<HTMLDivElement>(null)
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "failed">("idle")
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow
@@ -20,8 +22,20 @@ function ContactDialog({ onClose }: { onClose: () => void }) {
     }
   }, [onClose])
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (status === "sending") return
+
+    const form = event.currentTarget
+    const data = new FormData(form)
+    const name = String(data.get("name") ?? "")
+    const email = String(data.get("email") ?? "")
+    const subject = String(data.get("subject") ?? "")
+    const message = String(data.get("message") ?? "")
+
+    setStatus("sending")
+    const result = await submitContactMessage({ name, email, subject, message })
+    setStatus(result.ok ? "sent" : "failed")
   }
 
   return (
@@ -95,13 +109,25 @@ function ContactDialog({ onClose }: { onClose: () => void }) {
             />
           </label>
           <div className="form-action">
-            <button className="send-button" type="submit">
-              Send message
+            <button className="send-button" type="submit" disabled={status === "sending"}>
+              {status === "sending" ? "Sending…" : "Send message"}
             </button>
-            <p className="privacy-note">
-              <img alt="" height="13" src={`${assets}/efaa1.svg`} width="13" />
-              Your information is only used to respond to your enquiry.
-            </p>
+            {status === "sent" && (
+              <p className="form-status form-status--ok" role="status">
+                Thank you — your message has been sent.
+              </p>
+            )}
+            {status === "failed" && (
+              <p className="form-status form-status--error" role="alert">
+                Something went wrong. Please try again.
+              </p>
+            )}
+            {status !== "sent" && status !== "failed" && (
+              <p className="privacy-note">
+                <img alt="" height="13" src={`${assets}/efaa1.svg`} width="13" />
+                Your information is only used to respond to your enquiry.
+              </p>
+            )}
           </div>
         </form>
       </div>
@@ -200,35 +226,27 @@ export default function ContactPage() {
               <h2>Find us.</h2>
             </div>
             <div className="address">
-              <p>[Add office address]</p>
-              <span>[City, region, postal code]</span>
+              <p>363 N Sam Houston Pkwy E</p>
+              <span>Suite 200, Houston, TX 77060</span>
             </div>
             <div className="location-preview">
-              <div className="map-preview">
-                <img
-                  alt="Illustrative street map"
+              <a
+                className="map-preview"
+                href="https://www.google.com/maps/search/?api=1&query=363+N+Sam+Houston+Pkwy+E+Suite+200+Houston+TX+77060"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Open 363 N Sam Houston Pkwy E Suite 200, Houston TX 77060 in Google Maps"
+              >
+                <iframe
+                  title="KSEFinServe office location"
                   className="street-map"
-                  height="156"
-                  src={`${assets}/60a2a.png`}
-                  width="280"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  src="https://www.google.com/maps?q=363%20N%20Sam%20Houston%20Pkwy%20E%20Suite%20200%2C%20Houston%2C%20TX%2077060&output=embed"
                 />
                 <span className="preview-badge">
-                  Location preview · placeholder
+                  View larger map ↗
                 </span>
-                <div className="map-controls">
-                  <img
-                    alt=""
-                    height="14"
-                    src={`${assets}/b500f.svg`}
-                    width="14"
-                  />
-                  <img
-                    alt=""
-                    height="14"
-                    src={`${assets}/77324.svg`}
-                    width="14"
-                  />
-                </div>
                 <span className="location-marker">
                   <img
                     alt=""
@@ -237,10 +255,9 @@ export default function ContactPage() {
                     width="20"
                   />
                 </span>
-              </div>
+              </a>
               <p>
-                Google Maps preview to be connected once the office address is
-                added.
+                Tap the map to open directions in Google Maps.
               </p>
             </div>
           </article>

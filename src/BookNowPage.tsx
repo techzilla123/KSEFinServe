@@ -1,4 +1,5 @@
-import { FormEvent, ReactNode, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useState } from "react";
+import { useBookings, type BookingInput } from "./admin/bookingsDirectory";
 
 const A = "/assets";
 
@@ -23,6 +24,8 @@ type Details = {
   priorities: string[];
   route: string;
   topic: string;
+  consentContact: boolean;
+  consentUpdates: boolean;
 };
 
 const initialDetails: Details = {
@@ -44,6 +47,8 @@ const initialDetails: Details = {
   priorities: [],
   route: "Share the full picture",
   topic: "",
+  consentContact: true,
+  consentUpdates: false,
 };
 
 function Input({
@@ -262,7 +267,7 @@ function Companion({ step }: { step: "about" | "interests" | "review" }) {
       <div className="companion-tail">
         <div className="advisor">
           <span className="portrait">
-            <img src={`${A}/eab0f.png`} alt="Kayode Samson Elepe" />
+            <img src={`${A}/pix-removebg-preview.png`} alt="Kayode Samson Elepe" />
           </span>
           <span>
             <strong>Kayode Samson Elepe, RR</strong>
@@ -311,6 +316,8 @@ function DetailedShell({
 function BookPage({
   onDetailed,
   onQuickSubmit,
+  submitting,
+  error,
 }: {
   onDetailed: () => void;
   onQuickSubmit: (data: {
@@ -321,7 +328,12 @@ function BookPage({
     note: string;
     availableDate: string;
     availableTime: string;
+    city?: string;
+    province?: string;
+    country?: string;
   }) => void;
+  submitting?: boolean;
+  error?: string | null;
 }) {
   const [quick, setQuick] = useState({
     name: "",
@@ -332,11 +344,50 @@ function BookPage({
     availableDate: "",
     availableTime: "",
   });
+  const [location, setLocation] = useState<{ city: string; province: string; country: string } | null>(null);
+  const [locating, setLocating] = useState(false);
+
+  // Ask for the visitor's location once, so the session time can be interpreted
+  // in their own zone and converted for the admin.
+  useEffect(() => {
+    if (!("geolocation" in navigator)) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=10`,
+            { headers: { Accept: "application/json" } },
+          );
+          const data = await res.json();
+          const addr = data?.address ?? {};
+          setLocation({
+            city: addr.city ?? addr.town ?? addr.village ?? addr.county ?? "",
+            province: addr.state ?? addr.region ?? "",
+            country: addr.country ?? "",
+          });
+        } catch {
+          // Location is optional — the form still works without it.
+        } finally {
+          setLocating(false);
+        }
+      },
+      () => setLocating(false),
+      { timeout: 8000, maximumAge: 300000 },
+    );
+  }, []);
+
   const updateQuick = (key: keyof typeof quick) => (value: string) =>
     setQuick((current) => ({ ...current, [key]: value }));
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    onQuickSubmit(quick);
+    onQuickSubmit({
+      ...quick,
+      city: location?.city ?? "",
+      province: location?.province ?? "",
+      country: location?.country ?? "",
+    });
   };
   return (
     <main className="book-page">
@@ -420,6 +471,13 @@ function BookPage({
             <option>Speaking & partnerships</option>
           </SelectField>
           <TextArea label="Anything you’d like us to know?" value={quick.note} onChange={updateQuick("note")} />
+          <p className="loc-note">
+            {locating
+              ? "Detecting your location so we can confirm the right time…"
+              : location?.city
+                ? `Location detected: ${[location.city, location.province, location.country].filter(Boolean).join(", ")}`
+                : "Location not shared — we’ll confirm your time zone when we get in touch."}
+          </p>
           <AvailableTime
             date={quick.availableDate}
             time={quick.availableTime}
@@ -431,8 +489,13 @@ function BookPage({
             <input type="checkbox" required />
             <span>I agree that KSEFinServe may contact me about this session request. *</span>
           </label>
-          <button className="primary wide" type="submit">
-            Request a session →
+          {error && (
+            <p className="submit-error">
+              We could not save your request. {error} Please try again.
+            </p>
+          )}
+          <button className="primary wide" type="submit" disabled={submitting}>
+            {submitting ? "Sending your request…" : "Request a session →"}
           </button>
           <small className="footnote">
             This is a request, not a confirmed appointment. We’ll agree on a time
@@ -519,13 +582,13 @@ function AboutPage({
   );
 }
 
-function Actions({ back, submit = "Continue →" }: { back: () => void; submit?: string }) {
+function Actions({ back, submit = "Continue →", disabled }: { back: () => void; submit?: string; disabled?: boolean }) {
   return (
     <div className="actions">
-      <button type="button" className="secondary" onClick={back}>
+      <button type="button" className="secondary" onClick={back} disabled={disabled}>
         ← Back
       </button>
-      <button type="submit" className="primary">
+      <button type="submit" className="primary" disabled={disabled}>
         {submit}
       </button>
     </div>
@@ -663,14 +726,20 @@ function ReviewDetail({ label, children }: { label: string; children: ReactNode 
 
 function ReviewPage({
   details,
+  setDetails,
   back,
   submit,
   edit,
+  submitting,
+  error,
 }: {
   details: Details;
+  setDetails: (details: Details) => void;
   back: () => void;
   submit: () => void;
   edit: (step: Step) => void;
+  submitting?: boolean;
+  error?: string | null;
 }) {
   return (
     <DetailedShell active={3}>
@@ -724,16 +793,30 @@ function ReviewPage({
         <div className="permissions">
           <h3>Your permissions</h3>
           <label className="check-row">
-            <input type="checkbox" defaultChecked required />
+            <input
+              type="checkbox"
+              required
+              checked={details.consentContact}
+              onChange={(event) => setDetails({ ...details, consentContact: event.target.checked })}
+            />
             <span>I agree that KSEFinServe may contact me using the details provided to discuss and arrange this session. Required *</span>
           </label>
           <label className="check-row">
-            <input type="checkbox" />
+            <input
+              type="checkbox"
+              checked={details.consentUpdates}
+              onChange={(event) => setDetails({ ...details, consentUpdates: event.target.checked })}
+            />
             <span>I’d also like KSE insights and updates by email. Optional — I can unsubscribe at any time.</span>
           </label>
           <small>Your information is provided for this enquiry. Newsletter sign-up is separate and isn’t needed to request a session.</small>
         </div>
-        <Actions back={back} submit="Request a session →" />
+        {error && (
+          <p className="submit-error">
+            We could not save your request. {error} Please try again.
+          </p>
+        )}
+        <Actions back={back} submit={submitting ? "Sending your request…" : "Request a session →"} disabled={submitting} />
         <small className="footnote">Submitting sends a request. KSE will contact you to arrange the session; no appointment is booked yet.</small>
       </form>
     </DetailedShell>
@@ -760,7 +843,7 @@ function ReviewSection({
   );
 }
 
-function ReceivedPage({ details, restart }: { details: Details; restart: () => void }) {
+function ReceivedPage({ details, reference, restart }: { details: Details; reference?: string | null; restart: () => void }) {
   const contactDetail = details.contact === "Phone" ? details.phone : details.email;
   const when =
     details.availableDate || details.availableTime
@@ -784,7 +867,7 @@ function ReceivedPage({ details, restart }: { details: Details; restart: () => v
             <h3>{details.topic || details.path || "Wealth planning"}</h3>
             <p>{details.route || "Share the full picture"} · Preferred contact: {details.contact}<br />{contactDetail}</p>
             <hr />
-            <small>Preferred time: {when}<br />No appointment is booked yet. We’ll agree on a suitable time when we get in touch.</small>
+            <small>Record reference: {reference ?? "—"}<br />Preferred time: {when}<br />No appointment is booked yet. We’ll agree on a suitable time when we get in touch.</small>
           </div>
           <div className="confirmation-actions">
             <button className="primary" type="button" onClick={restart}>Return to KSEFinServe</button>
@@ -815,17 +898,57 @@ function ReceivedPage({ details, restart }: { details: Details; restart: () => v
 export default function BookNowPage() {
   const [step, setStep] = useState<Step>("book");
   const [details, setDetails] = useState(initialDetails);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [reference, setReference] = useState<string | null>(null);
+  const { submitBooking } = useBookings();
 
   const top = (next: Step) => {
     setStep(next);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  /** Send the completed enquiry to Supabase. */
+  const send = async (data: Details) => {
+    setSubmitting(true);
+    setSubmitError(null);
+    const payload: BookingInput = {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      phone: data.phone,
+      city: data.city,
+      province: data.province,
+      country: data.country,
+      contactMethod: data.contact,
+      source: data.source,
+      route: data.route,
+      path: data.path,
+      topic: data.topic,
+      priorities: data.priorities,
+      outcome: data.outcome,
+      context: data.context,
+      question: data.question,
+      availableDate: data.availableDate,
+      availableTime: data.availableTime,
+      consentContact: data.consentContact,
+      consentUpdates: data.consentUpdates,
+    };
+    const result = await submitBooking(payload);
+    setSubmitting(false);
+    if (result.error) {
+      setSubmitError(result.error);
+      return;
+    }
+    setReference(result.reference ?? null);
+    top("received");
+  };
+
   let content;
   if (step === "received") {
-    content = <ReceivedPage details={details} restart={() => top("book")} />;
+    content = <ReceivedPage details={details} reference={reference} restart={() => top("book")} />;
   } else if (step === "review") {
-    content = <ReviewPage details={details} back={() => top("interests")} submit={() => top("received")} edit={top} />;
+    content = <ReviewPage details={details} setDetails={setDetails} back={() => top("interests")} submit={() => void send(details)} edit={top} submitting={submitting} error={submitError} />;
   } else if (step === "interests") {
     content = <InterestsPage details={details} setDetails={setDetails} next={() => top("review")} back={() => top("about")} />;
   } else if (step === "about") {
@@ -836,8 +959,8 @@ export default function BookNowPage() {
         onDetailed={() => top("about")}
         onQuickSubmit={(data) => {
           const [firstName, ...rest] = data.name.trim().split(" ");
-          setDetails((current) => ({
-            ...current,
+          const next: Details = {
+            ...details,
             firstName: firstName || "",
             lastName: rest.join(" "),
             email: data.email,
@@ -847,9 +970,18 @@ export default function BookNowPage() {
             question: data.note,
             availableDate: data.availableDate,
             availableTime: data.availableTime,
-          }));
-          top("received");
+            // The short form has no "how did you hear about us" field, so it
+            // stays empty rather than inheriting a default.
+            source: "",
+            city: data.city ?? "",
+            province: data.province ?? "",
+            country: data.country ?? "",
+          };
+          setDetails(next);
+          void send(next);
         }}
+        submitting={submitting}
+        error={submitError}
       />
     );
   }

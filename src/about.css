@@ -361,6 +361,13 @@ a {
   font-size: 13px;
 }
 
+.identity-card .identity-role {
+  margin-top: 2px;
+  color: #DBAB47;
+  font-size: 12px;
+  letter-spacing: .05em;
+}
+
 .float-card {
   position: absolute;
   top: 66px;

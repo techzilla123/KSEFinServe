@@ -87,19 +87,27 @@ function Link(props: ComponentProps<"a">) {
 function BookingLink({
   variant = "navy",
   className = "",
-  href = "https://calendly.com/kay-business360/discovery_call",
+  href = "/book-now",
   ...props
 }: Omit<ComponentProps<"a">, "href"> & {
   variant?: "navy" | "gold" | "white" | "text";
   href?: string;
 }) {
+  // Every booking call-to-action lands on the site's own booking page rather
+  // than an external scheduler.
   return (
     <Link
       {...props}
       href={href}
+      onClick={(e) => {
+        if (href.startsWith("/")) {
+          e.preventDefault()
+          window.location.href = href
+        }
+      }}
       className={`button button-${variant} ${className}`}
     />
-  );
+  )
 }
 function Heading({
   level = 2,
@@ -844,9 +852,12 @@ export default function App() {
                 fetchPriority="high"
               />
               <div className="portrait-label">
-                Kayode S.
-                <br />
-                Elepe, RR
+                <span className="portrait-label-name">
+                  Kayode S.
+                  <br />
+                  Elepe
+                </span>
+                <span className="portrait-label-role">Financial Coach, RR</span>
               </div>
               <div className="hero-edition">
                 <strong>01</strong>
@@ -957,7 +968,7 @@ export default function App() {
                 <Button
                   variant="gold"
                   className="button-story"
-                  onClick={() => setPanel({ kind: "story" })}
+                  onClick={() => navigate("/about")}
                 >
                   About
                 </Button>
@@ -1452,14 +1463,9 @@ export default function App() {
             <Button
               variant="text"
               className="insights-view-all"
-              onClick={() => {
-                const isMobile = window.matchMedia("(max-width: 599px)").matches
-                if (isMobile) setInsightsModal(true)
-                else setShowInsights(!showInsights)
-              }}
-              aria-expanded={showInsights}
+              onClick={() => { window.location.href = "/insights" }}
             >
-              {showInsights ? "Back to collage" : "View all insights"}
+              View all insights
             </Button>
           </div>
         </section>

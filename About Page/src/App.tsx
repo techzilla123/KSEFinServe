@@ -107,8 +107,8 @@ function App() {
               <img className="portrait" src={asset("951b0.png")} alt="Kayode Samson Elepe" />
             </div>
             <div className="identity-card">
-              <strong>Kayode Samson Elepe, RR</strong>
-              <span>KSEFinServe · Wealth &amp; Leadership Development</span>
+              <strong>Kayode Samson Elepe</strong>
+              <span>KSEFinServe · Financial Coach, RR</span>
             </div>
             <div className="float-card">
               <strong>7-fig</strong>
@@ -300,7 +300,7 @@ function App() {
             have a conversation.
           </p>
           <div className="button-row">
-            <a className="button button-gold" href="mailto:hello@ksefinserve.com">Book a Session</a>
+            <a className="button button-gold" href="/book-now">Book a Session</a>
             <a className="button button-dark" href="/service">Explore our process →</a>
           </div>
         </div>

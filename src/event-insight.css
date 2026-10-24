@@ -143,6 +143,14 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Keep the shared site font. This file is loaded after index.css, so without
+   this the nav and every other element fall back to the system stack and look
+   heavier than the rest of the site. The value is spelled out because this
+   bundle's own Tailwind layer redefines --font-sans as the system stack. */
+:root {
+  font-family: "Mona Sans:Regular", Arial, sans-serif;
+}
+
 body {
   margin: 0;
   min-width: 320px;
@@ -163,6 +171,134 @@ input {
 
 /* Wrapper that reserves the scaled height of the fixed-size design canvas so
    the page scrolls correctly at any zoom level. */
+/* Event detail modals (added for the live events page).
+   The page renders inside a scaled 1440px design canvas, so a plain
+   position:fixed would be trapped inside it. These rules pull the modal out
+   to the real viewport instead. */
+.modal-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  transform: none;
+  width: 100vw;
+  height: 100vh;
+}
+
+.design-source .modal-layer {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  transform: none;
+}
+
+.modal-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 29, 43, 0.55);
+  border: 0;
+  cursor: pointer;
+}
+
+.event-modal {
+  position: relative;
+  background: #fff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 880px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.event-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #fff;
+  border: 0;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.event-modal-media {
+  position: relative;
+  min-height: 320px;
+  background: #ddd;
+}
+
+.event-modal-body {
+  padding: 32px;
+}
+
+/* The "See More" list is a single column, so it stays narrower than the
+   two-column detail modal. Written with extra specificity because
+   event-insight.css defines the base .event-modal rule later in the cascade. */
+.event-modal.event-modal--compact {
+  grid-template-columns: 1fr;
+  max-width: 620px;
+}
+
+.event-modal.event-modal--compact .event-modal-body {
+  padding: 28px;
+}
+
+@media (max-width: 760px) {
+  .event-modal { grid-template-columns: 1fr; }
+  .event-modal.event-modal--compact { max-width: 100%; }
+}
+
+/* Interest registration form */
+.interest-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.interest-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.interest-form input {
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #d5d1c8;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.interest-form .interest-error {
+  color: #8f2f24;
+  font-size: 12px;
+}
+
+.interest-success {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #f1f7f3;
+  border: 1px solid #cfe0d6;
+  color: #276b55;
+  font-size: 13px;
+}
+
 .design-scale-shell {
   position: relative;
   width: 100%;

@@ -58,11 +58,21 @@ interface Payload {
   password?: string
 }
 
-/** Read and parse the JSON body, tolerating an empty or malformed body. */
-async function readBody(req: IncomingMessage): Promise<Payload> {
+/** Read the JSON body.
+    Netlify deploys this as an ESM module and hands us a WHATWG Request, so the
+    body is read with req.json(). A Node IncomingMessage (used by the local dev
+    middleware) has no .json(), so fall back to reading its stream. */
+async function readBody(req: any): Promise<Payload> {
+  if (typeof req.json === 'function') {
+    try {
+      return (await req.json()) as Payload
+    } catch {
+      return {}
+    }
+  }
   const raw = await new Promise<string>((resolve, reject) => {
     let acc = ''
-    req.on('data', (chunk) => (acc += chunk))
+    req.on('data', (chunk: Buffer) => (acc += chunk))
     req.on('end', () => resolve(acc))
     req.on('error', reject)
   })
@@ -74,7 +84,16 @@ async function readBody(req: IncomingMessage): Promise<Payload> {
   }
 }
 
-export default async function handler(req: IncomingMessage) {
+/** Pull the bearer token off either a WHATWG Request or a Node IncomingMessage. */
+function bearerToken(req: any): string {
+  const fromHeader = req.headers?.get?.('authorization')
+  if (fromHeader) return fromHeader.replace(/^Bearer\s+/i, '')
+  const raw = req.headers?.authorization
+  const header = (Array.isArray(raw) ? raw[0] : raw) ?? ''
+  return header.replace(/^Bearer\s+/i, '')
+}
+
+export default async function handler(req: any) {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: cors })
   }
@@ -92,9 +111,7 @@ export default async function handler(req: IncomingMessage) {
 
   // The caller must be signed in. We verify their access token before doing
   // anything privileged, so the function cannot be used anonymously.
-  const rawAuth = req.headers.authorization
-  const authHeader = (Array.isArray(rawAuth) ? rawAuth[0] : rawAuth) ?? ''
-  const token = authHeader.replace(/^Bearer\s+/i, '')
+  const token = bearerToken(req)
   if (!token) return json({ error: 'Not signed in.' }, 401)
 
   const admin: SupabaseClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {

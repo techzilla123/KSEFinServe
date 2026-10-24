@@ -3,8 +3,10 @@
    reach the browser. This function holds it server-side and exposes only the
    specific actions the Settings page needs.
 
-   Requires SERVICE_ROLE_KEY and SUPABASE_URL in the Netlify environment
-   (Site settings -> Environment variables). Never set them as VITE_ vars.
+   Reads the service-role key from SERVICE_ROLE_KEY, falling back to
+   VITE_SUPABASE_SERVICE_ROLE_KEY so it also works when the key is set with
+   the VITE_ prefix in the Netlify environment. Either way it is only ever
+   read here, server-side, and is never bundled into the browser build.
 
    Runs on Netlify's Node runtime, so the Supabase SDK is imported from the
    installed package rather than a remote ESM URL. */
@@ -12,8 +14,9 @@
 import type { IncomingMessage } from 'node:http'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-const SUPABASE_URL = process.env.SUPABASE_URL ?? ''
-const SERVICE_ROLE_KEY = process.env.SERVICE_ROLE_KEY ?? ''
+const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL ?? ''
+const SERVICE_ROLE_KEY =
+  process.env.SERVICE_ROLE_KEY ?? process.env.VITE_SUPABASE_SERVICE_ROLE_KEY ?? ''
 
 /** Origins allowed to call this function. */
 const ALLOWED_ORIGIN = process.env.ADMIN_ALLOWED_ORIGIN ?? '*'

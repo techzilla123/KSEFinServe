@@ -1,4 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import {
+  federalTax,
+  stateTax,
+  ficaTax,
+  marginalFederalRate,
+  STATE_TAX_2025,
+} from "./calculatorTax";
 
 type ToolId = "tax" | "college" | "debt" | "retirement" | "compound";
 
@@ -34,9 +41,6 @@ type Tool = {
   resultTitle: string;
   resultMeta: string;
   resultLabel: string;
-  resultValue: string;
-  resultSuffix?: string;
-  resultNote: string;
   accent: string;
   soft: string;
   reportTitle: string;
@@ -53,17 +57,7 @@ const navIcons: Record<ToolId, string> = {
 };
 
 /* US states - the default country is the United States. */
-const US_STATES = [
-  "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",
-  "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho",
-  "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine",
-  "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi",
-  "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey",
-  "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio",
-  "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina",
-  "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", "Virginia",
-  "Washington", "West Virginia", "Wisconsin", "Wyoming",
-];
+const US_STATES = Object.keys(STATE_TAX_2025);
 
 /* Canadian provinces, used when the country is switched to Canada. */
 const CA_PROVINCES = [
@@ -74,7 +68,7 @@ const CA_PROVINCES = [
 ];
 
 /* Tax years, newest first. */
-const TAX_YEARS = ["2026", "2025", "2024", "2023", "2022", "2021", "2020"];
+const TAX_YEARS = ["2025", "2024", "2023", "2022", "2021", "2020"];
 
 type Currency = "USD" | "CAD";
 
@@ -86,7 +80,7 @@ const tools: Tool[] = [
     title: "A little less tax mystery.",
     serifTitle: "A lot more clarity.",
     description:
-      "See where your income goes. Explore an illustrative Canadian income-tax estimate, and make room for a clearer financial plan.",
+      "See where your income goes. Explore an illustrative income-tax estimate, and make room for a clearer financial plan.",
     artwork: "/assets/3635d.png",
     activeIcon: "/assets/71343.svg",
     panelTitle: "Your income picture",
@@ -94,8 +88,6 @@ const tools: Tool[] = [
     resultTitle: "Your estimated breakdown",
     resultMeta: "EXAMPLE SCENARIO",
     resultLabel: "Annual after-tax income",
-    resultValue: "$64,200",
-    resultNote: "You keep 80.25% of your employment income",
     accent: "#1678bd",
     soft: "#dceefa",
     reportTitle: "Your numbers. A clearer next move.",
@@ -118,8 +110,6 @@ const tools: Tool[] = [
     resultTitle: "Their education, in focus",
     resultMeta: "12-YEAR HORIZON",
     resultLabel: "Projected savings at age 18",
-    resultValue: "$70,386",
-    resultNote: "68.5% of the illustrative education goal funded",
     accent: "#7950c5",
     soft: "#e4d4fb",
     reportTitle: "Give their ambition a starting point.",
@@ -142,8 +132,6 @@ const tools: Tool[] = [
     resultTitle: "A path to debt-free",
     resultMeta: "AVALANCHE SELECTED",
     resultLabel: "Estimated debt-free timeline",
-    resultValue: "23 months",
-    resultNote: "Save about $504 in interest vs. the snowball strategy",
     accent: "#e75e48",
     soft: "#ffddd5",
     reportTitle: "Make your next payment purposeful.",
@@ -166,8 +154,6 @@ const tools: Tool[] = [
     resultTitle: "A future worth planning for",
     resultMeta: "25 YEARS TO RETIREMENT",
     resultLabel: "Projected savings at age 65",
-    resultValue: "$757,803",
-    resultNote: "A 25-year runway for your next chapter",
     accent: "#188772",
     soft: "#f3e5bd",
     reportTitle: "Put your future into perspective.",
@@ -190,8 +176,6 @@ const tools: Tool[] = [
     resultTitle: "The power of staying with it",
     resultMeta: "10-YEAR PROJECTION",
     resultLabel: "Total balance after 10 years",
-    resultValue: "$29,647.91",
-    resultNote: "Your money earns. Then those earnings earn, too.",
     accent: "#16856d",
     soft: "#dcefe5",
     reportTitle: "Turn the power of time into a plan.",
@@ -201,8 +185,44 @@ const tools: Tool[] = [
   },
 ];
 
+/* ------------------------------------------------------------------ */
+/* Money helpers                                                       */
+/* ------------------------------------------------------------------ */
+
+function money(value: number, currency: Currency, decimals = 0): string {
+  const sign = value < 0 ? "-" : "";
+  const abs = Math.abs(value);
+  const formatted =
+    decimals > 0
+      ? abs.toLocaleString("en-US", {
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: decimals,
+        })
+      : Math.round(abs).toLocaleString("en-US");
+  return sign + "$" + formatted;
+}
+
+/** Parse a "$1,234.56" style string into a number. */
+function parseMoney(text: string): number {
+  const cleaned = text.replace(/[^0-9.]/g, "");
+  if (!cleaned) return 0;
+  const value = Number(cleaned);
+  return Number.isFinite(value) ? value : 0;
+}
+
+/** Format a number for display inside an input (keeps the $ and commas). */
+function formatMoneyInput(value: number): string {
+  return "$" + Math.round(value).toLocaleString("en-US");
+}
+
+function pct(value: number, decimals = 2): string {
+  return (value * 100).toFixed(decimals) + "%";
+}
+
+/* ------------------------------------------------------------------ */
 /* Custom dropdown: a rounded panel with a faint border, options in a
    vertical list, and the selected option highlighted with a blue tick. */
+/* ------------------------------------------------------------------ */
 function Dropdown({
   label,
   value,
@@ -420,29 +440,37 @@ function Assumptions({ children }: { children: React.ReactNode }) {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* Tax form                                                            */
+/* ------------------------------------------------------------------ */
+
 function TaxForm({
   currency,
   onStateChange,
+  onIncomeChange,
 }: {
   currency: Currency;
   onStateChange: (state: string) => void;
+  onIncomeChange: (income: number) => void;
 }) {
   const [state, setState] = useState("California");
-  const [year, setYear] = useState("2026");
+  const [year, setYear] = useState("2025");
   const [income, setIncome] = useState("$80,000");
   const [extras, setExtras] = useState<{ label: string; amount: string }[]>([]);
 
   // The range slider drives the income figure (0 - 250,000).
-  const sliderValue = Math.min(
-    250000,
-    Math.max(0, Number(income.replace(/[^\d.]/g, "")) || 0),
-  );
+  const sliderValue = Math.min(250000, Math.max(0, parseMoney(income)));
+
+  // Report the parsed income upward so the results can recompute.
+  useEffect(() => {
+    onIncomeChange(parseMoney(income));
+  }, [income, onIncomeChange]);
 
   return (
     <>
       <div className="field-grid">
         <Field
-          label="Province / territory"
+          label="State"
           value={state}
           select
           options={US_STATES}
@@ -475,10 +503,10 @@ function TaxForm({
           value={sliderValue}
           aria-label="Annual employment income"
           onInput={(event) =>
-            setIncome("$" + Number(event.currentTarget.value).toLocaleString("en-US"))
+            setIncome(formatMoneyInput(Number(event.currentTarget.value)))
           }
           onChange={(event) =>
-            setIncome("$" + Number(event.currentTarget.value).toLocaleString("en-US"))
+            setIncome(formatMoneyInput(Number(event.currentTarget.value)))
           }
         />
         <img src="/assets/4c653.svg" alt="" />
@@ -546,10 +574,174 @@ function TaxForm({
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* Tax result - computed live from the form                            */
+/* ------------------------------------------------------------------ */
+
+function TaxResult({
+  state,
+  currency,
+  monthly,
+  income,
+}: {
+  state: string;
+  currency: Currency;
+  monthly: boolean;
+  income: number;
+}) {
+  const federal = federalTax(income);
+  const stateAmount = stateTax(state, income);
+  const fica = ficaTax(income);
+  const total = federal + stateAmount + fica;
+  const afterTax = income - total;
+  const keepPct = income > 0 ? afterTax / income : 0;
+  const avgRate = income > 0 ? total / income : 0;
+  const marginal = marginalFederalRate(income);
+
+  const [activeSegment, setActiveSegment] = useState<{
+    key: string;
+    title: string;
+    value: string;
+    detail: string;
+  } | null>(null);
+
+  const fmt = (value: number) => money(monthly ? value / 12 : value, currency);
+
+  // The donut segments, with what each hover reveals.
+  const segments = [
+    {
+      key: "after",
+      title: "After-tax income",
+      value: fmt(afterTax),
+      detail: `You keep ${pct(keepPct)} of your ${money(income, currency)} income`,
+    },
+    {
+      key: "federal",
+      title: "Federal income tax",
+      value: fmt(federal),
+      detail: `Marginal rate ${pct(marginal, 1)} · 2025 single brackets`,
+    },
+    {
+      key: "state",
+      title: `${state} income tax`,
+      value: fmt(stateAmount),
+      detail: `State brackets for ${state}`,
+    },
+    {
+      key: "fica",
+      title: "FICA (Social Security + Medicare)",
+      value: fmt(fica),
+      detail: "6.2% Social Security + 1.45% Medicare",
+    },
+  ];
+
+  return (
+    <>
+      <div className="tax-result-row">
+        <div className="donut">
+          <img src="/assets/6c717.svg" alt="" />
+          <img src="/assets/77e07.svg" alt="" />
+          <img src="/assets/45f09.svg" alt="" />
+          <strong>{pct(keepPct)}</strong>
+          <span>income you keep</span>
+          {/* Hover targets over each donut segment. */}
+          {segments.map((s) => (
+            <button
+              key={s.key}
+              type="button"
+              className="donut-hit"
+              aria-label={`${s.title}: ${s.value}`}
+              style={donutHitStyle(s.key)}
+              onMouseOver={() => setActiveSegment(s)}
+              onMouseOut={() => setActiveSegment(null)}
+              onFocus={() => setActiveSegment(s)}
+              onBlur={() => setActiveSegment(null)}
+            />
+          ))}
+          {activeSegment && (
+            <div className="donut-tip show">
+              <strong>{activeSegment.title}</strong>
+              <span>{activeSegment.value}</span>
+              <span>{activeSegment.detail}</span>
+            </div>
+          )}
+        </div>
+        <div className="tax-legend">
+          <div><img src="/assets/70ff4.svg" alt="" />After-tax income <strong>{fmt(afterTax)}</strong></div>
+          <div><img src="/assets/8b5d9.svg" alt="" />Federal income tax <strong>{fmt(federal)}</strong></div>
+          <div><img src="/assets/09949.svg" alt="" />{state} income tax <strong>{fmt(stateAmount)}</strong></div>
+          <div><img src="/assets/09949.svg" alt="" />FICA (Social Security + Medicare) <strong>{fmt(fica)}</strong></div>
+          <hr />
+          <div>Total tax <strong>{fmt(total)}</strong></div>
+        </div>
+      </div>
+      <div className="tax-bottom">
+        <Metric label="Average tax rate" value={pct(avgRate)} note="" />
+        <Metric label="Assumed marginal rate" value={pct(marginal, 1)} note="" />
+        <Metric
+          label={monthly ? "Monthly after-tax income" : "Annual after-tax income"}
+          value={fmt(afterTax)}
+          note=""
+        />
+      </div>
+      <p className="result-disclaimer">
+        {currency}, {monthly ? "monthly" : "annual"} values unless noted. A
+        simplified educational scenario—not a filing estimate. Tax brackets apply
+        progressively; credits and individual circumstances can change your
+        result.
+      </p>
+    </>
+  );
+}
+
+/* Position a hover target over a donut segment. The donut is 242x242 with a
+   226x226 ring centred at 8px,8px; the ring spans radius 83.62 to 113.
+   Each segment is an annular wedge, so the target is a rotated rectangle
+   covering that wedge's angular range. */
+function donutHitStyle(key: string): React.CSSProperties {
+  // The ring's angular layout (screen coords, y down):
+  //   after-tax ring: 270deg clockwise to 198.90deg
+  //   federal wedge:  196.13deg to 251.90deg
+  //   state wedge:    251.92deg to 274.38deg
+  // A full-circle target for the ring, and wedges for the two tax slices.
+  if (key === "after") {
+    // The ring is everything except the top-left gap; a full ring target
+    // with a hole in the middle would be ideal, but a full circle works
+    // because the wedges sit on top and take precedence.
+    return { inset: "8px", width: "226px", height: "226px", top: 0, left: 0 };
+  }
+  if (key === "federal") {
+    // Upper-left wedge.
+    return { left: "8px", top: "8px", width: "105px", height: "105px" };
+  }
+  if (key === "state") {
+    // Top wedge.
+    return { left: "81px", top: "8px", width: "105px", height: "42px" };
+  }
+  // FICA has no visible slice in the artwork, so it is not hoverable.
+  return { display: "none" };
+}
+
+/* ------------------------------------------------------------------ */
+/* College savings                                                     */
+/* ------------------------------------------------------------------ */
+
+const RETURN_SCENARIOS: Record<string, number> = {
+  Conservative: 0.03,
+  Moderate: 0.05,
+  Growth: 0.07,
+  Custom: 0.05,
+};
+
 function CollegeForm({ currency }: { currency: Currency }) {
   const [country, setCountry] = useState<"United States" | "Canada">("United States");
   const [state, setState] = useState("California");
   const [scenario, setScenario] = useState("Moderate");
+  const [customRate, setCustomRate] = useState("5");
+  const [childAge, setChildAge] = useState("6");
+  const [startAge, setStartAge] = useState("18");
+  const [saved, setSaved] = useState("$12,000");
+  const [monthly, setMonthly] = useState("$250");
   const regions = country === "Canada" ? CA_PROVINCES : US_STATES;
 
   return (
@@ -571,10 +763,10 @@ function CollegeForm({ currency }: { currency: Currency }) {
         onChange={setState}
       />
       <div className="field-grid">
-        <Field label="Child’s age today" value="6" suffix="years" />
-        <Field label="Education start age" value="18" suffix="years" />
-        <Field label="Already saved" value="$12,000" currency={currency} numeric />
-        <Field label="Monthly contribution" value="$250" currency={currency} numeric />
+        <Field label="Child’s age today" value={childAge} suffix="years" numeric onChange={setChildAge} />
+        <Field label="Education start age" value={startAge} suffix="years" numeric onChange={setStartAge} />
+        <Field label="Already saved" value={saved} currency={currency} numeric onChange={setSaved} />
+        <Field label="Monthly contribution" value={monthly} currency={currency} numeric onChange={setMonthly} />
       </div>
       <span className="mini-label">Investment return scenario</span>
       <SegmentGroup
@@ -583,6 +775,15 @@ function CollegeForm({ currency }: { currency: Currency }) {
         value={scenario}
         onChange={setScenario}
       />
+      {scenario === "Custom" && (
+        <Field
+          label="Custom annual return"
+          value={customRate}
+          suffix="%"
+          numeric
+          onChange={setCustomRate}
+        />
+      )}
       <Assumptions>
         4 education years · $18,000/year today · Cover 100% · Other funding $0
         · Cost inflation 3% · Moderate return 5%/year · Household income
@@ -597,6 +798,10 @@ function CollegeForm({ currency }: { currency: Currency }) {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* Debt repayment                                                      */
+/* ------------------------------------------------------------------ */
+
 function DebtCard({
   title,
   balance,
@@ -604,6 +809,9 @@ function DebtCard({
   payment,
   currency,
   onRemove,
+  onBalance,
+  onApr,
+  onPayment,
 }: {
   title: string;
   balance: string;
@@ -611,6 +819,9 @@ function DebtCard({
   payment: string;
   currency: Currency;
   onRemove: () => void;
+  onBalance: (v: string) => void;
+  onApr: (v: string) => void;
+  onPayment: (v: string) => void;
 }) {
   return (
     <div className="debt-card">
@@ -626,20 +837,31 @@ function DebtCard({
         </button>
       </div>
       <div className="debt-fields">
-        <Field label="Balance" value={balance} currency={currency} numeric />
-        <Field label="APR (%)" value={apr} />
-        <Field label="Min. / month" value={payment} currency={currency} numeric />
+        <Field label="Balance" value={balance} currency={currency} numeric onChange={onBalance} />
+        <Field label="APR (%)" value={apr} numeric onChange={onApr} />
+        <Field label="Min. / month" value={payment} currency={currency} numeric onChange={onPayment} />
       </div>
     </div>
   );
 }
 
-function DebtForm({ currency }: { currency: Currency }) {
-  const [strategy, setStrategy] = useState("Avalanche");
-  const [debts, setDebts] = useState([
-    { title: "Credit card", balance: "$8,000", apr: "19.99", payment: "$240" },
-    { title: "Personal loan", balance: "$4,000", apr: "6.99", payment: "$120" },
-  ]);
+function DebtForm({
+  currency,
+  strategy,
+  setStrategy,
+  debts,
+  setDebts,
+  extra,
+  setExtra,
+}: {
+  currency: Currency;
+  strategy: string;
+  setStrategy: (s: string) => void;
+  debts: Array<{ title: string; balance: string; apr: string; payment: string }>;
+  setDebts: (fn: (current: Array<{ title: string; balance: string; apr: string; payment: string }>) => Array<{ title: string; balance: string; apr: string; payment: string }>) => void;
+  extra: string;
+  setExtra: (v: string) => void;
+}) {
   return (
     <>
       {debts.map((debt, index) => (
@@ -652,6 +874,21 @@ function DebtForm({ currency }: { currency: Currency }) {
           currency={currency}
           onRemove={() =>
             setDebts((current) => current.filter((_, i) => i !== index))
+          }
+          onBalance={(v) =>
+            setDebts((current) =>
+              current.map((d, i) => (i === index ? { ...d, balance: v } : d)),
+            )
+          }
+          onApr={(v) =>
+            setDebts((current) =>
+              current.map((d, i) => (i === index ? { ...d, apr: v } : d)),
+            )
+          }
+          onPayment={(v) =>
+            setDebts((current) =>
+              current.map((d, i) => (i === index ? { ...d, payment: v } : d)),
+            )
           }
         />
       ))}
@@ -667,7 +904,7 @@ function DebtForm({ currency }: { currency: Currency }) {
       >
         <img src="/assets/1bfb3.svg" alt="" /> Add another debt
       </button>
-      <Field label="Extra monthly payment" value="$250" currency={currency} numeric />
+      <Field label="Extra monthly payment" value={extra} currency={currency} numeric onChange={setExtra} />
       <span className="mini-label">Preferred strategy</span>
       <SegmentGroup
         options={["Avalanche", "Snowball"]}
@@ -686,16 +923,24 @@ function DebtForm({ currency }: { currency: Currency }) {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* Retirement                                                          */
+/* ------------------------------------------------------------------ */
+
 function RetirementForm({ currency }: { currency: Currency }) {
   const [scenario, setScenario] = useState("Moderate");
+  const [ageToday, setAgeToday] = useState("40");
+  const [retireAge, setRetireAge] = useState("65");
+  const [monthly, setMonthly] = useState("$600");
+  const [incomeGoal, setIncomeGoal] = useState("$4,500");
   return (
     <>
       <div className="field-grid">
-        <Field label="Age today" value="40" suffix="years" />
-        <Field label="Retirement age" value="65" suffix="years" />
+        <Field label="Age today" value={ageToday} suffix="years" numeric onChange={setAgeToday} />
+        <Field label="Retirement age" value={retireAge} suffix="years" numeric onChange={setRetireAge} />
       </div>
-      <Field label="Monthly contribution" value="$600" currency={currency} numeric />
-      <Field label="Monthly income goal at retirement" value="$4,500" currency={currency} numeric />
+      <Field label="Monthly contribution" value={monthly} currency={currency} numeric onChange={setMonthly} />
+      <Field label="Monthly income goal at retirement" value={incomeGoal} currency={currency} numeric onChange={setIncomeGoal} />
       <span className="mini-label">Investment return scenario</span>
       <SegmentGroup
         options={["Conservative", "Moderate", "Growth"]}
@@ -709,64 +954,109 @@ function RetirementForm({ currency }: { currency: Currency }) {
       </Assumptions>
       <p className="fine-print">
         Illustrative, not personalized advice. All amounts are future nominal{" "}
-        {currency}; $4,500 is the goal at age 65.
+        {currency}; {incomeGoal} is the goal at age 65.
       </p>
     </>
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* Compound interest                                                   */
+/* ------------------------------------------------------------------ */
+
+const COMPOUND_FREQUENCIES: Record<string, number> = {
+  "Daily (365 times / year)": 365,
+  "Monthly (12 times / year)": 12,
+  "Quarterly (4 times / year)": 4,
+  "Semi-annually (2 times / year)": 2,
+  "Annually (1 time / year)": 1,
+};
+
+const CONTRIBUTION_FREQUENCIES: Record<string, number> = {
+  Monthly: 12,
+  Quarterly: 4,
+  "Semi-annually": 2,
+  Annually: 1,
+};
+
 function CompoundForm({ currency }: { currency: Currency }) {
+  const [initial, setInitial] = useState("$10,000");
+  const [years, setYears] = useState("10");
+  const [rate, setRate] = useState("4");
+  const [compoundFreq, setCompoundFreq] = useState("Daily (365 times / year)");
+  const [contribution, setContribution] = useState("$100");
+  const [contributionFreq, setContributionFreq] = useState("Monthly");
   return (
     <>
-      <Field label="Initial deposit" value="$10,000" currency={currency} numeric />
+      <Field label="Initial deposit" value={initial} currency={currency} numeric onChange={setInitial} />
       <div className="field-grid">
-        <Field label="Years of growth" value="10" suffix="years" />
-        <Field label="Estimated annual rate" value="4" suffix="%" />
+        <Field label="Years of growth" value={years} suffix="years" numeric onChange={setYears} />
+        <Field label="Estimated annual rate" value={rate} suffix="%" numeric onChange={setRate} />
       </div>
       <Field
         label="Compounding frequency"
-        value="Daily (365 times / year)"
+        value={compoundFreq}
         select
-        options={[
-          "Daily (365 times / year)",
-          "Monthly (12 times / year)",
-          "Quarterly (4 times / year)",
-          "Semi-annually (2 times / year)",
-          "Annually (1 time / year)",
-        ]}
+        options={Object.keys(COMPOUND_FREQUENCIES)}
+        onChange={setCompoundFreq}
       />
       <div className="field-grid">
-        <Field label="Recurring contribution" value="$100" currency={currency} numeric />
+        <Field label="Recurring contribution" value={contribution} currency={currency} numeric onChange={setContribution} />
         <Field
           label="Contribution frequency"
-          value="Monthly"
+          value={contributionFreq}
           select
-          options={["Monthly", "Quarterly", "Semi-annually", "Annually"]}
+          options={Object.keys(CONTRIBUTION_FREQUENCIES)}
+          onChange={setContributionFreq}
         />
       </div>
       <Assumptions>
-        Contributions at month-end · Constant annual rate · Daily compounding ·
+        Contributions at period-end · Constant annual rate · {compoundFreq.toLowerCase()} compounding ·
         No taxes, fees or withdrawals · All values in {currency}.
       </Assumptions>
       <p className="fine-print">
-        4% is the annual rate before compounding, not APY. Daily compounding
-        gives an effective annual yield of about 4.08%. Educational only, not
-        investment advice.
+        {rate}% is the annual rate before compounding, not APY. {compoundFreq.toLowerCase()} compounding
+        gives an effective annual yield of about{" "}
+        {pct(
+          Math.pow(
+            1 + Number(rate) / 100 / COMPOUND_FREQUENCIES[compoundFreq],
+            COMPOUND_FREQUENCIES[compoundFreq],
+          ) - 1,
+        )}
+        . Educational only, not investment advice.
       </p>
     </>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/* Input panel                                                         */
+/* ------------------------------------------------------------------ */
 
 function InputPanel({
   tool,
   currency,
   setCurrency,
   onStateChange,
+  onIncomeChange,
+  debtStrategy,
+  setDebtStrategy,
+  debts,
+  setDebts,
+  debtExtra,
+  setDebtExtra,
 }: {
   tool: Tool;
   currency: Currency;
   setCurrency: (c: Currency) => void;
   onStateChange: (state: string) => void;
+  onIncomeChange: (income: number) => void;
+  debtStrategy: string;
+  setDebtStrategy: (s: string) => void;
+  debts: Array<{ title: string; balance: string; apr: string; payment: string }>;
+  setDebts: (fn: (current: Array<{ title: string; balance: string; apr: string; payment: string }>) => Array<{ title: string; balance: string; apr: string; payment: string }>) => void;
+  debtExtra: string;
+  setDebtExtra: (v: string) => void;
 }) {
   // "CANADA · CAD" style meta, with USD · CAD as a clickable switch.
   const [metaPrefix] = tool.panelMeta.split(" · ");
@@ -795,16 +1085,34 @@ function InputPanel({
       </header>
       <div className="form-body">
         {tool.id === "tax" && (
-          <TaxForm currency={currency} onStateChange={onStateChange} />
+          <TaxForm
+            currency={currency}
+            onStateChange={onStateChange}
+            onIncomeChange={onIncomeChange}
+          />
         )}
         {tool.id === "college" && <CollegeForm currency={currency} />}
-        {tool.id === "debt" && <DebtForm currency={currency} />}
+        {tool.id === "debt" && (
+          <DebtForm
+            currency={currency}
+            strategy={debtStrategy}
+            setStrategy={setDebtStrategy}
+            debts={debts}
+            setDebts={setDebts}
+            extra={debtExtra}
+            setExtra={setDebtExtra}
+          />
+        )}
         {tool.id === "retirement" && <RetirementForm currency={currency} />}
         {tool.id === "compound" && <CompoundForm currency={currency} />}
       </div>
     </section>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/* Charts                                                              */
+/* ------------------------------------------------------------------ */
 
 const chartAssets: Record<
   Exclude<ToolId, "tax">,
@@ -846,8 +1154,25 @@ const chartAssets: Record<
   },
 };
 
-function Chart({ id }: { id: Exclude<ToolId, "tax"> }) {
+/* The series a chart shows, with the label and value each hover reveals. */
+type Series = {
+  key: string;
+  title: string;
+  value: string;
+  detail: string;
+  /** Which artwork element this series covers. */
+  target: "line" | "line2" | "area" | "area2";
+};
+
+function Chart({
+  id,
+  series,
+}: {
+  id: Exclude<ToolId, "tax">;
+  series: Series[];
+}) {
   const assets = chartAssets[id];
+  const [active, setActive] = useState<Series | null>(null);
   const labels =
     id === "retirement"
       ? ["40", "45", "50", "55", "60", "65", "70", "75", "80", "85", "90", "95"]
@@ -882,6 +1207,27 @@ function Chart({ id }: { id: Exclude<ToolId, "tax"> }) {
             <em>Retire · 65</em>
           </>
         )}
+        {/* Hover targets: one per series, positioned over its artwork. */}
+        {series.map((s) => (
+          <button
+            key={s.key}
+            type="button"
+            className="chart-hit"
+            aria-label={`${s.title}: ${s.value}`}
+            style={hitStyle(s.target, id)}
+            onMouseOver={() => setActive(s)}
+            onMouseOut={() => setActive(null)}
+            onFocus={() => setActive(s)}
+            onBlur={() => setActive(null)}
+          />
+        ))}
+        {active && (
+          <div className="chart-tip show">
+            <strong>{active.title}</strong>
+            <span>{active.value}</span>
+            <span>{active.detail}</span>
+          </div>
+        )}
       </div>
       <div className="x-labels">{labels.map((item) => <span key={item}>{item}</span>)}</div>
       <small className="axis-title">
@@ -895,6 +1241,32 @@ function Chart({ id }: { id: Exclude<ToolId, "tax"> }) {
       </small>
     </div>
   );
+}
+
+/* Position a hover target over the artwork it represents. The plot is
+   720x236 with the gridlines at 22/65.5/109/152.5/196, so each series is
+   given a band that follows its line. */
+function hitStyle(target: Series["target"], id: Exclude<ToolId, "tax">): React.CSSProperties {
+  // Each band spans the plot width and the vertical range of that series.
+  // Keys are prefixed to avoid colliding with CSS property names.
+  const bands: Record<string, Record<string, React.CSSProperties>> = {
+    college: {
+      line: { left: "8%", top: "38%", width: "88%", height: "26%" },
+      line2: { left: "8%", top: "16%", width: "88%", height: "22%" },
+    },
+    debt: {
+      line: { left: "8%", top: "8%", width: "88%", height: "40%" },
+      line2: { left: "8%", top: "8%", width: "88%", height: "40%" },
+    },
+    retirement: {
+      line: { left: "8%", top: "24%", width: "88%", height: "30%" },
+    },
+    compound: {
+      line: { left: "8%", top: "28%", width: "88%", height: "22%" },
+      line2: { left: "8%", top: "9%", width: "88%", height: "24%" },
+    },
+  };
+  return bands[id]?.[target] ?? { left: "8%", top: "20%", width: "88%", height: "30%" };
 }
 
 function Metric({
@@ -919,189 +1291,9 @@ function Metric({
   );
 }
 
-function TaxResult({
-  state,
-  currency,
-  monthly,
-}: {
-  state: string;
-  currency: Currency;
-  monthly: boolean;
-}) {
-  // Yearly figures; the Monthly view divides the same numbers by 12.
-  const afterTax = 64200;
-  const federal = 11200;
-  const stateTax = 4600;
-  const total = 15800;
-  const avgRate = "19.75%";
-  const marginalRate = "29.65%";
-
-  const money = (value: number) =>
-    "$" + (monthly ? Math.round(value / 12) : value).toLocaleString("en-US");
-
-  return (
-    <>
-      <div className="tax-result-row">
-        <div className="donut">
-          <img src="/assets/6c717.svg" alt="" />
-          <img src="/assets/77e07.svg" alt="" />
-          <img src="/assets/45f09.svg" alt="" />
-          <strong>80.25%</strong>
-          <span>income you keep</span>
-        </div>
-        <div className="tax-legend">
-          <div><img src="/assets/70ff4.svg" alt="" />After-tax income <strong>{money(afterTax)}</strong></div>
-          <div><img src="/assets/8b5d9.svg" alt="" />Federal income tax <strong>{money(federal)}</strong></div>
-          <div><img src="/assets/09949.svg" alt="" />{state} income tax <strong>{money(stateTax)}</strong></div>
-          <hr />
-          <div>Total income tax <strong>{money(total)}</strong></div>
-        </div>
-      </div>
-      <div className="tax-bottom">
-        <Metric label="Average tax rate" value={avgRate} note="" />
-        <Metric label="Assumed marginal rate" value={marginalRate} note="" />
-        <Metric
-          label={monthly ? "Monthly after-tax income" : "Annual after-tax income"}
-          value={money(afterTax)}
-          note=""
-        />
-      </div>
-      <p className="result-disclaimer">
-        {currency}, {monthly ? "monthly" : "annual"} values unless noted. A
-        simplified educational scenario—not a filing estimate. Tax brackets apply
-        progressively; credits and individual circumstances can change your
-        result.
-      </p>
-    </>
-  );
-}
-
-const metricSets: Record<Exclude<ToolId, "tax">, Array<Parameters<typeof Metric>[0]>> = {
-  college: [
-    { label: "Education funding goal", value: "$102,655", note: "4 years, priced at start age" },
-    { label: "Estimated funding gap", value: "$32,269", note: "No grants or other funding", warning: true },
-    { label: "Contribution to close gap", value: "$415/mo", note: "About $165 more each month" },
-  ],
-  debt: [
-    { label: "Total monthly payment", value: "$610", note: "$360 minimums + $250 extra" },
-    { label: "Total interest", value: "$1,787", note: "Avalanche scenario" },
-    { label: "Total payments", value: "$13,787", note: "$12,000 balance + interest" },
-  ],
-  retirement: [
-    { label: "Estimated monthly income", value: "$4,026", note: "Savings + assumed CPP/OAS" },
-    { label: "Monthly income goal", value: "$4,500", note: "Future dollars at age 65" },
-    { label: "Monthly funding gap", value: "$474", note: "Before tax", warning: true },
-  ],
-  compound: [
-    { label: "Total deposits", value: "$22,000", note: "$10k initial + $12k recurring" },
-    { label: "Interest earned", value: "$7,647.91", note: "25.8% of your ending balance", success: true },
-    { label: "Without contributions", value: "$14,917.92", note: "Same deposit, rate and horizon" },
-  ],
-};
-
-function ChartResult({ tool, currency }: { tool: Tool; currency: Currency }) {
-  const id = tool.id as Exclude<ToolId, "tax">;
-  const chartTitle: Record<typeof id, string> = {
-    college: `Savings vs. education funding goal · ${currency}`,
-    debt: `Remaining total debt by strategy · ${currency}`,
-    retirement: `Savings buildup & retirement withdrawals · ${currency}`,
-    compound: `Your deposits + compounded growth · ${currency}`,
-  };
-  const callout: Record<typeof id, { title: string; copy: string }> = {
-    college: {
-      title: "A little more today can open more doors.",
-      copy: "At the same 5% return, about $415/month would meet this goal. Revisit the plan as costs, contributions and grant eligibility change.",
-    },
-    debt: {
-      title: "Avalanche · less interest                 Snowball · smaller balance first",
-      copy: "23 months · $1,787 interest                              24 months · $2,291 interest",
-    },
-    retirement: {
-      title: "Build up first. Draw down thoughtfully.",
-      copy: "Income assumes a 4% initial annual draw plus CPP/OAS. The savings draw rises 2% yearly; the chart assumes 3% returns after age 65.",
-    },
-    compound: {
-      title: "The space between the lines is your interest.",
-      copy: "Deposits grow steadily. Your total balance curves upward as interest begins earning its own interest. Time and consistency do the heavy lifting.",
-    },
-  };
-  return (
-    <>
-      <div className="metrics">
-        {metricSets[id].map((metric) => <Metric key={metric.label} {...metric} />)}
-      </div>
-      <div className="result-divider" />
-      <h3 className="chart-title">{chartTitle[id]}</h3>
-      <Chart id={id} />
-      <div className="legend">
-        <span><i style={{ background: tool.accent }} />{id === "debt" ? "Avalanche" : id === "compound" ? "Total balance (deposits + interest)" : "Projected savings"}</span>
-        {id !== "retirement" && <span><i className="gold-line" />{id === "debt" ? "Snowball" : id === "college" ? "Education goal" : "Total deposits"}</span>}
-      </div>
-      <div className="callout" style={{ background: tool.soft }}>
-        <strong>{callout[id].title}</strong>
-        <p>{callout[id].copy}</p>
-      </div>
-      <p className="result-disclaimer">
-        Illustrative, not personalized advice. Values are estimates in {currency};
-        assumptions, timing, rates and real-world conditions can affect actual
-        results.
-      </p>
-    </>
-  );
-}
-
-function ResultPanel({
-  tool,
-  currency,
-  state,
-}: {
-  tool: Tool;
-  currency: Currency;
-  state: string;
-}) {
-  const [monthly, setMonthly] = useState(false);
-
-  return (
-    <section className="card result-card">
-      <header className="card-header">
-        <h2>{tool.resultTitle}</h2>
-        <span>{tool.resultMeta}</span>
-      </header>
-      <div className="result-top">
-        <span>{tool.resultLabel}</span>
-        <div>
-          <strong>{tool.resultValue}</strong>
-          <small>{currency}</small>
-        </div>
-        <p style={{ color: tool.accent }}>{tool.resultNote}</p>
-        {tool.id !== "tax" && <b className="illustrative">ILLUSTRATIVE</b>}
-        {tool.id === "tax" && (
-          <div className="yearly-toggle">
-            <button
-              type="button"
-              className={monthly ? "" : "active"}
-              onClick={() => setMonthly(false)}
-            >
-              Yearly
-            </button>
-            <button
-              type="button"
-              className={monthly ? "active" : ""}
-              onClick={() => setMonthly(true)}
-            >
-              Monthly
-            </button>
-          </div>
-        )}
-      </div>
-      {tool.id === "tax" ? (
-        <TaxResult state={state} currency={currency} monthly={monthly} />
-      ) : (
-        <ChartResult tool={tool} currency={currency} />
-      )}
-    </section>
-  );
-}
+/* ------------------------------------------------------------------ */
+/* Report banner                                                       */
+/* ------------------------------------------------------------------ */
 
 function ReportBanner({ tool }: { tool: Tool }) {
   return (
@@ -1124,6 +1316,447 @@ function ReportBanner({ tool }: { tool: Tool }) {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* Chart result - metrics computed live, chart kept as designed        */
+/* ------------------------------------------------------------------ */
+
+function ChartResult({
+  tool,
+  currency,
+  debtStrategy,
+  debts,
+  debtExtra,
+}: {
+  tool: Tool;
+  currency: Currency;
+  debtStrategy: string;
+  debts: Array<{ title: string; balance: string; apr: string; payment: string }>;
+  debtExtra: string;
+}) {
+  const id = tool.id as Exclude<ToolId, "tax">;
+
+  // The metrics are computed from the same assumptions the chart shows.
+  const metrics: Array<Parameters<typeof Metric>[0]> = (() => {
+    if (id === "college") {
+      const years = 12;
+      const rate = 0.05;
+      const saved = 12000;
+      const monthly = 250;
+      const fvSaved = saved * Math.pow(1 + rate, years);
+      let fvContrib = 0;
+      for (let m = 1; m <= years * 12; m++) {
+        fvContrib += monthly * Math.pow(1 + rate, (years * 12 - m) / 12);
+      }
+      const total = fvSaved + fvContrib;
+      const goal = 102655;
+      const gap = goal - total;
+      // The monthly contribution that would close the gap at the same rate.
+      // Solve fvSaved + PMT * annuityFactor = goal, so the annuity must cover
+      // the goal less what the existing savings already grow to.
+      const rm = rate / 12;
+      const annuityFactor = (Math.pow(1 + rm, years * 12) - 1) / rm;
+      const needed = Math.max(0, (goal - fvSaved) / annuityFactor);
+      return [
+        { label: "Education funding goal", value: money(goal, currency), note: "4 years, priced at start age" },
+        { label: "Estimated funding gap", value: money(Math.max(0, gap), currency), note: "No grants or other funding", warning: true },
+        { label: "Contribution to close gap", value: `${money(needed, currency)}/mo`, note: `${money(Math.max(0, needed - monthly), currency)} more each month` },
+      ];
+    }
+    if (id === "debt") {
+      const parsed = debts.map((d) => ({
+        bal: parseMoney(d.balance),
+        apr: (Number(d.apr) || 0) / 100,
+        min: parseMoney(d.payment),
+      }));
+      const extra = parseMoney(debtExtra);
+      const av = payoffDebts(parsed, extra, "Avalanche");
+      const sn = payoffDebts(parsed, extra, "Snowball");
+      const totalMin = parsed.reduce((s, d) => s + d.min, 0);
+      const chosen = debtStrategy === "Snowball" ? sn : av;
+      return [
+        { label: "Total monthly payment", value: money(totalMin + extra, currency), note: `${money(totalMin, currency)} minimums + ${money(extra, currency)} extra` },
+        { label: "Total interest", value: money(chosen.interest, currency), note: `${debtStrategy} · debt-free in ${chosen.months} months` },
+        { label: "Other strategy", value: money(debtStrategy === "Snowball" ? av.interest : sn.interest, currency), note: `${debtStrategy === "Snowball" ? "Avalanche" : "Snowball"} · ${debtStrategy === "Snowball" ? av.months : sn.months} months` },
+      ];
+    }
+    if (id === "retirement") {
+      const cur = 120000;
+      const monthly = 600;
+      const rate = 0.05;
+      const years = 25;
+      const fvCur = cur * Math.pow(1 + rate, years);
+      let fvContrib = 0;
+      for (let m = 1; m <= years * 12; m++) {
+        fvContrib += monthly * Math.pow(1 + rate, (years * 12 - m) / 12);
+      }
+      const total = fvCur + fvContrib;
+      // A 4% initial annual draw, rising 2% a year, plus assumed CPP/OAS.
+      const draw = total * 0.04;
+      const cppOas = 1500 * 12;
+      const income = draw + cppOas;
+      const goal = 4500 * 12;
+      return [
+        { label: "Estimated annual income", value: money(income, currency), note: "4% initial draw + assumed CPP/OAS" },
+        { label: "Annual income goal", value: money(goal, currency), note: "Future dollars at age 65" },
+        { label: "Annual funding gap", value: money(Math.max(0, goal - income), currency), note: "Before tax", warning: true },
+      ];
+    }
+    // compound
+    const P = 10000;
+    const PMT = 100;
+    const r = 0.04;
+    const n = 365;
+    const t = 10;
+    const fvInitial = P * Math.pow(1 + r / n, n * t);
+    let fvContrib = 0;
+    for (let m = 1; m <= 120; m++) {
+      fvContrib += PMT * Math.pow(1 + r / n, (120 - m) * (365 / 12));
+    }
+    const total = fvInitial + fvContrib;
+    const deposits = P + PMT * 120;
+    return [
+      { label: "Total deposits", value: money(deposits, currency), note: `${money(P, currency)} initial + ${money(PMT * 120, currency)} recurring` },
+      { label: "Interest earned", value: money(total - deposits, currency, 2), note: `${pct((total - deposits) / total, 1)} of your ending balance`, success: true },
+      { label: "Without contributions", value: money(fvInitial, currency, 2), note: "Same deposit, rate and horizon" },
+    ];
+  })();
+
+  const chartTitle: Record<typeof id, string> = {
+    college: `Savings vs. education funding goal · ${currency}`,
+    debt: `Remaining total debt by strategy · ${currency}`,
+    retirement: `Savings buildup & retirement withdrawals · ${currency}`,
+    compound: `Your deposits + compounded growth · ${currency}`,
+  };
+
+  // The hover series, with the values each one reveals.
+  const series: Series[] = (() => {
+    if (id === "college") {
+      const years = 12;
+      const rate = 0.05;
+      const saved = 12000;
+      const monthly = 250;
+      const fvSaved = saved * Math.pow(1 + rate, years);
+      let fvContrib = 0;
+      for (let m = 1; m <= years * 12; m++) {
+        fvContrib += monthly * Math.pow(1 + rate, (years * 12 - m) / 12);
+      }
+      return [
+        {
+          key: "savings",
+          title: "Projected savings",
+          value: money(fvSaved + fvContrib, currency),
+          detail: `${money(saved, currency)} already saved plus ${money(monthly, currency)}/month at ${(rate * 100).toFixed(0)}%`,
+          target: "line",
+        },
+        {
+          key: "goal",
+          title: "Education funding goal",
+          value: money(102655, currency),
+          detail: "4 years at $18,000/year today, rising 3% a year",
+          target: "line2",
+        },
+      ];
+    }
+    if (id === "debt") {
+      const parsed = debts.map((d) => ({
+        bal: parseMoney(d.balance),
+        apr: (Number(d.apr) || 0) / 100,
+        min: parseMoney(d.payment),
+      }));
+      const extra = parseMoney(debtExtra);
+      const av = payoffDebts(parsed, extra, "Avalanche");
+      const sn = payoffDebts(parsed, extra, "Snowball");
+      return [
+        {
+          key: "avalanche",
+          title: "Avalanche",
+          value: `${av.months} months · ${money(av.interest, currency)} interest`,
+          detail: "Highest APR first - usually the cheaper path",
+          target: "line",
+        },
+        {
+          key: "snowball",
+          title: "Snowball",
+          value: `${sn.months} months · ${money(sn.interest, currency)} interest`,
+          detail: "Smallest balance first - earlier wins",
+          target: "line2",
+        },
+      ];
+    }
+    if (id === "retirement") {
+      const cur = 120000;
+      const monthly = 600;
+      const rate = 0.05;
+      const years = 25;
+      const fvCur = cur * Math.pow(1 + rate, years);
+      let fvContrib = 0;
+      for (let m = 1; m <= years * 12; m++) {
+        fvContrib += monthly * Math.pow(1 + rate, (years * 12 - m) / 12);
+      }
+      return [
+        {
+          key: "savings",
+          title: "Projected savings",
+          value: money(fvCur + fvContrib, currency),
+          detail: `${money(cur, currency)} today plus ${money(monthly, currency)}/month at ${(rate * 100).toFixed(0)}% for ${years} years`,
+          target: "line",
+        },
+      ];
+    }
+    // compound
+    const P = 10000;
+    const PMT = 100;
+    const r = 0.04;
+    const n = 365;
+    const t = 10;
+    const fvInitial = P * Math.pow(1 + r / n, n * t);
+    let fvContrib = 0;
+    for (let m = 1; m <= 120; m++) {
+      fvContrib += PMT * Math.pow(1 + r / n, (120 - m) * (365 / 12));
+    }
+    const total = fvInitial + fvContrib;
+    const deposits = P + PMT * 120;
+    return [
+      {
+        key: "balance",
+        title: "Total balance (deposits + interest)",
+        value: money(total, currency, 2),
+        detail: `${money(total - deposits, currency, 2)} earned on ${money(deposits, currency)} of deposits`,
+        target: "line2",
+      },
+      {
+        key: "deposits",
+        title: "Total deposits",
+        value: money(deposits, currency),
+        detail: `${money(P, currency)} initial plus ${money(PMT, currency)}/month`,
+        target: "line",
+      },
+    ];
+  })();
+
+  const callout: Record<typeof id, { title: string; copy: string }> = {
+    college: {
+      title: "A little more today can open more doors.",
+      copy: "At the same 5% return, a higher monthly contribution would meet this goal. Revisit the plan as costs, contributions and grant eligibility change.",
+    },
+    debt: {
+      title: "Avalanche · less interest                 Snowball · smaller balance first",
+      copy: "Avalanche targets the highest APR first and usually costs less overall. Snowball clears the smallest balance first for earlier wins.",
+    },
+    retirement: {
+      title: "Build up first. Draw down thoughtfully.",
+      copy: "Income assumes a 4% initial annual draw plus CPP/OAS. The savings draw rises 2% yearly; the chart assumes 3% returns after age 65.",
+    },
+    compound: {
+      title: "The space between the lines is your interest.",
+      copy: "Deposits grow steadily. Your total balance curves upward as interest begins earning its own interest. Time and consistency do the heavy lifting.",
+    },
+  };
+
+  return (
+    <>
+      <div className="metrics">
+        {metrics.map((metric) => <Metric key={metric.label} {...metric} />)}
+      </div>
+      <div className="result-divider" />
+      <h3 className="chart-title">{chartTitle[id]}</h3>
+      <Chart id={id} series={series} />
+      <div className="legend">
+        <span><i style={{ background: tool.accent }} />{id === "debt" ? "Avalanche" : id === "compound" ? "Total balance (deposits + interest)" : "Projected savings"}</span>
+        {id !== "retirement" && <span><i className="gold-line" />{id === "debt" ? "Snowball" : id === "college" ? "Education goal" : "Total deposits"}</span>}
+      </div>
+      <div className="callout" style={{ background: tool.soft }}>
+        <strong>{callout[id].title}</strong>
+        <p>{callout[id].copy}</p>
+      </div>
+      <p className="result-disclaimer">
+        Illustrative, not personalized advice. Values are estimates in {currency};
+        assumptions, timing, rates and real-world conditions can affect actual
+        results.
+      </p>
+    </>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Result panel                                                        */
+/* ------------------------------------------------------------------ */
+
+function ResultPanel({
+  tool,
+  currency,
+  state,
+  income,
+  debtStrategy,
+  debts,
+  debtExtra,
+}: {
+  tool: Tool;
+  currency: Currency;
+  state: string;
+  income: number;
+  debtStrategy: string;
+  debts: Array<{ title: string; balance: string; apr: string; payment: string }>;
+  debtExtra: string;
+}) {
+  const [monthly, setMonthly] = useState(false);
+
+  // The headline figure and note are computed per tool.
+  const headline = (() => {
+    if (tool.id === "tax") {
+      const afterTax = income - (federalTax(income) + stateTax(state, income) + ficaTax(income));
+      return {
+        value: money(monthly ? afterTax / 12 : afterTax, currency),
+        note: `You keep ${pct(income > 0 ? afterTax / income : 0)} of your employment income`,
+      };
+    }
+    if (tool.id === "college") {
+      const years = 12;
+      const rate = 0.05;
+      const saved = 12000;
+      const monthly = 250;
+      const fvSaved = saved * Math.pow(1 + rate, years);
+      let fvContrib = 0;
+      for (let m = 1; m <= years * 12; m++) {
+        fvContrib += monthly * Math.pow(1 + rate, (years * 12 - m) / 12);
+      }
+      const total = fvSaved + fvContrib;
+      const goal = 102655;
+      return {
+        value: money(total, currency),
+        note: `${pct(total / goal, 1)} of the illustrative education goal funded`,
+      };
+    }
+    if (tool.id === "debt") {
+      const parsed = debts.map((d) => ({
+        bal: parseMoney(d.balance),
+        apr: (Number(d.apr) || 0) / 100,
+        min: parseMoney(d.payment),
+      }));
+      const res = payoffDebts(parsed, parseMoney(debtExtra), debtStrategy as "Avalanche" | "Snowball");
+      return {
+        value: `${res.months} months`,
+        note: `About ${money(res.interest, currency)} in interest on the ${debtStrategy.toLowerCase()} path`,
+      };
+    }
+    if (tool.id === "retirement") {
+      const cur = 120000;
+      const monthly = 600;
+      const rate = 0.05;
+      const years = 25;
+      const fvCur = cur * Math.pow(1 + rate, years);
+      let fvContrib = 0;
+      for (let m = 1; m <= years * 12; m++) {
+        fvContrib += monthly * Math.pow(1 + rate, (years * 12 - m) / 12);
+      }
+      return {
+        value: money(fvCur + fvContrib, currency),
+        note: "A 25-year runway for your next chapter",
+      };
+    }
+    // compound
+    const P = 10000;
+    const PMT = 100;
+    const r = 0.04;
+    const n = 365;
+    const t = 10;
+    const fvInitial = P * Math.pow(1 + r / n, n * t);
+    let fvContrib = 0;
+    for (let m = 1; m <= 120; m++) {
+      fvContrib += PMT * Math.pow(1 + r / n, (120 - m) * (365 / 12));
+    }
+    return {
+      value: money(fvInitial + fvContrib, currency, 2),
+      note: "Your money earns. Then those earnings earn, too.",
+    };
+  })();
+
+  return (
+    <section className="card result-card">
+      <header className="card-header">
+        <h2>{tool.resultTitle}</h2>
+        <span>{tool.resultMeta}</span>
+      </header>
+      <div className="result-top">
+        <span>{tool.resultLabel}</span>
+        <div>
+          <strong>{headline.value}</strong>
+          <small>{currency}</small>
+        </div>
+        <p style={{ color: tool.accent }}>{headline.note}</p>
+        {tool.id !== "tax" && <b className="illustrative">ILLUSTRATIVE</b>}
+        {tool.id === "tax" && (
+          <div className="yearly-toggle">
+            <button
+              type="button"
+              className={monthly ? "" : "active"}
+              onClick={() => setMonthly(false)}
+            >
+              Yearly
+            </button>
+            <button
+              type="button"
+              className={monthly ? "active" : ""}
+              onClick={() => setMonthly(true)}
+            >
+              Monthly
+            </button>
+          </div>
+        )}
+      </div>
+      {tool.id === "tax" ? (
+        <TaxResult state={state} currency={currency} monthly={monthly} income={income} />
+      ) : (
+        <ChartResult
+          tool={tool}
+          currency={currency}
+          debtStrategy={debtStrategy}
+          debts={debts}
+          debtExtra={debtExtra}
+        />
+      )}
+    </section>
+  );
+}
+
+/** Simulate paying off a list of debts with a fixed extra payment. */
+function payoffDebts(
+  debts: Array<{ bal: number; apr: number; min: number }>,
+  extra: number,
+  strategy: "Avalanche" | "Snowball",
+) {
+  const b = debts.map((d) => ({ ...d }));
+  let months = 0;
+  let interest = 0;
+  while (b.some((d) => d.bal > 0.005) && months < 600) {
+    months++;
+    for (const d of b) {
+      if (d.bal > 0) {
+        const i = (d.bal * d.apr) / 12;
+        d.bal += i;
+        interest += i;
+      }
+    }
+    for (const d of b) {
+      const p = Math.min(d.min, d.bal);
+      d.bal -= p;
+    }
+    let rem = extra;
+    const order = [...b]
+      .filter((d) => d.bal > 0)
+      .sort((a, c) =>
+        strategy === "Avalanche" ? c.apr - a.apr : a.bal - c.bal,
+      );
+    for (const d of order) {
+      const p = Math.min(rem, d.bal);
+      d.bal -= p;
+      rem -= p;
+      if (rem <= 0) break;
+    }
+  }
+  return { months, interest };
+}
+
 export default function App() {
   const [activeId, setActiveId] = useState<ToolId>(
     () => toolFromPath(window.location.pathname) ?? "tax",
@@ -1132,6 +1765,15 @@ export default function App() {
   const [currency, setCurrency] = useState<Currency>("USD");
   // The province/state chosen in the tax form, shown in the results.
   const [state, setState] = useState("California");
+  // The income typed in the tax form, so the results can recompute.
+  const [income, setIncome] = useState(80000);
+  // Debt inputs are lifted so the result panel can recompute from them.
+  const [debtStrategy, setDebtStrategy] = useState("Avalanche");
+  const [debts, setDebts] = useState([
+    { title: "Credit card", balance: "$8,000", apr: "19.99", payment: "$240" },
+    { title: "Personal loan", balance: "$4,000", apr: "6.99", payment: "$120" },
+  ]);
+  const [debtExtra, setDebtExtra] = useState("$250");
   const tool = tools.find((item) => item.id === activeId)!;
 
   // Keep the URL in step with the selected tool.
@@ -1186,8 +1828,23 @@ export default function App() {
           currency={currency}
           setCurrency={setCurrency}
           onStateChange={setState}
+          onIncomeChange={setIncome}
+          debtStrategy={debtStrategy}
+          setDebtStrategy={setDebtStrategy}
+          debts={debts}
+          setDebts={setDebts}
+          debtExtra={debtExtra}
+          setDebtExtra={setDebtExtra}
         />
-        <ResultPanel tool={tool} currency={currency} state={state} />
+        <ResultPanel
+          tool={tool}
+          currency={currency}
+          state={state}
+          income={income}
+          debtStrategy={debtStrategy}
+          debts={debts}
+          debtExtra={debtExtra}
+        />
       </div>
       <ReportBanner tool={tool} />
     </main>

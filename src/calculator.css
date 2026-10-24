@@ -1518,3 +1518,83 @@ button {
 .segment:not(.active):hover {
   color: #1678bd;
 }
+
+/* ---------------------------------------------------------------
+   Chart + donut hover tooltips.
+   Each chart series and donut segment is a real hover target that
+   shows a small card naming that part and its value.
+   --------------------------------------------------------------- */
+
+/* The tooltip card itself. */
+.chart-tip,
+.donut-tip {
+  position: absolute;
+  z-index: 20;
+  max-width: 240px;
+  padding: 9px 11px;
+  border: 1px solid #dedcd5;
+  border-radius: 9px;
+  background: #fff;
+  box-shadow: 0 10px 26px rgba(13, 43, 66, 0.14);
+  color: #0d2b42;
+  font-size: 11px;
+  line-height: 1.45;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.14s ease, transform 0.14s ease;
+}
+
+.chart-tip.show,
+.donut-tip.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.chart-tip strong,
+.donut-tip strong {
+  display: block;
+  margin-bottom: 2px;
+  font-family: "Mona Sans:SemiBold", Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.chart-tip span,
+.donut-tip span {
+  display: block;
+  color: #62717a;
+}
+
+/* Hover targets over the chart series. They sit above the artwork but
+   below the tooltip, and are invisible. */
+.chart-hit {
+  position: absolute;
+  z-index: 10;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.chart-hit:focus-visible {
+  outline: 2px solid #1678bd;
+  outline-offset: 2px;
+}
+
+/* The donut segments are the three stacked images. */
+.donut-hit {
+  position: absolute;
+  z-index: 6;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.donut-hit:focus-visible {
+  outline: 2px solid #1678bd;
+  outline-offset: 2px;
+}
+
+/* Slight emphasis on the hovered series. */
+.chart-line.hover,
+.chart-area.hover {
+  filter: brightness(1.12) saturate(1.15);
+}

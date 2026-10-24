@@ -17,6 +17,7 @@ logs/
 # populated copies are generated and must stay out of version control.
 dist/config.js
 /public/config.local.js
+/dist/config.local.js
 
 # Platform-managed agentplat state, not project source. In the
 # client-initiated single-repo workspace layout (make's `Path: "."` spec) the
@@ -25,3 +26,7 @@ dist/config.js
 /.plugins/
 /.opencode-skills/
 learn_backup_*/
+
+# Build output. Netlify runs `npm run build` and publishes dist/ itself,
+# so committing it only risks leaking generated secrets.
+dist/

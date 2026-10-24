@@ -23,9 +23,13 @@ declare global {
   }
 }
 
-/** The runtime config, or an empty object when nothing was provided. */
+/** The runtime config, or an empty object when nothing was provided.
+    Never throws: a missing or malformed config should degrade features, not
+    take the whole page down. */
 export function runtimeConfig(): Partial<RuntimeConfig> {
-  return window.__KSE_CONFIG__ ?? {}
+  const cfg = window.__KSE_CONFIG__
+  if (!cfg || typeof cfg !== 'object') return {}
+  return cfg
 }
 
 /** True when the Supabase client has everything it needs to connect. */

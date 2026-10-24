@@ -112,6 +112,30 @@ export default defineConfig(({ mode }) => {
         },
       },
       {
+        name: "dev-runtime-config-injection",
+        // Dev only: public/config.js is a committed placeholder with empty
+        // values, so the real config is injected here instead of via an HTML
+        // script tag. That keeps production from requesting a file that does
+        // not exist (Netlify would return index.html for it, which the browser
+        // then fails to parse as JavaScript).
+        transformIndexHtml() {
+          // Dev only. `vite build` runs this hook too, which would inline the
+          // keys into every built HTML file, so it is skipped unless the dev
+          // server is actually running.
+          if (process.env.NODE_ENV === "production" || process.argv.includes("build")) return []
+          const devConfig = path.resolve(__dirname, "public", "config.local.js")
+          if (!existsSync(devConfig)) return []
+          const code = readFileSync(devConfig, "utf8")
+          return [
+            {
+              tag: "script",
+              children: code,
+              injectTo: "head-prepend",
+            },
+          ] as HtmlTagDescriptor[]
+        },
+      },
+      {
         name: "admin-directory-function-middleware",
         // Dev only: serve the admin-directory function locally so the Settings
         // page works without deploying. Reads the service-role key from .env,

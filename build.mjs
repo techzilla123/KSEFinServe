@@ -91,10 +91,12 @@ const result = spawnSync(viteBin, ["build"], { cwd: root, stdio: "inherit", shel
 if (result.status === 0) {
   mkdirSync(distDir, { recursive: true })
   writeFileSync(join(distDir, "config.js"), configJs)
-  // Local dev: Vite serves public/, so the populated copy goes there too.
+  // Local dev only: Vite serves public/, so the populated copy goes there.
   // public/config.js holds the committed placeholder and is left untouched.
+  // This file is gitignored and is NOT referenced by the HTML — Vite's dev
+  // server is told to inject it, so production never requests a missing file.
   writeFileSync(join(root, "public", "config.local.js"), configJs)
-  console.log("build.mjs: wrote dist/config.js and public/config.local.js")
+  console.log("build.mjs: wrote dist/config.js and public/config.local.js (dev only)")
 }
 
 process.exit(result.status ?? 1)

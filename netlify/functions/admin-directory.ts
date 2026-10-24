@@ -4,15 +4,19 @@
    specific actions the Settings page needs.
 
    Requires SERVICE_ROLE_KEY and SUPABASE_URL in the Netlify environment
-   (Site settings → Environment variables). Never set them as VITE_ vars. */
+   (Site settings -> Environment variables). Never set them as VITE_ vars.
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.118.0'
+   Runs on Netlify's Node runtime, so the Supabase SDK is imported from the
+   installed package rather than a remote ESM URL. */
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
-const SERVICE_ROLE_KEY = Deno.env.get('SERVICE_ROLE_KEY') ?? ''
+import type { IncomingMessage, ServerResponse } from 'node:http'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+
+const SUPABASE_URL = process.env.SUPABASE_URL ?? ''
+const SERVICE_ROLE_KEY = process.env.SERVICE_ROLE_KEY ?? ''
 
 /** Origins allowed to call this function. */
-const ALLOWED_ORIGIN = Deno.env.get('ADMIN_ALLOWED_ORIGIN') ?? '*'
+const ALLOWED_ORIGIN = process.env.ADMIN_ALLOWED_ORIGIN ?? '*'
 
 const cors = {
   'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
@@ -20,11 +24,11 @@ const cors = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-function json(body, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...cors, 'Content-Type': 'application/json' },
-  })
+function json(res: ServerResponse, body: unknown, status = 200) {
+  res.statusCode = status
+  res.setHeader('Content-Type', 'application/json')
+  for (const [k, v] of Object.entries(cors)) res.setHeader(k, v)
+  res.send(JSON.stringify(body))
 }
 
 /** Actions this function will perform. Anything else is refused. */
@@ -37,113 +41,139 @@ const ACTIONS = new Set([
   'deleteUser',
 ])
 
-export default async function handler(request) {
-  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors })
-  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
+interface Payload {
+  action?: string
+  id?: string
+  email?: string
+  firstName?: string
+  lastName?: string
+  role?: string
+  permissions?: string[]
+  password?: string
+}
+
+/** Read and parse the JSON body, tolerating an empty or malformed body. */
+async function readBody(req: IncomingMessage): Promise<Payload> {
+  const raw = await new Promise<string>((resolve, reject) => {
+    let acc = ''
+    req.on('data', (chunk) => (acc += chunk))
+    req.on('end', () => resolve(acc))
+    req.on('error', reject)
+  })
+  if (!raw) return {}
+  try {
+    return JSON.parse(raw) as Payload
+  } catch {
+    return {}
+  }
+}
+
+export default async function handler(req: IncomingMessage, res: ServerResponse) {
+  if (req.method === 'OPTIONS') {
+    for (const [k, v] of Object.entries(cors)) res.setHeader(k, v)
+    res.statusCode = 204
+    res.end()
+    return
+  }
+  if (req.method !== 'POST') return json(res, { error: 'Method not allowed' }, 405)
 
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-    return json({ error: 'Admin directory is not configured on this deployment.' }, 500)
+    return json(res, { error: 'Admin directory is not configured on this deployment.' }, 500)
   }
 
-  let payload
-  try {
-    payload = await request.json()
-  } catch {
-    return json({ error: 'Invalid request body.' }, 400)
-  }
-
-  const action = payload?.action
+  const payload = await readBody(req)
+  const action = payload.action
   if (!action || !ACTIONS.has(action)) {
-    return json({ error: 'Unsupported action.' }, 400)
+    return json(res, { error: 'Unsupported action.' }, 400)
   }
 
   // The caller must be signed in. We verify their access token before doing
   // anything privileged, so the function cannot be used anonymously.
-  const authHeader = request.headers.get('authorization') ?? ''
+  const rawAuth = req.headers.authorization
+  const authHeader = (Array.isArray(rawAuth) ? rawAuth[0] : rawAuth) ?? ''
   const token = authHeader.replace(/^Bearer\s+/i, '')
-  if (!token) return json({ error: 'Not signed in.' }, 401)
+  if (!token) return json(res, { error: 'Not signed in.' }, 401)
 
-  const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+  const admin: SupabaseClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   })
 
   // Confirm the token belongs to a real user before acting on their behalf.
   const { data: me, error: meError } = await admin.auth.getUser(token)
-  if (meError || !me?.user) return json({ error: 'Session is no longer valid.' }, 401)
+  if (meError || !me?.user) return json(res, { error: 'Session is no longer valid.' }, 401)
 
   try {
     switch (action) {
       case 'listUsers': {
         const { data, error } = await admin.auth.admin.listUsers({ page: 1, perPage: 100 })
-        if (error) return json({ error: error.message }, 400)
-        return json({ users: data.users ?? [] })
+        if (error) return json(res, { error: error.message }, 400)
+        return json(res, { users: data.users ?? [] })
       }
 
       case 'createUser': {
-        const { email, firstName, lastName, role, permissions } = payload
-        if (!email) return json({ error: 'Email is required.' }, 400)
+        if (!payload.email) return json(res, { error: 'Email is required.' }, 400)
         const { error } = await admin.auth.admin.createUser({
-          email: String(email).trim(),
+          email: String(payload.email).trim(),
           email_confirm: true,
           user_metadata: {
-            first_name: String(firstName ?? '').trim(),
-            last_name: String(lastName ?? '').trim(),
-            role: role ?? 'Adviser',
-            permissions: permissions ?? [],
+            first_name: String(payload.firstName ?? '').trim(),
+            last_name: String(payload.lastName ?? '').trim(),
+            role: payload.role ?? 'Adviser',
+            permissions: payload.permissions ?? [],
           },
         })
-        if (error) return json({ error: error.message }, 400)
-        return json({ ok: true })
+        if (error) return json(res, { error: error.message }, 400)
+        return json(res, { ok: true })
       }
 
       case 'updateUser': {
-        const { id, firstName, lastName, role, permissions, password } = payload
-        if (!id) return json({ error: 'User id is required.' }, 400)
+        if (!payload.id) return json(res, { error: 'User id is required.' }, 400)
 
         // Read the existing metadata so a partial update does not wipe it.
-        const { data: existing, error: readError } = await admin.auth.admin.getUserById(id)
-        if (readError) return json({ error: readError.message }, 400)
+        const { data: existing, error: readError } = await admin.auth.admin.getUserById(payload.id)
+        if (readError) return json(res, { error: readError.message }, 400)
 
         const meta = { ...(existing.user.user_metadata ?? {}) }
-        if (firstName !== undefined) meta.first_name = String(firstName).trim()
-        if (lastName !== undefined) meta.last_name = String(lastName).trim()
-        if (role !== undefined) meta.role = role
-        if (permissions !== undefined) meta.permissions = permissions
+        if (payload.firstName !== undefined) meta.first_name = String(payload.firstName).trim()
+        if (payload.lastName !== undefined) meta.last_name = String(payload.lastName).trim()
+        if (payload.role !== undefined) meta.role = payload.role
+        if (payload.permissions !== undefined) meta.permissions = payload.permissions
 
-        const { error } = await admin.auth.admin.updateUserById(id, {
+        const { error } = await admin.auth.admin.updateUserById(payload.id, {
           user_metadata: meta,
-          ...(password ? { password: String(password) } : {}),
+          ...(payload.password ? { password: String(payload.password) } : {}),
         })
-        if (error) return json({ error: error.message }, 400)
-        return json({ ok: true })
+        if (error) return json(res, { error: error.message }, 400)
+        return json(res, { ok: true })
       }
 
       case 'deactivateUser': {
-        const { error } = await admin.auth.admin.updateUserById(String(payload.id), {
+        if (!payload.id) return json(res, { error: 'User id is required.' }, 400)
+        const { error } = await admin.auth.admin.updateUserById(payload.id, {
           ban_duration: '2147483647s',
         })
-        if (error) return json({ error: error.message }, 400)
-        return json({ ok: true })
+        if (error) return json(res, { error: error.message }, 400)
+        return json(res, { ok: true })
       }
 
       case 'reactivateUser': {
-        const { error } = await admin.auth.admin.updateUserById(String(payload.id), {
-          ban_duration: 'none',
-        })
-        if (error) return json({ error: error.message }, 400)
-        return json({ ok: true })
+        if (!payload.id) return json(res, { error: 'User id is required.' }, 400)
+        const { error } = await admin.auth.admin.updateUserById(payload.id, { ban_duration: 'none' })
+        if (error) return json(res, { error: error.message }, 400)
+        return json(res, { ok: true })
       }
 
       case 'deleteUser': {
-        const { error } = await admin.auth.admin.deleteUser(String(payload.id))
-        if (error) return json({ error: error.message }, 400)
-        return json({ ok: true })
+        if (!payload.id) return json(res, { error: 'User id is required.' }, 400)
+        const { error } = await admin.auth.admin.deleteUser(payload.id)
+        if (error) return json(res, { error: error.message }, 400)
+        return json(res, { ok: true })
       }
 
       default:
-        return json({ error: 'Unsupported action.' }, 400)
+        return json(res, { error: 'Unsupported action.' }, 400)
     }
   } catch (e) {
-    return json({ error: e?.message ?? 'Something went wrong.' }, 500)
+    return json(res, { error: e instanceof Error ? e.message : 'Something went wrong.' }, 500)
   }
 }

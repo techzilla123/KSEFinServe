@@ -1,17 +1,23 @@
 /* Supabase client for the KSEFinServe admin workspace.
-   Only the auth flows live here for now — the rest of the admin pages stay on
-   their sample data until they are connected. */
+   Auth, directory, bookings, events, insights, careers and notifications all
+   run through this client.
+
+   The keys are NOT bundled. Vite inlines any VITE_-prefixed env var into the
+   client build, which both leaks the secret and trips Netlify/GitHub secret
+   scanning, so they are injected at runtime instead: build.mjs writes a small
+   public/config.js from .env before Vite runs. */
 
 import { createClient } from '@supabase/supabase-js'
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string
+/** Runtime-injected configuration (see build.mjs). */
+const runtimeConfig = (window as unknown as { __KSE_CONFIG__?: Record<string, string> }).__KSE_CONFIG__ ?? {}
+
+const SUPABASE_URL = runtimeConfig.supabaseUrl ?? ''
+const SUPABASE_ANON_KEY = runtimeConfig.supabaseAnonKey ?? ''
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   // Fail loudly rather than silently falling back to a broken client.
-  throw new Error(
-    'Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env',
-  )
+  throw new Error('Supabase is not configured on this deployment.')
 }
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {

@@ -6,7 +6,6 @@
    directory working without any extra tables. */
 
 import { useCallback, useEffect, useState } from 'react'
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { supabase } from './supabaseClient'
 
 /** Roles an administrator can assign. */
@@ -127,12 +126,36 @@ function toAdminUser(u: Record<string, any>): AdminUser {
   }
 }
 
-/** The service-role client used for admin-only directory operations. */
-function serviceClient(): SupabaseClient | null {
-  const url = import.meta.env.VITE_SUPABASE_URL as string
-  const key = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY as string
-  if (!url || !key) return null
-  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
+/**
+ * Call the admin-directory Netlify Function.
+ *
+ * The service-role key bypasses row-level security, so it lives on the server
+ * and never reaches the browser. The function verifies the caller's session
+ * before doing anything privileged.
+ */
+async function callAdminFunction(action: string, body: Record<string, unknown> = {}): Promise<{ error: string | null; users?: unknown[] }> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+  if (!session?.access_token) return { error: 'You are signed out. Please sign in again.' }
+
+  const res = await fetch('/.netlify/functions/admin-directory', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({ action, ...body }),
+  })
+
+  let payload: { error?: string; users?: unknown[] } = {}
+  try {
+    payload = await res.json()
+  } catch {
+    return { error: 'The admin service did not respond.' }
+  }
+  if (!res.ok) return { error: payload.error ?? 'The admin service could not complete that.' }
+  return { error: null, users: payload.users }
 }
 
 export interface AdminDirectory {
@@ -159,22 +182,20 @@ export function useAdminDirectory(): AdminDirectory {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [currentUser, setCurrentUser] = useState<AdminUser | null>(null)
-  const canManage = serviceClient() !== null
+  // The directory is served by the Netlify Function, so it is available
+  // whenever the admin console is deployed.
+  const canManage = true
 
   const refresh = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      // The anon key can read auth.users only when exposed via a view; the
-      // service key is the supported path. Fall back to the anon key so the
-      // page still renders something when the service key is absent.
-      const client = serviceClient() ?? supabase
-      const { data, error: err } = await client.auth.admin.listUsers({ page: 1, perPage: 100 })
+      const { error: err, users: rows } = await callAdminFunction('listUsers')
       if (err) {
-        setError(err.message)
+        setError(err)
         setUsers([])
       } else {
-        const list = (data.users ?? []).map((u) => toAdminUser(u as unknown as Record<string, any>))
+        const list = (rows ?? []).map((u) => toAdminUser(u as Record<string, any>))
         setUsers(list)
         // Mark which row is the signed-in admin.
         setCurrentUser(list.find((u) => u.email === sessionEmail()) ?? null)
@@ -201,71 +222,54 @@ export function useAdminDirectory(): AdminDirectory {
   }, [])
 
   const inviteUser = useCallback(async (input: { email: string; firstName: string; lastName: string; role: Role; permissions: PermissionKey[] }) => {
-    const client = serviceClient()
-    if (!client) return { error: 'Add VITE_SUPABASE_SERVICE_ROLE_KEY to .env to manage users.' }
-    const { error } = await client.auth.admin.createUser({
-      email: input.email.trim(),
-      email_confirm: true,
-      user_metadata: {
-        first_name: input.firstName.trim(),
-        last_name: input.lastName.trim(),
-        role: input.role,
-        permissions: input.permissions,
-      },
+    const { error } = await callAdminFunction('createUser', {
+      email: input.email,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      role: input.role,
+      permissions: input.permissions,
     })
-    if (error) return { error: error.message }
+    if (error) return { error }
     await refresh()
     return { error: null }
   }, [refresh])
 
   const updateUser = useCallback(async (id: string, input: { firstName?: string; lastName?: string; role?: Role; permissions?: PermissionKey[] }) => {
-    const client = serviceClient()
-    if (!client) return { error: 'Add VITE_SUPABASE_SERVICE_ROLE_KEY to .env to manage users.' }
-    const existing = users.find((u) => u.id === id)
-    const meta = {
-      ...(existing?.raw ?? {}),
-      ...(input.firstName !== undefined ? { first_name: input.firstName.trim() } : {}),
-      ...(input.lastName !== undefined ? { last_name: input.lastName.trim() } : {}),
-      ...(input.role !== undefined ? { role: input.role } : {}),
-      ...(input.permissions !== undefined ? { permissions: input.permissions } : {}),
-    }
-    const { error } = await client.auth.admin.updateUserById(id, { user_metadata: meta })
-    if (error) return { error: error.message }
+    const { error } = await callAdminFunction('updateUser', {
+      id,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      role: input.role,
+      permissions: input.permissions,
+    })
+    if (error) return { error }
     await refresh()
     return { error: null }
-  }, [users, refresh])
+  }, [refresh])
 
   const setUserPassword = useCallback(async (id: string, password: string) => {
-    const client = serviceClient()
-    if (!client) return { error: 'Add VITE_SUPABASE_SERVICE_ROLE_KEY to .env to manage users.' }
-    const { error } = await client.auth.admin.updateUserById(id, { password })
-    if (error) return { error: error.message }
+    const { error } = await callAdminFunction('updateUser', { id, password })
+    if (error) return { error }
     return { error: null }
   }, [])
 
   const deactivateUser = useCallback(async (id: string) => {
-    const client = serviceClient()
-    if (!client) return { error: 'Add VITE_SUPABASE_SERVICE_ROLE_KEY to .env to manage users.' }
-    const { error } = await client.auth.admin.updateUserById(id, { ban_duration: '2147483647s' })
-    if (error) return { error: error.message }
+    const { error } = await callAdminFunction('deactivateUser', { id })
+    if (error) return { error }
     await refresh()
     return { error: null }
   }, [refresh])
 
   const reactivateUser = useCallback(async (id: string) => {
-    const client = serviceClient()
-    if (!client) return { error: 'Add VITE_SUPABASE_SERVICE_ROLE_KEY to .env to manage users.' }
-    const { error } = await client.auth.admin.updateUserById(id, { ban_duration: 'none' })
-    if (error) return { error: error.message }
+    const { error } = await callAdminFunction('reactivateUser', { id })
+    if (error) return { error }
     await refresh()
     return { error: null }
   }, [refresh])
 
   const deleteUser = useCallback(async (id: string) => {
-    const client = serviceClient()
-    if (!client) return { error: 'Add VITE_SUPABASE_SERVICE_ROLE_KEY to .env to manage users.' }
-    const { error } = await client.auth.admin.deleteUser(id)
-    if (error) return { error: error.message }
+    const { error } = await callAdminFunction('deleteUser', { id })
+    if (error) return { error }
     await refresh()
     return { error: null }
   }, [refresh])

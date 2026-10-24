@@ -1,5 +1,12 @@
 [build]
-  # Leave command empty or set to a no-op so it doesn't rebuild
-  command = ""
+  # Build the site and the Netlify Functions that hold the service-role key.
+  command = "npm run build"
   # Point the publish directory to your dist folder
   publish = "dist"
+  # Where the server-side functions live
+  functions = "netlify/functions"
+
+# The admin directory function needs the service-role key, which must never be
+# bundled. It is read from the Netlify environment at runtime.
+[functions.admin-directory]
+  external_node_modules = ["@supabase/supabase-js"]

@@ -2,6 +2,7 @@ import { defineConfig, type HtmlTagDescriptor, type Plugin } from "vite"
 import react from "@vitejs/plugin-react"
 import tailwindcss from "@tailwindcss/vite"
 import path from "node:path"
+import { readFileSync, existsSync } from "node:fs"
 
 import siteConfiguration from "./.figma/make/site.json"
 
@@ -107,6 +108,155 @@ export default defineConfig(({ mode }) => {
               req.url = "/calculator.html"
             }
             next()
+          })
+        },
+      },
+      {
+        name: "admin-directory-function-middleware",
+        // Dev only: serve the admin-directory function locally so the Settings
+        // page works without deploying. Reads the service-role key from .env,
+        // which never leaves this process.
+        configureServer(server) {
+          server.middlewares.use(async (req, res, next) => {
+            if (req.url?.split("?")[0] !== "/.netlify/functions/admin-directory") return next()
+            if (req.method === "OPTIONS") {
+              res.statusCode = 204
+              res.setHeader("Access-Control-Allow-Origin", "*")
+              res.setHeader("Access-Control-Allow-Headers", "authorization, content-type")
+              res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS")
+              res.end()
+              return
+            }
+            if (req.method !== "POST") {
+              res.statusCode = 405
+              res.setHeader("Content-Type", "application/json")
+              res.end(JSON.stringify({ error: "Method not allowed" }))
+              return
+            }
+
+            const envPath = path.resolve(__dirname, ".env")
+            const env: Record<string, string> = {}
+            if (existsSync(envPath)) {
+              for (const line of readFileSync(envPath, "utf8").split(/\r?\n/)) {
+                const t = line.trim()
+                if (!t || t.startsWith("#")) continue
+                const eq = t.indexOf("=")
+                if (eq === -1) continue
+                env[t.slice(0, eq).trim()] = t.slice(eq + 1).trim().replace(/^["']|["']$/g, "")
+              }
+            }
+
+            const SUPABASE_URL = env.VITE_SUPABASE_URL ?? ""
+            const SERVICE_ROLE_KEY = env.VITE_SUPABASE_SERVICE_ROLE_KEY ?? ""
+            if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+              res.statusCode = 500
+              res.setHeader("Content-Type", "application/json")
+              res.end(JSON.stringify({ error: "Admin directory is not configured." }))
+              return
+            }
+
+            const authHeader = (req.headers.authorization as string) ?? ""
+            const token = authHeader.replace(/^Bearer\s+/i, "")
+            if (!token) {
+              res.statusCode = 401
+              res.setHeader("Content-Type", "application/json")
+              res.end(JSON.stringify({ error: "Not signed in." }))
+              return
+            }
+
+            const { createClient } = await import("@supabase/supabase-js")
+            const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+              auth: { persistSession: false, autoRefreshToken: false },
+            })
+
+            const { data: me, error: meError } = await admin.auth.getUser(token)
+            if (meError || !me?.user) {
+              res.statusCode = 401
+              res.setHeader("Content-Type", "application/json")
+              res.end(JSON.stringify({ error: "Session is no longer valid." }))
+              return
+            }
+
+            let body: Record<string, unknown> = {}
+            try {
+              const raw = await new Promise<string>((resolve, reject) => {
+                let acc = ""
+                req.on("data", (c) => (acc += c))
+                req.on("end", () => resolve(acc))
+                req.on("error", reject)
+              })
+              body = raw ? JSON.parse(raw) : {}
+            } catch {
+              res.statusCode = 400
+              res.setHeader("Content-Type", "application/json")
+              res.end(JSON.stringify({ error: "Invalid request body." }))
+              return
+            }
+
+            const action = (body.action as string) ?? ""
+            const reply = (payload: unknown, status = 200) => {
+              res.statusCode = status
+              res.setHeader("Content-Type", "application/json")
+              res.end(JSON.stringify(payload))
+            }
+
+            switch (action) {
+              case "listUsers": {
+                const { data, error } = await admin.auth.admin.listUsers({ page: 1, perPage: 100 })
+                if (error) return reply({ error: error.message }, 400)
+                return reply({ users: data.users ?? [] })
+              }
+              case "createUser": {
+                const { email, firstName, lastName, role, permissions } = body
+                if (!email) return reply({ error: "Email is required." }, 400)
+                const { error } = await admin.auth.admin.createUser({
+                  email: String(email).trim(),
+                  email_confirm: true,
+                  user_metadata: {
+                    first_name: String(firstName ?? "").trim(),
+                    last_name: String(lastName ?? "").trim(),
+                    role: role ?? "Adviser",
+                    permissions: permissions ?? [],
+                  },
+                })
+                if (error) return reply({ error: error.message }, 400)
+                return reply({ ok: true })
+              }
+              case "updateUser": {
+                const { id, firstName, lastName, role, permissions, password } = body
+                if (!id) return reply({ error: "User id is required." }, 400)
+                const { data: existing, error: readError } = await admin.auth.admin.getUserById(String(id))
+                if (readError) return reply({ error: readError.message }, 400)
+                const meta = { ...(existing.user.user_metadata ?? {}) }
+                if (firstName !== undefined) meta.first_name = String(firstName).trim()
+                if (lastName !== undefined) meta.last_name = String(lastName).trim()
+                if (role !== undefined) meta.role = role
+                if (permissions !== undefined) meta.permissions = permissions
+                const { error } = await admin.auth.admin.updateUserById(String(id), {
+                  user_metadata: meta,
+                  ...(password ? { password: String(password) } : {}),
+                })
+                if (error) return reply({ error: error.message }, 400)
+                return reply({ ok: true })
+              }
+              case "deactivateUser": {
+                const { error } = await admin.auth.admin.updateUserById(String(body.id), { ban_duration: "2147483647s" })
+                if (error) return reply({ error: error.message }, 400)
+                return reply({ ok: true })
+              }
+              case "reactivateUser": {
+                const { error } = await admin.auth.admin.updateUserById(String(body.id), { ban_duration: "none" })
+                if (error) return reply({ error: error.message }, 400)
+                return reply({ ok: true })
+              }
+              case "deleteUser": {
+                const { error } = await admin.auth.admin.deleteUser(String(body.id))
+                if (error) return reply({ error: error.message }, 400)
+                return reply({ ok: true })
+              }
+              default:
+                return reply({ error: "Unsupported action." }, 400)
+            }
           })
         },
       },

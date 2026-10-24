@@ -79,43 +79,14 @@ export interface Notifications {
   loading: boolean
   error: string | null
   refresh: () => Promise<void>
-  remove: (item: Notification) => void
+  remove: (item: Notification) => Promise<{ error: string | null }>
 }
 
 /** Dismiss one notification.
-    Notifications are derived from the live tables, so dismissing one only
-    drops it from this admin's list — it never deletes the underlying record.
-    The dismissal is remembered in localStorage so it survives a reload. */
-const DISMISSED_KEY = 'kse.admin.notifications.dismissed'
-
-export function dismissedNotifications(): string[] {
-  try {
-    const raw = window.localStorage.getItem(DISMISSED_KEY)
-    const parsed = raw ? JSON.parse(raw) : []
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
-}
-
-export function dismissNotification(id: string): void {
-  try {
-    const current = dismissedNotifications()
-    if (!current.includes(id)) {
-      window.localStorage.setItem(DISMISSED_KEY, JSON.stringify([...current, id]))
-    }
-  } catch {
-    /* storage unavailable — the dismissal simply will not persist */
-  }
-}
-
-export function restoreNotifications(): void {
-  try {
-    window.localStorage.removeItem(DISMISSED_KEY)
-  } catch {
-    /* ignore */
-  }
-}
+    The dismissal is stored in the database, keyed to the signed-in admin, so it
+    follows them to any device. A dismissal never deletes the underlying record —
+    it only hides that notification from the admin's bell. */
+const DISMISSED_TABLE = 'notification_dismissals'
 
 /** Read the most recent activity across the live tables. */
 export function useNotifications(): Notifications {
@@ -127,6 +98,12 @@ export function useNotifications(): Notifications {
     setLoading(true)
     setError(null)
     try {
+      if (!isConfigured || !supabase) {
+        setError('Supabase is not configured on this deployment.')
+        setItems([])
+        return
+      }
+
       const [bookings, careers, interests, insights, events] = await Promise.all([
         supabase.from('bookings').select('*').order('created_at', { ascending: false }).limit(20),
         supabase.from('career_applications').select('*').order('created_at', { ascending: false }).limit(20),
@@ -134,6 +111,17 @@ export function useNotifications(): Notifications {
         supabase.from('insights').select('*').order('updated_at', { ascending: false }).limit(20),
         supabase.from('events').select('*').order('updated_at', { ascending: false }).limit(20),
       ])
+
+      // Dismissals live in the database so they follow the admin to any device.
+      // If the table has not been created yet this rejects; the notifications
+      // still load, just without any dismissals applied.
+      let dismissedRows: { notification_id: string }[] = []
+      try {
+        const { data: rows } = await supabase.from(DISMISSED_TABLE).select('notification_id')
+        dismissedRows = (rows ?? []) as { notification_id: string }[]
+      } catch {
+        dismissedRows = []
+      }
 
       const collected: Notification[] = []
       if (bookings.data) collected.push(...bookings.data.map((r) => fromBooking(r as Record<string, any>)))
@@ -144,9 +132,10 @@ export function useNotifications(): Notifications {
 
       // Newest first, most recent 20 across every source.
       collected.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
-      // Dismissed notifications stay dismissed until the admin restores them.
-      const dismissed = dismissedNotifications()
-      setItems(collected.filter((n) => !dismissed.includes(n.id)).slice(0, 20))
+
+      // Hide anything this admin has dismissed.
+      const dismissed = new Set(dismissedRows.map((r) => r.notification_id).filter(Boolean))
+      setItems(collected.filter((n) => !dismissed.has(n.id)).slice(0, 20))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not load notifications.')
       setItems([])
@@ -159,11 +148,38 @@ export function useNotifications(): Notifications {
     void refresh()
   }, [refresh])
 
-  /** Drop one notification from this admin's list. The record stays put. */
-  const remove = useCallback((item: Notification) => {
-    dismissNotification(item.id)
+  /** Dismiss one notification by recording it against the signed-in admin. */
+  const remove = useCallback(async (item: Notification) => {
+    // Drop it from the list immediately so the click feels instant.
     setItems((current) => current.filter((n) => n.id !== item.id))
+
+    if (!isConfigured || !supabase) {
+      return { error: 'Supabase is not configured on this deployment.' }
+    }
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    const adminId = session?.user?.id
+    if (!adminId) {
+      // Not signed in, so there is nothing to attach the dismissal to.
+      return { error: 'You are signed out. Please sign in again.' }
+    }
+
+    const { error: insertError } = await supabase
+      .from(DISMISSED_TABLE)
+      .upsert(
+        { notification_id: item.id, admin_id: adminId },
+        { onConflict: 'notification_id,admin_id', ignoreDuplicates: true },
+      )
+    if (insertError) {
+      // Put it back — the dismissal did not stick.
+      setItems((current) => (current.some((n) => n.id === item.id) ? current : [item, ...current]))
+      return { error: insertError.message }
+    }
+    return { error: null }
   }, [])
+
   return { items, loading, error, refresh, remove }
 }
 

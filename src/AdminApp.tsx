@@ -770,16 +770,16 @@ function ContactDetail({ message: m, directory, onClose }: { message: ContactMes
 }
 
 /** The bell's notification list. */
-function NotificationModal({ items, onRemove, onClose }: { items: Notification[]; onRemove?: (item: Notification) => void; onClose: () => void }) {
+function NotificationModal({ items, onRemove, onClose }: { items: Notification[]; onRemove?: (item: Notification) => Promise<{ error: string | null }>; onClose: () => void }) {
   const [removing, setRemoving] = useState<string | null>(null)
   const [failed, setFailed] = useState<string | null>(null)
 
-  const handleRemove = (item: Notification) => {
+  const handleRemove = async (item: Notification) => {
     if (!onRemove) return
     setRemoving(item.id)
     setFailed(null)
-    // The dismissal is local to this admin's list, so there is nothing to fail.
-    onRemove(item)
+    const { error } = await onRemove(item)
+    if (error) setFailed(error)
     setRemoving(null)
   }
 

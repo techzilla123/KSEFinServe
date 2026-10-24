@@ -24,15 +24,14 @@ const cors = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-/** Build a response object.
-    Netlify's runtime does not hand us a real ServerResponse, so we return a
-    plain object and let the runtime serialise it. */
+/** Build a response.
+    Netlify's runtime accepts a WHATWG Response (or undefined), so we return one
+    rather than a plain object. */
 function json(body: unknown, status = 200) {
-  return {
-    statusCode: status,
+  return new Response(JSON.stringify(body), {
+    status,
     headers: { ...cors, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  }
+  })
 }
 
 /** Actions this function will perform. Anything else is refused. */
@@ -74,7 +73,7 @@ async function readBody(req: IncomingMessage): Promise<Payload> {
 
 export default async function handler(req: IncomingMessage) {
   if (req.method === 'OPTIONS') {
-    return { statusCode: 204, headers: cors, body: '' }
+    return new Response(null, { status: 204, headers: cors })
   }
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
 
@@ -93,7 +92,7 @@ export default async function handler(req: IncomingMessage) {
   const rawAuth = req.headers.authorization
   const authHeader = (Array.isArray(rawAuth) ? rawAuth[0] : rawAuth) ?? ''
   const token = authHeader.replace(/^Bearer\s+/i, '')
-  if (!token) return json(res, { error: 'Not signed in.' }, 401)
+  if (!token) return json({ error: 'Not signed in.' }, 401)
 
   const admin: SupabaseClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },

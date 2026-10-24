@@ -172,8 +172,21 @@ export function useNotifications(): Notifications {
         { notification_id: item.id, admin_id: adminId },
         { onConflict: 'notification_id,admin_id', ignoreDuplicates: true },
       )
+
+    // The table may not exist yet. Rather than putting the notification back
+    // (which would look like the delete silently failed), keep it dismissed for
+    // this session and say what to do.
     if (insertError) {
-      // Put it back — the dismissal did not stick.
+      const missing = /PGRST205|does not exist|Could not find the table/i.test(insertError.message)
+      if (missing) {
+        return {
+          error:
+            'Notification dismissals are not set up yet. Run the SQL in ' +
+            'supabase/migrations/001_notification_dismissals.sql in the Supabase ' +
+            'SQL editor, then reload.',
+        }
+      }
+      // A real failure — put it back so the list matches the database.
       setItems((current) => (current.some((n) => n.id === item.id) ? current : [item, ...current]))
       return { error: insertError.message }
     }

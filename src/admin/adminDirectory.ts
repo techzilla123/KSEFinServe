@@ -6,7 +6,7 @@
    directory working without any extra tables. */
 
 import { useCallback, useEffect, useState } from 'react'
-import { supabase } from './supabaseClient'
+import { supabase, isConfigured } from './supabaseClient'
 
 /** Roles an administrator can assign. */
 export const ROLES = ['Administrator', 'Content editor', 'Adviser', 'Analyst'] as const

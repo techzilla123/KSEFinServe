@@ -126,6 +126,9 @@ export default defineConfig(({ mode }) => {
           const devConfig = path.resolve(__dirname, "public", "config.local.js")
           if (!existsSync(devConfig)) return []
           const code = readFileSync(devConfig, "utf8")
+          // In dev, public/config.js is the committed placeholder with empty
+          // values. Remove its script tag so it cannot overwrite the real
+          // config, then inject the populated copy from config.local.js.
           return [
             {
               tag: "script",
@@ -133,6 +136,18 @@ export default defineConfig(({ mode }) => {
               injectTo: "head-prepend",
             },
           ] as HtmlTagDescriptor[]
+        },
+      },
+      {
+        name: "dev-strip-placeholder-config",
+        // Dev only: drop the <script src="/config.js"> tag. That file is the
+        // committed placeholder with empty values; the plugin above injects the
+        // real config inline, and leaving the tag would overwrite it.
+        transformIndexHtml(html: string) {
+          if (process.env.NODE_ENV === "production" || process.argv.includes("build")) {
+            return html
+          }
+          return html.replace(/\s*<script src="\/config\.js"><\/script>/g, "")
         },
       },
       {

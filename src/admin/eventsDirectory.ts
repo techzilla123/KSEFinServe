@@ -5,7 +5,7 @@
    so the database stays small. */
 
 import { useCallback, useEffect, useState } from 'react'
-import { supabase } from './supabaseClient'
+import { supabase, isConfigured } from './supabaseClient'
 
 export type EventStatus = 'Published' | 'Draft' | 'Cancelled'
 

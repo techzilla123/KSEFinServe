@@ -4,7 +4,7 @@
    Images live in Cloudinary — only the delivery URL is stored here. */
 
 import { useCallback, useEffect, useState } from 'react'
-import { supabase } from './supabaseClient'
+import { supabase, isConfigured } from './supabaseClient'
 
 export type InsightStatus = 'Published' | 'Draft' | 'Archived'
 

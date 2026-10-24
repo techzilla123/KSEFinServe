@@ -4,7 +4,7 @@
    event interest registrations and draft content awaiting review. */
 
 import { useCallback, useEffect, useState } from 'react'
-import { supabase } from './supabaseClient'
+import { supabase, isConfigured } from './supabaseClient'
 
 export type Notification = {
   id: string

@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
-import { supabase } from './supabaseClient'
+import { supabase, isConfigured } from './supabaseClient'
 
 export type AuthStatus = 'loading' | 'signed-out' | 'signed-in'
 
@@ -31,6 +31,13 @@ export function useAdminAuth(): AdminAuth {
   const [status, setStatus] = useState<AuthStatus>('loading')
 
   useEffect(() => {
+    // Without a configured client there is no session to restore. Show the
+    // signed-out state rather than crashing on a null client.
+    if (!isConfigured || !supabase) {
+      setStatus('signed-out')
+      return
+    }
+
     // Ask Supabase for any session restored from storage, then keep listening.
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
@@ -46,16 +53,19 @@ export function useAdminAuth(): AdminAuth {
   }, [])
 
   const signIn = useCallback(async (email: string, password: string) => {
+    if (!isConfigured || !supabase) return { error: 'Supabase is not configured on this deployment.' }
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) return { error: error.message }
     return { error: null }
   }, [])
 
   const signOut = useCallback(async () => {
+    if (!isConfigured || !supabase) return
     await supabase.auth.signOut()
   }, [])
 
   const requestPasswordReset = useCallback(async (email: string) => {
+    if (!isConfigured || !supabase) return { error: 'Supabase is not configured on this deployment.' }
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/admin/auth/reset`,
     })
@@ -64,6 +74,7 @@ export function useAdminAuth(): AdminAuth {
   }, [])
 
   const setNewPassword = useCallback(async (password: string) => {
+    if (!isConfigured || !supabase) return { error: 'Supabase is not configured on this deployment.' }
     // A signed-in user changes their own password.
     const { data } = await supabase.auth.getSession()
     if (data.session) {

@@ -2,7 +2,7 @@
    The public /career form writes here; the admin dashboard reads them. */
 
 import { useCallback, useEffect, useState } from 'react'
-import { supabase } from './supabaseClient'
+import { supabase, isConfigured } from './supabaseClient'
 
 export type CareerStatus = 'New' | 'Reviewing' | 'Contacted' | 'Archived'
 

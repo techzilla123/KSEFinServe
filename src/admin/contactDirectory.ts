@@ -3,7 +3,7 @@
    table alongside career applications. */
 
 import { useCallback, useEffect, useState } from 'react'
-import { supabase } from './supabaseClient'
+import { supabase, isConfigured } from './supabaseClient'
 
 export type ContactMessage = {
   id: string

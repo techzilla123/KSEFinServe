@@ -9,13 +9,12 @@
 
 import { createClient } from '@supabase/supabase-js'
 
-/** Runtime-injected configuration (see build.mjs). */
-const runtimeConfig = (window as unknown as { __KSE_CONFIG__?: Record<string, string> }).__KSE_CONFIG__ ?? {}
+import { runtimeConfig, isSupabaseConfigured } from '../runtimeConfig'
 
-const SUPABASE_URL = runtimeConfig.supabaseUrl ?? ''
-const SUPABASE_ANON_KEY = runtimeConfig.supabaseAnonKey ?? ''
+const SUPABASE_URL = runtimeConfig().supabaseUrl ?? ''
+const SUPABASE_ANON_KEY = runtimeConfig().supabaseAnonKey ?? ''
 
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+if (!isSupabaseConfigured()) {
   // Fail loudly rather than silently falling back to a broken client.
   throw new Error('Supabase is not configured on this deployment.')
 }

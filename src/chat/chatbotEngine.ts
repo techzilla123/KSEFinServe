@@ -8,9 +8,9 @@
    public/config.js from .env before Vite runs. */
 
 /** Runtime-injected configuration (see build.mjs). */
-const runtimeConfig = (window as unknown as { __KSE_CONFIG__?: { geminiApiKey?: string } }).__KSE_CONFIG__ ?? {}
+import { runtimeConfig } from '../runtimeConfig'
 
-const API_KEY = runtimeConfig.geminiApiKey ?? ""
+const API_KEY = runtimeConfig().geminiApiKey ?? ""
 
 export type ChatMessage = {
   id: string

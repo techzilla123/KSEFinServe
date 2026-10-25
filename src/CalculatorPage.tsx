@@ -631,7 +631,8 @@ function TaxResult({
   const fmt = (value: number) => money(monthly ? value / 12 : value, currency);
 
   // The donut is drawn from the computed amounts, so the slices always match
-  // the numbers. Each slice is an annular wedge in a 226x226 box.
+  // the numbers. Each slice is an annular wedge in a 226x226 box, and each
+  // carries the tight viewBox and origin its hover target needs.
   const donutSlices = (() => {
     const cx = 113;
     const cy = 113;
@@ -662,7 +663,28 @@ function TaxResult({
           `A${outer} ${outer} 0 ${large} 1 ${pt(outer, end)} ` +
           `L${pt(inner, end)} ` +
           `A${inner} ${inner} 0 ${large} 0 ${pt(inner, start)} Z`;
-        return { key: p.key, path: d, color: p.color };
+        // The wedge's bounding box, so the hover target can shrink to it.
+        const xs = [cx + outer * Math.cos(rad(start)), cx + outer * Math.cos(rad(end)), cx + inner * Math.cos(rad(start)), cx + inner * Math.cos(rad(end))];
+        const ys = [cy + outer * Math.sin(rad(start)), cy + outer * Math.sin(rad(end)), cy + inner * Math.sin(rad(start)), cy + inner * Math.sin(rad(end))];
+        // Include the arc extremes so the box covers the whole wedge.
+        for (let a = Math.floor(start / 90) * 90; a <= Math.ceil(end / 90) * 90; a += 90) {
+          if (a >= start && a <= end) {
+            xs.push(cx + outer * Math.cos(rad(a)));
+            ys.push(cy + outer * Math.sin(rad(a)));
+          }
+        }
+        const minX = Math.min(...xs);
+        const minY = Math.min(...ys);
+        const maxX = Math.max(...xs);
+        const maxY = Math.max(...ys);
+        return {
+          key: p.key,
+          path: d,
+          color: p.color,
+          origin: { x: minX, y: minY },
+          size: { w: maxX - minX, h: maxY - minY },
+          viewBox: `${minX} ${minY} ${maxX - minX} ${maxY - minY}`,
+        };
       });
   })();
 
@@ -706,7 +728,8 @@ function TaxResult({
           <strong>{pct(keepPct)}</strong>
           <span>income you keep</span>
           {/* Hover targets are the drawn slice paths, so the tooltip always
-              matches the slice under the pointer. */}
+              matches the slice under the pointer. Each button is translated to
+              its own path's bounding box so it never covers the other slices. */}
           {segments.map((s) => {
             const slice = donutSlices.find((d) => d.key === s.key);
             if (!slice) return null;
@@ -716,13 +739,19 @@ function TaxResult({
                 type="button"
                 className="donut-hit"
                 aria-label={`${s.title}: ${s.value}`}
+                style={{ transform: `translate(${slice.origin.x}px, ${slice.origin.y}px)` }}
                 onMouseMove={(e) => moveDonutTip(e)}
                 onMouseOver={() => setActiveSegment(s)}
                 onMouseOut={() => setActiveSegment(null)}
                 onFocus={() => setActiveSegment(s)}
                 onBlur={() => setActiveSegment(null)}
               >
-                <svg viewBox="0 0 226 226" aria-hidden="true">
+                <svg
+                  viewBox={slice.viewBox}
+                  width={slice.size.w}
+                  height={slice.size.h}
+                  aria-hidden="true"
+                >
                   <path d={slice.path} />
                 </svg>
               </button>

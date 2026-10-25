@@ -773,18 +773,22 @@ button {
   height: 226px;
 }
 
-/* Hover targets are the drawn slice paths themselves, so the tooltip always
-   matches the slice under the pointer. */
+/* Hover targets are the drawn slice paths, so the tooltip always matches the
+   slice under the pointer. Each button shrink-wraps its own path so it never
+   covers the slices drawn after it. */
 .donut-hit {
   position: absolute;
-  top: 8px;
-  left: 8px;
-  width: 226px;
-  height: 226px;
+  top: 0;
+  left: 0;
   padding: 0;
   border: 0;
   background: transparent;
   cursor: pointer;
+}
+
+.donut-hit svg {
+  display: block;
+  overflow: visible;
 }
 
 .donut-hit path {

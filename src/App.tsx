@@ -1555,7 +1555,7 @@ export default function App() {
                   </p>
                   <div className="flex flex-wrap gap-3">
                     <BookingLink variant="white">Book a Session</BookingLink>
-                    <Link className="button button-navy" href="#about">
+                    <Link className="button button-navy" href="/about">
                       About
                     </Link>
                   </div>

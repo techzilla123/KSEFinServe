@@ -764,6 +764,15 @@ button {
   height: 242px;
 }
 
+/* The donut is drawn as SVG now, so the slices match the numbers. */
+.donut-svg {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 226px;
+  height: 226px;
+}
+
 .donut img {
   position: absolute;
   top: 8px;

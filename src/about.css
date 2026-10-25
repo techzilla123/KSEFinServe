@@ -476,6 +476,22 @@ a {
   mix-blend-mode: multiply;
 }
 
+/* The trust strip now shows words instead of logos. */
+.trust-word {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 154px;
+  height: 50px;
+  color: #0d2b42;
+  font-family: "Mona Sans:Medium", Arial, sans-serif;
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .trust-strip > p {
   margin: 0;
   font-family: "Mona Sans:Light", sans-serif;

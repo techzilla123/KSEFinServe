@@ -630,6 +630,42 @@ function TaxResult({
 
   const fmt = (value: number) => money(monthly ? value / 12 : value, currency);
 
+  // The donut is drawn from the computed amounts, so the slices always match
+  // the numbers. Each slice is an annular wedge in a 226x226 box.
+  const donutSlices = (() => {
+    const cx = 113;
+    const cy = 113;
+    const outer = 113;
+    const inner = 83.62;
+    const parts = [
+      { key: "after", value: Math.max(0, afterTax), color: "#1678BD" },
+      { key: "federal", value: Math.max(0, federal), color: "#7650B2" },
+      { key: "state", value: Math.max(0, stateAmount), color: "#C9A963" },
+      { key: "fica", value: Math.max(0, fica), color: "#7A8B99" },
+    ];
+    const sum = parts.reduce((s, p) => s + p.value, 0) || 1;
+    // Start at the top and sweep clockwise, matching the original artwork.
+    let angle = -90;
+    return parts
+      .filter((p) => p.value > 0)
+      .map((p) => {
+        const sweep = (p.value / sum) * 360;
+        const start = angle;
+        const end = angle + sweep;
+        angle = end;
+        const rad = (a: number) => (a * Math.PI) / 180;
+        const pt = (r: number, a: number) =>
+          `${(cx + r * Math.cos(rad(a))).toFixed(2)} ${(cy + r * Math.sin(rad(a))).toFixed(2)}`;
+        const large = sweep > 180 ? 1 : 0;
+        const d =
+          `M${pt(outer, start)} ` +
+          `A${outer} ${outer} 0 ${large} 1 ${pt(outer, end)} ` +
+          `L${pt(inner, end)} ` +
+          `A${inner} ${inner} 0 ${large} 0 ${pt(inner, start)} Z`;
+        return { key: p.key, path: d, color: p.color };
+      });
+  })();
+
   // The donut segments, with what each hover reveals.
   const segments = [
     {
@@ -662,9 +698,11 @@ function TaxResult({
     <>
       <div className="tax-result-row">
         <div className="donut" ref={donutRef}>
-          <img src="/assets/6c717.svg" alt="" />
-          <img src="/assets/77e07.svg" alt="" />
-          <img src="/assets/45f09.svg" alt="" />
+          <svg className="donut-svg" viewBox="0 0 226 226" aria-hidden="true">
+            {donutSlices.map((s) => (
+              <path key={s.key} d={s.path} fill={s.color} />
+            ))}
+          </svg>
           <strong>{pct(keepPct)}</strong>
           <span>income you keep</span>
           {/* Hover targets over each donut segment. */}
@@ -724,18 +762,13 @@ function TaxResult({
 
 /* Position a hover target over a donut segment. The donut is 242x242 with a
    226x226 ring centred at 8px,8px; the ring spans radius 83.62 to 113.
-   Each segment is an annular wedge, so the target is a rotated rectangle
-   covering that wedge's angular range. */
+   Each target is a rotated rectangle covering that slice's angular range. */
 function donutHitStyle(key: string): React.CSSProperties {
-  // The ring's angular layout (screen coords, y down):
-  //   after-tax ring: 270deg clockwise to 198.90deg
-  //   federal wedge:  196.13deg to 251.90deg
-  //   state wedge:    251.92deg to 274.38deg
-  // A full-circle target for the ring, and wedges for the two tax slices.
+  // The slices are drawn from the computed amounts, so the targets follow the
+  // same layout: after-tax first (from the top, clockwise), then federal,
+  // state and FICA. A full-ring target for the largest slice and wedges for
+  // the rest; the later targets sit on top so the smaller slices win.
   if (key === "after") {
-    // The ring is everything except the top-left gap; a full ring target
-    // with a hole in the middle would be ideal, but a full circle works
-    // because the wedges sit on top and take precedence.
     return { inset: "8px", width: "226px", height: "226px", top: 0, left: 0 };
   }
   if (key === "federal") {
@@ -746,8 +779,8 @@ function donutHitStyle(key: string): React.CSSProperties {
     // Top wedge.
     return { left: "81px", top: "8px", width: "105px", height: "42px" };
   }
-  // FICA has no visible slice in the artwork, so it is not hoverable.
-  return { display: "none" };
+  // FICA is the last slice; a thin band on the right.
+  return { left: "150px", top: "8px", width: "84px", height: "60px" };
 }
 
 /* ------------------------------------------------------------------ */
@@ -1458,27 +1491,40 @@ function Chart({
             </em>
           </>
         )}
-        {/* Hover targets: one per series, covering the plot. */}
-        {series.map((s, i) => (
-          <button
-            key={s.key}
-            type="button"
-            className="chart-hit"
-            aria-label={`${s.title}: ${s.value}`}
-            style={{
-              left: `${left}%`,
-              top: `${top}%`,
-              width: `${width}%`,
-              height: `${bottom - top}%`,
-              zIndex: i === 0 ? 12 : 11,
-            }}
-            onMouseMove={(e) => moveTip(e)}
-            onMouseOver={() => setActive(s)}
-            onMouseOut={() => setActive(null)}
-            onFocus={() => setActive(s)}
-            onBlur={() => setActive(null)}
-          />
-        ))}
+        {/* Hover targets: one per series, each covering only its own line. */}
+        {series.map((s, i) => {
+          const pts = i === 0 ? points : points2 ?? [];
+          if (!pts.length) return null;
+          // The band this line occupies, in plot percentages.
+          const span = PLOT.bottom - PLOT.top;
+          const values = pts.map((p) => p.y);
+          const lo = Math.min(...values);
+          const hi = Math.max(...values);
+          const topPct = PLOT.bottom - (hi / yMax) * span;
+          const bottomPct = PLOT.bottom - (lo / yMax) * span;
+          // A little padding so the thin line is easy to hit.
+          const pad = 3;
+          return (
+            <button
+              key={s.key}
+              type="button"
+              className="chart-hit"
+              aria-label={`${s.title}: ${s.value}`}
+              style={{
+                left: `${PLOT.left}%`,
+                top: `${Math.max(0, topPct - pad)}%`,
+                width: `${PLOT.width}%`,
+                height: `${Math.min(100, bottomPct - topPct + pad * 2)}%`,
+                zIndex: i === 0 ? 11 : 12,
+              }}
+              onMouseMove={(e) => moveTip(e)}
+              onMouseOver={() => setActive(s)}
+              onMouseOut={() => setActive(null)}
+              onFocus={() => setActive(s)}
+              onBlur={() => setActive(null)}
+            />
+          );
+        })}
         {active && (
           <div
             className="chart-tip show"

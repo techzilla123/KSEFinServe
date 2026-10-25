@@ -219,17 +219,15 @@ function App() {
           <div className="trusted-marquee">
             <div className="trusted-marquee-track">
               {[
-                ["Shell", "83ae0.png"],
-                ["ExxonMobil", "1cf6f.png"],
-                ["Imperial Oil", "8b8a5.png"],
-                ["CMHC", "a1806.png"],
-                ["Shell", "83ae0.png"],
-                ["ExxonMobil", "1cf6f.png"],
-                ["Imperial Oil", "8b8a5.png"],
-                ["CMHC", "a1806.png"],
-              ].map(([label, src]: string[], i: number) => (
+                ["Legacy", "Legacy"],
+                ["Clarity", "Clarity"],
+                ["Purpose", "Purpose"],
+                ["Legacy", "Legacy"],
+                ["Clarity", "Clarity"],
+                ["Purpose", "Purpose"],
+              ].map(([label, word]: string[], i: number) => (
                 <div key={`m-${label}-${i}`}>
-                  <img src={asset(src)} alt={label} />
+                  <span className="trust-word">{word}</span>
                 </div>
               ))}
             </div>

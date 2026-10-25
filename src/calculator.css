@@ -773,6 +773,24 @@ button {
   height: 226px;
 }
 
+/* Hover targets are the drawn slice paths themselves, so the tooltip always
+   matches the slice under the pointer. */
+.donut-hit {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 226px;
+  height: 226px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.donut-hit path {
+  fill: transparent;
+}
+
 .donut img {
   position: absolute;
   top: 8px;

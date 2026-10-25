@@ -705,21 +705,29 @@ function TaxResult({
           </svg>
           <strong>{pct(keepPct)}</strong>
           <span>income you keep</span>
-          {/* Hover targets over each donut segment. */}
-          {segments.map((s) => (
-            <button
-              key={s.key}
-              type="button"
-              className="donut-hit"
-              aria-label={`${s.title}: ${s.value}`}
-              style={donutHitStyle(s.key)}
-              onMouseMove={(e) => moveDonutTip(e)}
-              onMouseOver={() => setActiveSegment(s)}
-              onMouseOut={() => setActiveSegment(null)}
-              onFocus={() => setActiveSegment(s)}
-              onBlur={() => setActiveSegment(null)}
-            />
-          ))}
+          {/* Hover targets are the drawn slice paths, so the tooltip always
+              matches the slice under the pointer. */}
+          {segments.map((s) => {
+            const slice = donutSlices.find((d) => d.key === s.key);
+            if (!slice) return null;
+            return (
+              <button
+                key={s.key}
+                type="button"
+                className="donut-hit"
+                aria-label={`${s.title}: ${s.value}`}
+                onMouseMove={(e) => moveDonutTip(e)}
+                onMouseOver={() => setActiveSegment(s)}
+                onMouseOut={() => setActiveSegment(null)}
+                onFocus={() => setActiveSegment(s)}
+                onBlur={() => setActiveSegment(null)}
+              >
+                <svg viewBox="0 0 226 226" aria-hidden="true">
+                  <path d={slice.path} />
+                </svg>
+              </button>
+            );
+          })}
         </div>
         <div className="tax-legend">
           <div><img src="/assets/70ff4.svg" alt="" />After-tax income <strong>{fmt(afterTax)}</strong></div>
@@ -758,29 +766,6 @@ function TaxResult({
       </p>
     </>
   );
-}
-
-/* Position a hover target over a donut segment. The donut is 242x242 with a
-   226x226 ring centred at 8px,8px; the ring spans radius 83.62 to 113.
-   Each target is a rotated rectangle covering that slice's angular range. */
-function donutHitStyle(key: string): React.CSSProperties {
-  // The slices are drawn from the computed amounts, so the targets follow the
-  // same layout: after-tax first (from the top, clockwise), then federal,
-  // state and FICA. A full-ring target for the largest slice and wedges for
-  // the rest; the later targets sit on top so the smaller slices win.
-  if (key === "after") {
-    return { inset: "8px", width: "226px", height: "226px", top: 0, left: 0 };
-  }
-  if (key === "federal") {
-    // Upper-left wedge.
-    return { left: "8px", top: "8px", width: "105px", height: "105px" };
-  }
-  if (key === "state") {
-    // Top wedge.
-    return { left: "81px", top: "8px", width: "105px", height: "42px" };
-  }
-  // FICA is the last slice; a thin band on the right.
-  return { left: "150px", top: "8px", width: "84px", height: "60px" };
 }
 
 /* ------------------------------------------------------------------ */
@@ -1395,6 +1380,7 @@ function Chart({
   xLabels,
   retireIndex,
   retireAgeLabel,
+  debtStrategy,
 }: {
   id: Exclude<ToolId, "tax">;
   series: Series[];
@@ -1406,6 +1392,8 @@ function Chart({
   retireIndex?: number;
   /** The age shown on the retirement marker. */
   retireAgeLabel?: string;
+  /** The debt strategy currently selected, for the hover tooltip. */
+  debtStrategy?: string;
 }) {
   const [active, setActive] = useState<Series | null>(null);
   // Where the tooltip sits, relative to the plot.
@@ -1491,7 +1479,9 @@ function Chart({
             </em>
           </>
         )}
-        {/* Hover targets: one per series, each covering only its own line. */}
+        {/* Hover targets: one per series. The debt lines are close together,
+            so the pointer's x position picks the line and the selected
+            strategy is preferred when they are indistinguishable. */}
         {series.map((s, i) => {
           const pts = i === 0 ? points : points2 ?? [];
           if (!pts.length) return null;
@@ -1504,6 +1494,12 @@ function Chart({
           const bottomPct = PLOT.bottom - (lo / yMax) * span;
           // A little padding so the thin line is easy to hit.
           const pad = 3;
+          const band = {
+            left: PLOT.left,
+            top: Math.max(0, topPct - pad),
+            width: PLOT.width,
+            height: Math.min(100, bottomPct - topPct + pad * 2),
+          };
           return (
             <button
               key={s.key}
@@ -1511,13 +1507,27 @@ function Chart({
               className="chart-hit"
               aria-label={`${s.title}: ${s.value}`}
               style={{
-                left: `${PLOT.left}%`,
-                top: `${Math.max(0, topPct - pad)}%`,
-                width: `${PLOT.width}%`,
-                height: `${Math.min(100, bottomPct - topPct + pad * 2)}%`,
+                left: `${band.left}%`,
+                top: `${band.top}%`,
+                width: `${band.width}%`,
+                height: `${band.height}%`,
                 zIndex: i === 0 ? 11 : 12,
               }}
-              onMouseMove={(e) => moveTip(e)}
+              onMouseMove={(e) => {
+                moveTip(e);
+                // When the lines overlap, prefer the selected strategy so
+                // the tooltip matches what the chart is showing.
+                if (series.length > 1 && id === "debt" && debtStrategy) {
+                  const chosen = series.find(
+                    (x) => x.key.toLowerCase() === debtStrategy.toLowerCase(),
+                  );
+                  if (chosen) {
+                    setActive(chosen);
+                    return;
+                  }
+                }
+                setActive(s);
+              }}
               onMouseOver={() => setActive(s)}
               onMouseOut={() => setActive(null)}
               onFocus={() => setActive(s)}
@@ -2010,6 +2020,7 @@ function ChartResult({
         xLabels={chartData.xLabels}
         retireIndex={chartData.retireIndex}
         retireAgeLabel={chartData.retireAgeLabel}
+        debtStrategy={debtStrategy}
       />
       <div className="legend">
         <span><i style={{ background: tool.accent }} />{id === "debt" ? "Avalanche" : id === "compound" ? "Total balance (deposits + interest)" : "Projected savings"}</span>

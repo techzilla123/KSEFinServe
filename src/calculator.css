@@ -846,6 +846,7 @@ button {
 }
 
 .tax-result-row {
+  position: relative;
   display: grid;
   grid-template-columns: 250px minmax(0, 1fr);
   align-items: center;
@@ -1529,16 +1530,16 @@ button {
 .chart-tip,
 .donut-tip {
   position: absolute;
-  z-index: 20;
-  max-width: 240px;
-  padding: 9px 11px;
+  z-index: 30;
+  width: 220px;
+  padding: 10px 12px;
   border: 1px solid #dedcd5;
-  border-radius: 9px;
+  border-radius: 10px;
   background: #fff;
-  box-shadow: 0 10px 26px rgba(13, 43, 66, 0.14);
+  box-shadow: 0 12px 30px rgba(13, 43, 66, 0.16);
   color: #0d2b42;
   font-size: 11px;
-  line-height: 1.45;
+  line-height: 1.5;
   pointer-events: none;
   opacity: 0;
   transform: translateY(4px);
@@ -1554,15 +1555,26 @@ button {
 .chart-tip strong,
 .donut-tip strong {
   display: block;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
   font-family: "Mona Sans:SemiBold", Arial, sans-serif;
   font-size: 11px;
   font-weight: 600;
 }
 
-.chart-tip span,
-.donut-tip span {
+/* The value line is emphasised. */
+.chart-tip span:first-of-type,
+.donut-tip span:first-of-type {
   display: block;
+  color: #1678bd;
+  font-family: "Mona Sans:SemiBold", Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.chart-tip span:last-of-type,
+.donut-tip span:last-of-type {
+  display: block;
+  margin-top: 3px;
   color: #62717a;
 }
 
@@ -1571,7 +1583,10 @@ button {
 .chart-hit {
   position: absolute;
   z-index: 10;
+  padding: 0;
+  border: 0;
   border-radius: 6px;
+  background: transparent;
   cursor: pointer;
 }
 
@@ -1584,7 +1599,10 @@ button {
 .donut-hit {
   position: absolute;
   z-index: 6;
+  padding: 0;
+  border: 0;
   border-radius: 50%;
+  background: transparent;
   cursor: pointer;
 }
 

@@ -204,19 +204,27 @@ function money(value: number, currency: Currency, decimals = 0): string {
 
 /** Parse a "$1,234.56" style string into a number. */
 function parseMoney(text: string): number {
-  const cleaned = text.replace(/[^0-9.]/g, "");
+  const cleaned = text.replace(/[^\d.]/g, "");
   if (!cleaned) return 0;
   const value = Number(cleaned);
   return Number.isFinite(value) ? value : 0;
 }
 
-/** Format a number for display inside an input (keeps the $ and commas). */
+/** Format a number for a money input (keeps the $ and grouped commas). */
 function formatMoneyInput(value: number): string {
-  return "$" + Math.round(value).toLocaleString("en-US");
+  return "$" + groupThousands(String(Math.round(value)));
 }
 
 function pct(value: number, decimals = 2): string {
   return (value * 100).toFixed(decimals) + "%";
+}
+
+/** Group thousands with commas: 1000000 -> "1,000,000". */
+function groupThousands(digits: string): string {
+  // Split off any decimal part so grouping only applies to the whole number.
+  const [whole, ...rest] = digits.split(".");
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return rest.length ? grouped + "." + rest.join(".") : grouped;
 }
 
 /* ------------------------------------------------------------------ */
@@ -323,7 +331,7 @@ function Field({
   const [lastValue, setLastValue] = useState(value);
   if (value !== lastValue) {
     setLastValue(value);
-    if (numeric) setCurrent(value);
+    setCurrent(value);
   }
 
   if (select && options) {
@@ -348,8 +356,7 @@ function Field({
       <span>{label}</span>
       <span className="control">
         <input
-          value={numeric ? current : undefined}
-          defaultValue={numeric ? undefined : value}
+          value={current}
           aria-label={label}
           inputMode={numeric ? "numeric" : undefined}
           onBeforeInput={(event) => {
@@ -365,13 +372,14 @@ function Field({
           }}
           onChange={(event) => {
             if (numeric) {
-              // Keep a leading "$"; only digits, commas and a decimal point.
-              const digits = event.target.value.replace(/[^\d.,]/g, "");
-              const next = "$" + digits;
+              // Money fields keep a leading "$" and group thousands as you type.
+              const digits = event.target.value.replace(/[^\d]/g, "");
+              const next = "$" + groupThousands(digits);
               setCurrent(next);
               onChange?.(next);
               return;
             }
+            setCurrent(event.target.value);
             onChange?.(event.target.value);
           }}
         />
@@ -604,6 +612,21 @@ function TaxResult({
     value: string;
     detail: string;
   } | null>(null);
+  // Where the donut tooltip sits, relative to the donut.
+  const [donutTipPos, setDonutTipPos] = useState({ x: 0, y: 0 });
+  const donutRef = useRef<HTMLDivElement>(null);
+
+  /** Keep the donut tooltip next to the pointer, clamped inside the row. */
+  function moveDonutTip(event: React.MouseEvent) {
+    const row = donutRef.current?.closest(".tax-result-row") as HTMLElement | null;
+    if (!row) return;
+    const rect = row.getBoundingClientRect();
+    const rawX = event.clientX - rect.left + 16;
+    const rawY = event.clientY - rect.top + 16;
+    const x = Math.max(8, Math.min(rawX, rect.width - 232));
+    const y = Math.max(8, Math.min(rawY, rect.height - 110));
+    setDonutTipPos({ x, y });
+  }
 
   const fmt = (value: number) => money(monthly ? value / 12 : value, currency);
 
@@ -638,7 +661,7 @@ function TaxResult({
   return (
     <>
       <div className="tax-result-row">
-        <div className="donut">
+        <div className="donut" ref={donutRef}>
           <img src="/assets/6c717.svg" alt="" />
           <img src="/assets/77e07.svg" alt="" />
           <img src="/assets/45f09.svg" alt="" />
@@ -652,19 +675,13 @@ function TaxResult({
               className="donut-hit"
               aria-label={`${s.title}: ${s.value}`}
               style={donutHitStyle(s.key)}
+              onMouseMove={(e) => moveDonutTip(e)}
               onMouseOver={() => setActiveSegment(s)}
               onMouseOut={() => setActiveSegment(null)}
               onFocus={() => setActiveSegment(s)}
               onBlur={() => setActiveSegment(null)}
             />
           ))}
-          {activeSegment && (
-            <div className="donut-tip show">
-              <strong>{activeSegment.title}</strong>
-              <span>{activeSegment.value}</span>
-              <span>{activeSegment.detail}</span>
-            </div>
-          )}
         </div>
         <div className="tax-legend">
           <div><img src="/assets/70ff4.svg" alt="" />After-tax income <strong>{fmt(afterTax)}</strong></div>
@@ -674,6 +691,17 @@ function TaxResult({
           <hr />
           <div>Total tax <strong>{fmt(total)}</strong></div>
         </div>
+        {/* The tooltip lives outside the donut so it is never clipped. */}
+        {activeSegment && (
+          <div
+            className="donut-tip show"
+            style={{ left: donutTipPos.x, top: donutTipPos.y }}
+          >
+            <strong>{activeSegment.title}</strong>
+            <span>{activeSegment.value}</span>
+            <span>{activeSegment.detail}</span>
+          </div>
+        )}
       </div>
       <div className="tax-bottom">
         <Metric label="Average tax rate" value={pct(avgRate)} note="" />
@@ -733,16 +761,45 @@ const RETURN_SCENARIOS: Record<string, number> = {
   Custom: 0.05,
 };
 
-function CollegeForm({ currency }: { currency: Currency }) {
-  const [country, setCountry] = useState<"United States" | "Canada">("United States");
-  const [state, setState] = useState("California");
-  const [scenario, setScenario] = useState("Moderate");
-  const [customRate, setCustomRate] = useState("5");
-  const [childAge, setChildAge] = useState("6");
-  const [startAge, setStartAge] = useState("18");
-  const [saved, setSaved] = useState("$12,000");
-  const [monthly, setMonthly] = useState("$250");
+function CollegeForm({
+  currency,
+  country,
+  setCountry,
+  state,
+  setState,
+  scenario,
+  setScenario,
+  customRate,
+  setCustomRate,
+  childAge,
+  setChildAge,
+  startAge,
+  setStartAge,
+  saved,
+  setSaved,
+  monthly,
+  setMonthly,
+}: {
+  currency: Currency;
+  country: string;
+  setCountry: (v: string) => void;
+  state: string;
+  setState: (v: string) => void;
+  scenario: string;
+  setScenario: (v: string) => void;
+  customRate: string;
+  setCustomRate: (v: string) => void;
+  childAge: string;
+  setChildAge: (v: string) => void;
+  startAge: string;
+  setStartAge: (v: string) => void;
+  saved: string;
+  setSaved: (v: string) => void;
+  monthly: string;
+  setMonthly: (v: string) => void;
+}) {
   const regions = country === "Canada" ? CA_PROVINCES : US_STATES;
+  const rate = scenario === "Custom" ? Number(customRate) / 100 : RETURN_SCENARIOS[scenario] ?? 0.05;
 
   return (
     <>
@@ -751,7 +808,7 @@ function CollegeForm({ currency }: { currency: Currency }) {
         options={["United States", "Canada"]}
         value={country}
         onChange={(next) => {
-          setCountry(next as "United States" | "Canada");
+          setCountry(next);
           setState(next === "Canada" ? "Ontario" : "California");
         }}
       />
@@ -763,8 +820,8 @@ function CollegeForm({ currency }: { currency: Currency }) {
         onChange={setState}
       />
       <div className="field-grid">
-        <Field label="Child’s age today" value={childAge} suffix="years" numeric onChange={setChildAge} />
-        <Field label="Education start age" value={startAge} suffix="years" numeric onChange={setStartAge} />
+        <Field label="Child’s age today" value={childAge} suffix="years" onChange={setChildAge} />
+        <Field label="Education start age" value={startAge} suffix="years" onChange={setStartAge} />
         <Field label="Already saved" value={saved} currency={currency} numeric onChange={setSaved} />
         <Field label="Monthly contribution" value={monthly} currency={currency} numeric onChange={setMonthly} />
       </div>
@@ -780,13 +837,12 @@ function CollegeForm({ currency }: { currency: Currency }) {
           label="Custom annual return"
           value={customRate}
           suffix="%"
-          numeric
           onChange={setCustomRate}
         />
       )}
       <Assumptions>
         4 education years · $18,000/year today · Cover 100% · Other funding $0
-        · Cost inflation 3% · Moderate return 5%/year · Household income
+        · Cost inflation 3% · Return {(rate * 100).toFixed(0)}%/year · Household income
         $100k–$150k. Grants excluded.
       </Assumptions>
       <p className="fine-print">
@@ -838,7 +894,7 @@ function DebtCard({
       </div>
       <div className="debt-fields">
         <Field label="Balance" value={balance} currency={currency} numeric onChange={onBalance} />
-        <Field label="APR (%)" value={apr} numeric onChange={onApr} />
+        <Field label="APR (%)" value={apr} onChange={onApr} />
         <Field label="Min. / month" value={payment} currency={currency} numeric onChange={onPayment} />
       </div>
     </div>
@@ -927,17 +983,43 @@ function DebtForm({
 /* Retirement                                                          */
 /* ------------------------------------------------------------------ */
 
-function RetirementForm({ currency }: { currency: Currency }) {
-  const [scenario, setScenario] = useState("Moderate");
-  const [ageToday, setAgeToday] = useState("40");
-  const [retireAge, setRetireAge] = useState("65");
-  const [monthly, setMonthly] = useState("$600");
-  const [incomeGoal, setIncomeGoal] = useState("$4,500");
+const RETIREMENT_SCENARIOS: Record<string, number> = {
+  Conservative: 0.03,
+  Moderate: 0.05,
+  Growth: 0.07,
+};
+
+function RetirementForm({
+  currency,
+  scenario,
+  setScenario,
+  ageToday,
+  setAgeToday,
+  retireAge,
+  setRetireAge,
+  monthly,
+  setMonthly,
+  incomeGoal,
+  setIncomeGoal,
+}: {
+  currency: Currency;
+  scenario: string;
+  setScenario: (v: string) => void;
+  ageToday: string;
+  setAgeToday: (v: string) => void;
+  retireAge: string;
+  setRetireAge: (v: string) => void;
+  monthly: string;
+  setMonthly: (v: string) => void;
+  incomeGoal: string;
+  setIncomeGoal: (v: string) => void;
+}) {
+  const rate = RETIREMENT_SCENARIOS[scenario] ?? 0.05;
   return (
     <>
       <div className="field-grid">
-        <Field label="Age today" value={ageToday} suffix="years" numeric onChange={setAgeToday} />
-        <Field label="Retirement age" value={retireAge} suffix="years" numeric onChange={setRetireAge} />
+        <Field label="Age today" value={ageToday} suffix="years" onChange={setAgeToday} />
+        <Field label="Retirement age" value={retireAge} suffix="years" onChange={setRetireAge} />
       </div>
       <Field label="Monthly contribution" value={monthly} currency={currency} numeric onChange={setMonthly} />
       <Field label="Monthly income goal at retirement" value={incomeGoal} currency={currency} numeric onChange={setIncomeGoal} />
@@ -949,7 +1031,7 @@ function RetirementForm({ currency }: { currency: Currency }) {
       />
       <Assumptions>
         RRSP $80,000 · TFSA $30,000 · Other $10,000 · CPP/OAS $1,500/mo at 65
-        · Plan through age 95 · Inflation 2% · Growth return 5% · Retirement
+        · Plan through age 95 · Inflation 2% · Growth return {(rate * 100).toFixed(0)}% · Retirement
         return 3%.
       </Assumptions>
       <p className="fine-print">
@@ -979,19 +1061,43 @@ const CONTRIBUTION_FREQUENCIES: Record<string, number> = {
   Annually: 1,
 };
 
-function CompoundForm({ currency }: { currency: Currency }) {
-  const [initial, setInitial] = useState("$10,000");
-  const [years, setYears] = useState("10");
-  const [rate, setRate] = useState("4");
-  const [compoundFreq, setCompoundFreq] = useState("Daily (365 times / year)");
-  const [contribution, setContribution] = useState("$100");
-  const [contributionFreq, setContributionFreq] = useState("Monthly");
+function CompoundForm({
+  currency,
+  initial,
+  setInitial,
+  years,
+  setYears,
+  rate,
+  setRate,
+  compoundFreq,
+  setCompoundFreq,
+  contribution,
+  setContribution,
+  contributionFreq,
+  setContributionFreq,
+}: {
+  currency: Currency;
+  initial: string;
+  setInitial: (v: string) => void;
+  years: string;
+  setYears: (v: string) => void;
+  rate: string;
+  setRate: (v: string) => void;
+  compoundFreq: string;
+  setCompoundFreq: (v: string) => void;
+  contribution: string;
+  setContribution: (v: string) => void;
+  contributionFreq: string;
+  setContributionFreq: (v: string) => void;
+}) {
+  const n = COMPOUND_FREQUENCIES[compoundFreq] ?? 365;
+  const apy = Math.pow(1 + Number(rate) / 100 / n, n) - 1;
   return (
     <>
       <Field label="Initial deposit" value={initial} currency={currency} numeric onChange={setInitial} />
       <div className="field-grid">
-        <Field label="Years of growth" value={years} suffix="years" numeric onChange={setYears} />
-        <Field label="Estimated annual rate" value={rate} suffix="%" numeric onChange={setRate} />
+        <Field label="Years of growth" value={years} suffix="years" onChange={setYears} />
+        <Field label="Estimated annual rate" value={rate} suffix="%" onChange={setRate} />
       </div>
       <Field
         label="Compounding frequency"
@@ -1016,14 +1122,8 @@ function CompoundForm({ currency }: { currency: Currency }) {
       </Assumptions>
       <p className="fine-print">
         {rate}% is the annual rate before compounding, not APY. {compoundFreq.toLowerCase()} compounding
-        gives an effective annual yield of about{" "}
-        {pct(
-          Math.pow(
-            1 + Number(rate) / 100 / COMPOUND_FREQUENCIES[compoundFreq],
-            COMPOUND_FREQUENCIES[compoundFreq],
-          ) - 1,
-        )}
-        . Educational only, not investment advice.
+        gives an effective annual yield of about {pct(apy)}. Educational only, not
+        investment advice.
       </p>
     </>
   );
@@ -1045,6 +1145,12 @@ function InputPanel({
   setDebts,
   debtExtra,
   setDebtExtra,
+  college,
+  setCollege,
+  retirement,
+  setRetirement,
+  compound,
+  setCompound,
 }: {
   tool: Tool;
   currency: Currency;
@@ -1057,6 +1163,12 @@ function InputPanel({
   setDebts: (fn: (current: Array<{ title: string; balance: string; apr: string; payment: string }>) => Array<{ title: string; balance: string; apr: string; payment: string }>) => void;
   debtExtra: string;
   setDebtExtra: (v: string) => void;
+  college: CollegeInputs;
+  setCollege: (fn: (c: CollegeInputs) => CollegeInputs) => void;
+  retirement: RetirementInputs;
+  setRetirement: (fn: (r: RetirementInputs) => RetirementInputs) => void;
+  compound: CompoundInputs;
+  setCompound: (fn: (c: CompoundInputs) => CompoundInputs) => void;
 }) {
   // "CANADA · CAD" style meta, with USD · CAD as a clickable switch.
   const [metaPrefix] = tool.panelMeta.split(" · ");
@@ -1091,7 +1203,27 @@ function InputPanel({
             onIncomeChange={onIncomeChange}
           />
         )}
-        {tool.id === "college" && <CollegeForm currency={currency} />}
+        {tool.id === "college" && (
+          <CollegeForm
+            currency={currency}
+            country={college.country}
+            setCountry={(v) => setCollege((c) => ({ ...c, country: v }))}
+            state={college.state}
+            setState={(v) => setCollege((c) => ({ ...c, state: v }))}
+            scenario={college.scenario}
+            setScenario={(v) => setCollege((c) => ({ ...c, scenario: v }))}
+            customRate={college.customRate}
+            setCustomRate={(v) => setCollege((c) => ({ ...c, customRate: v }))}
+            childAge={college.childAge}
+            setChildAge={(v) => setCollege((c) => ({ ...c, childAge: v }))}
+            startAge={college.startAge}
+            setStartAge={(v) => setCollege((c) => ({ ...c, startAge: v }))}
+            saved={college.saved}
+            setSaved={(v) => setCollege((c) => ({ ...c, saved: v }))}
+            monthly={college.monthly}
+            setMonthly={(v) => setCollege((c) => ({ ...c, monthly: v }))}
+          />
+        )}
         {tool.id === "debt" && (
           <DebtForm
             currency={currency}
@@ -1103,8 +1235,38 @@ function InputPanel({
             setExtra={setDebtExtra}
           />
         )}
-        {tool.id === "retirement" && <RetirementForm currency={currency} />}
-        {tool.id === "compound" && <CompoundForm currency={currency} />}
+        {tool.id === "retirement" && (
+          <RetirementForm
+            currency={currency}
+            scenario={retirement.scenario}
+            setScenario={(v) => setRetirement((r) => ({ ...r, scenario: v }))}
+            ageToday={retirement.ageToday}
+            setAgeToday={(v) => setRetirement((r) => ({ ...r, ageToday: v }))}
+            retireAge={retirement.retireAge}
+            setRetireAge={(v) => setRetirement((r) => ({ ...r, retireAge: v }))}
+            monthly={retirement.monthly}
+            setMonthly={(v) => setRetirement((r) => ({ ...r, monthly: v }))}
+            incomeGoal={retirement.incomeGoal}
+            setIncomeGoal={(v) => setRetirement((r) => ({ ...r, incomeGoal: v }))}
+          />
+        )}
+        {tool.id === "compound" && (
+          <CompoundForm
+            currency={currency}
+            initial={compound.initial}
+            setInitial={(v) => setCompound((c) => ({ ...c, initial: v }))}
+            years={compound.years}
+            setYears={(v) => setCompound((c) => ({ ...c, years: v }))}
+            rate={compound.rate}
+            setRate={(v) => setCompound((c) => ({ ...c, rate: v }))}
+            compoundFreq={compound.compoundFreq}
+            setCompoundFreq={(v) => setCompound((c) => ({ ...c, compoundFreq: v }))}
+            contribution={compound.contribution}
+            setContribution={(v) => setCompound((c) => ({ ...c, contribution: v }))}
+            contributionFreq={compound.contributionFreq}
+            setContributionFreq={(v) => setCompound((c) => ({ ...c, contributionFreq: v }))}
+          />
+        )}
       </div>
     </section>
   );
@@ -1173,6 +1335,22 @@ function Chart({
 }) {
   const assets = chartAssets[id];
   const [active, setActive] = useState<Series | null>(null);
+  // Where the tooltip sits, relative to the plot.
+  const [tipPos, setTipPos] = useState({ x: 0, y: 0 });
+  const plotRef = useRef<HTMLDivElement>(null);
+
+  /** Keep the tooltip next to the pointer, clamped inside the plot. */
+  function moveTip(event: React.MouseEvent) {
+    const plot = plotRef.current;
+    if (!plot) return;
+    const rect = plot.getBoundingClientRect();
+    const rawX = event.clientX - rect.left + 14;
+    const rawY = event.clientY - rect.top + 14;
+    // The card is ~240px wide and ~70px tall; flip it back inside the plot.
+    const x = Math.max(4, Math.min(rawX, rect.width - 248));
+    const y = Math.max(4, Math.min(rawY, rect.height - 78));
+    setTipPos({ x, y });
+  }
   const labels =
     id === "retirement"
       ? ["40", "45", "50", "55", "60", "65", "70", "75", "80", "85", "90", "95"]
@@ -1193,7 +1371,7 @@ function Chart({
   return (
     <div className={`chart chart-${id}`}>
       <div className="y-labels">{y.map((item) => <span key={item}>{item}</span>)}</div>
-      <div className="plot">
+      <div className="plot" ref={plotRef}>
         {[0, 1, 2, 3, 4].map((line) => <i key={line} />)}
         {assets.area2 && <img className="chart-area second" src={assets.area2} alt="" />}
         <img className="chart-area" src={assets.area} alt="" />
@@ -1215,6 +1393,7 @@ function Chart({
             className="chart-hit"
             aria-label={`${s.title}: ${s.value}`}
             style={hitStyle(s.target, id)}
+            onMouseMove={(e) => moveTip(e)}
             onMouseOver={() => setActive(s)}
             onMouseOut={() => setActive(null)}
             onFocus={() => setActive(s)}
@@ -1222,7 +1401,10 @@ function Chart({
           />
         ))}
         {active && (
-          <div className="chart-tip show">
+          <div
+            className="chart-tip show"
+            style={{ left: tipPos.x, top: tipPos.y }}
+          >
             <strong>{active.title}</strong>
             <span>{active.value}</span>
             <span>{active.detail}</span>
@@ -1320,44 +1502,100 @@ function ReportBanner({ tool }: { tool: Tool }) {
 /* Chart result - metrics computed live, chart kept as designed        */
 /* ------------------------------------------------------------------ */
 
+type CollegeInputs = {
+  country: string;
+  state: string;
+  scenario: string;
+  customRate: string;
+  childAge: string;
+  startAge: string;
+  saved: string;
+  monthly: string;
+};
+
+type RetirementInputs = {
+  scenario: string;
+  ageToday: string;
+  retireAge: string;
+  monthly: string;
+  incomeGoal: string;
+};
+
+type CompoundInputs = {
+  initial: string;
+  years: string;
+  rate: string;
+  compoundFreq: string;
+  contribution: string;
+  contributionFreq: string;
+};
+
+/** Future value of an initial sum plus regular contributions.
+    `contribution` is paid once per contribution period, and `contributionsPerYear`
+    says how many times a year that is. */
+function futureValue(
+  initial: number,
+  contribution: number,
+  annualRate: number,
+  years: number,
+  compoundsPerYear: number,
+  contributionsPerYear: number,
+): number {
+  const r = annualRate / compoundsPerYear;
+  const periods = Math.round(years * compoundsPerYear);
+  const fvInitial = initial * Math.pow(1 + r, periods);
+  // Each contribution compounds for the periods remaining after it lands.
+  const gap = compoundsPerYear / contributionsPerYear;
+  let fvContrib = 0;
+  for (let k = 1; k <= Math.round(years * contributionsPerYear); k++) {
+    const remaining = periods - Math.round(k * gap);
+    if (remaining > 0) fvContrib += contribution * Math.pow(1 + r, remaining);
+  }
+  return fvInitial + fvContrib;
+}
+
 function ChartResult({
   tool,
   currency,
   debtStrategy,
   debts,
   debtExtra,
+  college,
+  retirement,
+  compound,
 }: {
   tool: Tool;
   currency: Currency;
   debtStrategy: string;
   debts: Array<{ title: string; balance: string; apr: string; payment: string }>;
   debtExtra: string;
+  college: CollegeInputs;
+  retirement: RetirementInputs;
+  compound: CompoundInputs;
 }) {
   const id = tool.id as Exclude<ToolId, "tax">;
 
   // The metrics are computed from the same assumptions the chart shows.
   const metrics: Array<Parameters<typeof Metric>[0]> = (() => {
     if (id === "college") {
-      const years = 12;
-      const rate = 0.05;
-      const saved = 12000;
-      const monthly = 250;
-      const fvSaved = saved * Math.pow(1 + rate, years);
-      let fvContrib = 0;
-      for (let m = 1; m <= years * 12; m++) {
-        fvContrib += monthly * Math.pow(1 + rate, (years * 12 - m) / 12);
-      }
-      const total = fvSaved + fvContrib;
-      const goal = 102655;
+      const years = Math.max(0, Number(college.startAge) - Number(college.childAge));
+      const rate =
+        college.scenario === "Custom"
+          ? Number(college.customRate) / 100
+          : RETURN_SCENARIOS[college.scenario] ?? 0.05;
+      const saved = parseMoney(college.saved);
+      const monthly = parseMoney(college.monthly);
+      // 4 years of $18,000 today, rising 3% a year, priced at the start age.
+      const goal = 4 * 18000 * Math.pow(1.03, years);
+      const total = futureValue(saved, monthly, rate, years, 12, 12);
       const gap = goal - total;
       // The monthly contribution that would close the gap at the same rate.
-      // Solve fvSaved + PMT * annuityFactor = goal, so the annuity must cover
-      // the goal less what the existing savings already grow to.
       const rm = rate / 12;
-      const annuityFactor = (Math.pow(1 + rm, years * 12) - 1) / rm;
-      const needed = Math.max(0, (goal - fvSaved) / annuityFactor);
+      const annuityFactor =
+        rm > 0 ? (Math.pow(1 + rm, years * 12) - 1) / rm : years * 12;
+      const needed = Math.max(0, (goal - saved * Math.pow(1 + rate, years)) / annuityFactor);
       return [
-        { label: "Education funding goal", value: money(goal, currency), note: "4 years, priced at start age" },
+        { label: "Education funding goal", value: money(goal, currency), note: `${years} years out · 4 years of study` },
         { label: "Estimated funding gap", value: money(Math.max(0, gap), currency), note: "No grants or other funding", warning: true },
         { label: "Contribution to close gap", value: `${money(needed, currency)}/mo`, note: `${money(Math.max(0, needed - monthly), currency)} more each month` },
       ];
@@ -1380,44 +1618,34 @@ function ChartResult({
       ];
     }
     if (id === "retirement") {
-      const cur = 120000;
-      const monthly = 600;
-      const rate = 0.05;
-      const years = 25;
-      const fvCur = cur * Math.pow(1 + rate, years);
-      let fvContrib = 0;
-      for (let m = 1; m <= years * 12; m++) {
-        fvContrib += monthly * Math.pow(1 + rate, (years * 12 - m) / 12);
-      }
-      const total = fvCur + fvContrib;
+      const years = Math.max(0, Number(retirement.retireAge) - Number(retirement.ageToday));
+      const rate = RETIREMENT_SCENARIOS[retirement.scenario] ?? 0.05;
+      const monthly = parseMoney(retirement.monthly);
+      const goal = parseMoney(retirement.incomeGoal);
+      const total = futureValue(120000, monthly, rate, years, 12, 12);
       // A 4% initial annual draw, rising 2% a year, plus assumed CPP/OAS.
       const draw = total * 0.04;
       const cppOas = 1500 * 12;
       const income = draw + cppOas;
-      const goal = 4500 * 12;
       return [
         { label: "Estimated annual income", value: money(income, currency), note: "4% initial draw + assumed CPP/OAS" },
-        { label: "Annual income goal", value: money(goal, currency), note: "Future dollars at age 65" },
-        { label: "Annual funding gap", value: money(Math.max(0, goal - income), currency), note: "Before tax", warning: true },
+        { label: "Annual income goal", value: money(goal * 12, currency), note: `Future dollars at age ${retirement.retireAge}` },
+        { label: "Annual funding gap", value: money(Math.max(0, goal * 12 - income), currency), note: "Before tax", warning: true },
       ];
     }
     // compound
-    const P = 10000;
-    const PMT = 100;
-    const r = 0.04;
-    const n = 365;
-    const t = 10;
-    const fvInitial = P * Math.pow(1 + r / n, n * t);
-    let fvContrib = 0;
-    for (let m = 1; m <= 120; m++) {
-      fvContrib += PMT * Math.pow(1 + r / n, (120 - m) * (365 / 12));
-    }
-    const total = fvInitial + fvContrib;
-    const deposits = P + PMT * 120;
+    const initial = parseMoney(compound.initial);
+    const contribution = parseMoney(compound.contribution);
+    const years = Number(compound.years) || 0;
+    const rate = (Number(compound.rate) || 0) / 100;
+    const n = COMPOUND_FREQUENCIES[compound.compoundFreq] ?? 365;
+    const cpy = CONTRIBUTION_FREQUENCIES[compound.contributionFreq] ?? 12;
+    const total = futureValue(initial, contribution, rate, years, n, cpy);
+    const deposits = initial + contribution * years * cpy;
     return [
-      { label: "Total deposits", value: money(deposits, currency), note: `${money(P, currency)} initial + ${money(PMT * 120, currency)} recurring` },
-      { label: "Interest earned", value: money(total - deposits, currency, 2), note: `${pct((total - deposits) / total, 1)} of your ending balance`, success: true },
-      { label: "Without contributions", value: money(fvInitial, currency, 2), note: "Same deposit, rate and horizon" },
+      { label: "Total deposits", value: money(deposits, currency), note: `${money(initial, currency)} initial + ${money(contribution * years * cpy, currency)} recurring` },
+      { label: "Interest earned", value: money(total - deposits, currency, 2), note: `${pct(deposits > 0 ? (total - deposits) / total : 0, 1)} of your ending balance`, success: true },
+      { label: "Without contributions", value: money(futureValue(initial, 0, rate, years, n, cpy), currency, 2), note: "Same deposit, rate and horizon" },
     ];
   })();
 
@@ -1431,28 +1659,28 @@ function ChartResult({
   // The hover series, with the values each one reveals.
   const series: Series[] = (() => {
     if (id === "college") {
-      const years = 12;
-      const rate = 0.05;
-      const saved = 12000;
-      const monthly = 250;
-      const fvSaved = saved * Math.pow(1 + rate, years);
-      let fvContrib = 0;
-      for (let m = 1; m <= years * 12; m++) {
-        fvContrib += monthly * Math.pow(1 + rate, (years * 12 - m) / 12);
-      }
+      const years = Math.max(0, Number(college.startAge) - Number(college.childAge));
+      const rate =
+        college.scenario === "Custom"
+          ? Number(college.customRate) / 100
+          : RETURN_SCENARIOS[college.scenario] ?? 0.05;
+      const saved = parseMoney(college.saved);
+      const monthly = parseMoney(college.monthly);
+      const goal = 4 * 18000 * Math.pow(1.03, years);
+      const total = futureValue(saved, monthly, rate, years, 12, 12);
       return [
         {
           key: "savings",
           title: "Projected savings",
-          value: money(fvSaved + fvContrib, currency),
+          value: money(total, currency),
           detail: `${money(saved, currency)} already saved plus ${money(monthly, currency)}/month at ${(rate * 100).toFixed(0)}%`,
           target: "line",
         },
         {
           key: "goal",
           title: "Education funding goal",
-          value: money(102655, currency),
-          detail: "4 years at $18,000/year today, rising 3% a year",
+          value: money(goal, currency),
+          detail: `4 years at $18,000/year today, rising 3% a year`,
           target: "line2",
         },
       ];
@@ -1484,38 +1712,29 @@ function ChartResult({
       ];
     }
     if (id === "retirement") {
-      const cur = 120000;
-      const monthly = 600;
-      const rate = 0.05;
-      const years = 25;
-      const fvCur = cur * Math.pow(1 + rate, years);
-      let fvContrib = 0;
-      for (let m = 1; m <= years * 12; m++) {
-        fvContrib += monthly * Math.pow(1 + rate, (years * 12 - m) / 12);
-      }
+      const years = Math.max(0, Number(retirement.retireAge) - Number(retirement.ageToday));
+      const rate = RETIREMENT_SCENARIOS[retirement.scenario] ?? 0.05;
+      const monthly = parseMoney(retirement.monthly);
+      const total = futureValue(120000, monthly, rate, years, 12, 12);
       return [
         {
           key: "savings",
           title: "Projected savings",
-          value: money(fvCur + fvContrib, currency),
-          detail: `${money(cur, currency)} today plus ${money(monthly, currency)}/month at ${(rate * 100).toFixed(0)}% for ${years} years`,
+          value: money(total, currency),
+          detail: `$120,000 today plus ${money(monthly, currency)}/month at ${(rate * 100).toFixed(0)}% for ${years} years`,
           target: "line",
         },
       ];
     }
     // compound
-    const P = 10000;
-    const PMT = 100;
-    const r = 0.04;
-    const n = 365;
-    const t = 10;
-    const fvInitial = P * Math.pow(1 + r / n, n * t);
-    let fvContrib = 0;
-    for (let m = 1; m <= 120; m++) {
-      fvContrib += PMT * Math.pow(1 + r / n, (120 - m) * (365 / 12));
-    }
-    const total = fvInitial + fvContrib;
-    const deposits = P + PMT * 120;
+    const initial = parseMoney(compound.initial);
+    const contribution = parseMoney(compound.contribution);
+    const years = Number(compound.years) || 0;
+    const rate = (Number(compound.rate) || 0) / 100;
+    const n = COMPOUND_FREQUENCIES[compound.compoundFreq] ?? 365;
+    const cpy = CONTRIBUTION_FREQUENCIES[compound.contributionFreq] ?? 12;
+    const total = futureValue(initial, contribution, rate, years, n, cpy);
+    const deposits = initial + contribution * years * cpy;
     return [
       {
         key: "balance",
@@ -1528,7 +1747,7 @@ function ChartResult({
         key: "deposits",
         title: "Total deposits",
         value: money(deposits, currency),
-        detail: `${money(P, currency)} initial plus ${money(PMT, currency)}/month`,
+        detail: `${money(initial, currency)} initial plus ${money(contribution, currency)}/${compound.contributionFreq.toLowerCase()}`,
         target: "line",
       },
     ];
@@ -1590,6 +1809,9 @@ function ResultPanel({
   debtStrategy,
   debts,
   debtExtra,
+  college,
+  retirement,
+  compound,
 }: {
   tool: Tool;
   currency: Currency;
@@ -1598,6 +1820,9 @@ function ResultPanel({
   debtStrategy: string;
   debts: Array<{ title: string; balance: string; apr: string; payment: string }>;
   debtExtra: string;
+  college: CollegeInputs;
+  retirement: RetirementInputs;
+  compound: CompoundInputs;
 }) {
   const [monthly, setMonthly] = useState(false);
 
@@ -1611,20 +1836,16 @@ function ResultPanel({
       };
     }
     if (tool.id === "college") {
-      const years = 12;
-      const rate = 0.05;
-      const saved = 12000;
-      const monthly = 250;
-      const fvSaved = saved * Math.pow(1 + rate, years);
-      let fvContrib = 0;
-      for (let m = 1; m <= years * 12; m++) {
-        fvContrib += monthly * Math.pow(1 + rate, (years * 12 - m) / 12);
-      }
-      const total = fvSaved + fvContrib;
-      const goal = 102655;
+      const years = Math.max(0, Number(college.startAge) - Number(college.childAge));
+      const rate =
+        college.scenario === "Custom"
+          ? Number(college.customRate) / 100
+          : RETURN_SCENARIOS[college.scenario] ?? 0.05;
+      const total = futureValue(parseMoney(college.saved), parseMoney(college.monthly), rate, years, 12, 12);
+      const goal = 4 * 18000 * Math.pow(1.03, years);
       return {
         value: money(total, currency),
-        note: `${pct(total / goal, 1)} of the illustrative education goal funded`,
+        note: `${pct(goal > 0 ? total / goal : 0, 1)} of the illustrative education goal funded`,
       };
     }
     if (tool.id === "debt") {
@@ -1640,33 +1861,23 @@ function ResultPanel({
       };
     }
     if (tool.id === "retirement") {
-      const cur = 120000;
-      const monthly = 600;
-      const rate = 0.05;
-      const years = 25;
-      const fvCur = cur * Math.pow(1 + rate, years);
-      let fvContrib = 0;
-      for (let m = 1; m <= years * 12; m++) {
-        fvContrib += monthly * Math.pow(1 + rate, (years * 12 - m) / 12);
-      }
+      const years = Math.max(0, Number(retirement.retireAge) - Number(retirement.ageToday));
+      const rate = RETIREMENT_SCENARIOS[retirement.scenario] ?? 0.05;
+      const total = futureValue(120000, parseMoney(retirement.monthly), rate, years, 12, 12);
       return {
-        value: money(fvCur + fvContrib, currency),
-        note: "A 25-year runway for your next chapter",
+        value: money(total, currency),
+        note: `A ${years}-year runway for your next chapter`,
       };
     }
     // compound
-    const P = 10000;
-    const PMT = 100;
-    const r = 0.04;
-    const n = 365;
-    const t = 10;
-    const fvInitial = P * Math.pow(1 + r / n, n * t);
-    let fvContrib = 0;
-    for (let m = 1; m <= 120; m++) {
-      fvContrib += PMT * Math.pow(1 + r / n, (120 - m) * (365 / 12));
-    }
+    const initial = parseMoney(compound.initial);
+    const contribution = parseMoney(compound.contribution);
+    const years = Number(compound.years) || 0;
+    const rate = (Number(compound.rate) || 0) / 100;
+    const n = COMPOUND_FREQUENCIES[compound.compoundFreq] ?? 365;
+    const cpy = CONTRIBUTION_FREQUENCIES[compound.contributionFreq] ?? 12;
     return {
-      value: money(fvInitial + fvContrib, currency, 2),
+      value: money(futureValue(initial, contribution, rate, years, n, cpy), currency, 2),
       note: "Your money earns. Then those earnings earn, too.",
     };
   })();
@@ -1713,6 +1924,9 @@ function ResultPanel({
           debtStrategy={debtStrategy}
           debts={debts}
           debtExtra={debtExtra}
+          college={college}
+          retirement={retirement}
+          compound={compound}
         />
       )}
     </section>
@@ -1774,6 +1988,32 @@ export default function App() {
     { title: "Personal loan", balance: "$4,000", apr: "6.99", payment: "$120" },
   ]);
   const [debtExtra, setDebtExtra] = useState("$250");
+  // The other tools' inputs, lifted for the same reason.
+  const [college, setCollege] = useState<CollegeInputs>({
+    country: "United States",
+    state: "California",
+    scenario: "Moderate",
+    customRate: "5",
+    childAge: "6",
+    startAge: "18",
+    saved: "$12,000",
+    monthly: "$250",
+  });
+  const [retirement, setRetirement] = useState<RetirementInputs>({
+    scenario: "Moderate",
+    ageToday: "40",
+    retireAge: "65",
+    monthly: "$600",
+    incomeGoal: "$4,500",
+  });
+  const [compound, setCompound] = useState<CompoundInputs>({
+    initial: "$10,000",
+    years: "10",
+    rate: "4",
+    compoundFreq: "Daily (365 times / year)",
+    contribution: "$100",
+    contributionFreq: "Monthly",
+  });
   const tool = tools.find((item) => item.id === activeId)!;
 
   // Keep the URL in step with the selected tool.
@@ -1835,6 +2075,12 @@ export default function App() {
           setDebts={setDebts}
           debtExtra={debtExtra}
           setDebtExtra={setDebtExtra}
+          college={college}
+          setCollege={setCollege}
+          retirement={retirement}
+          setRetirement={setRetirement}
+          compound={compound}
+          setCompound={setCompound}
         />
         <ResultPanel
           tool={tool}
@@ -1844,6 +2090,9 @@ export default function App() {
           debtStrategy={debtStrategy}
           debts={debts}
           debtExtra={debtExtra}
+          college={college}
+          retirement={retirement}
+          compound={compound}
         />
       </div>
       <ReportBanner tool={tool} />

@@ -620,21 +620,23 @@ button {
 
 .chart {
   position: relative;
-  width: 720px;
-  max-width: 100%;
+  width: 100%;
   height: 236px;
 }
 
 .y-labels {
   position: absolute;
-  top: 15px;
-  bottom: 33px;
+  top: 0;
   left: 0;
-  display: flex;
   width: 46px;
-  flex-direction: column;
-  align-items: flex-end;
-  justify-content: space-between;
+  height: 100%;
+}
+
+.y-labels span {
+  position: absolute;
+  right: 0;
+  transform: translateY(-50%);
+  margin-top: 8px;
   color: #62717a;
   font-size: 11px;
 }
@@ -645,112 +647,14 @@ button {
   overflow: visible;
 }
 
-.plot > i {
+.plot > i.gridline {
   position: absolute;
   left: 8.0556%;
   width: 88.3333%;
   height: 1px;
   background: #e7e9e8;
 }
-
-.plot > i:nth-of-type(1) { top: 22px; }
-.plot > i:nth-of-type(2) { top: 65.5px; }
-.plot > i:nth-of-type(3) { top: 109px; }
-.plot > i:nth-of-type(4) { top: 152.5px; }
-.plot > i:nth-of-type(5) { top: 196px; }
-
-.chart-area,
-.chart-line {
-  position: absolute;
-  left: 8.0556%;
-  width: 88.3333%;
-  max-width: none;
-}
-
-.chart-college .chart-area {
-  top: 93.94px;
-  height: 102.06px;
-}
-
-.chart-college .chart-line {
-  top: 92.44px;
-  left: calc(8.0556% - 1.5px);
-  width: calc(88.3333% + 3px);
-  height: 87.66px;
-}
-
-.chart-college .chart-line.second {
-  top: 45.65px;
-  height: 47.45px;
-}
-
-.chart-debt .chart-area {
-  top: 22px;
-  height: 174px;
-}
-
-.chart-debt .chart-line {
-  top: 20.5px;
-  left: calc(8.0556% - 1.5px);
-  width: calc(88.3333% + 3px);
-  height: 177px;
-}
-
-.chart-retirement .chart-area {
-  top: 64.14px;
-  height: 131.858px;
-}
-
-.chart-retirement .chart-line {
-  top: 62.59px;
-  left: calc(8.0556% - 1.5px);
-  width: calc(88.3333% + 3px);
-  height: 134.916px;
-}
-
-.chart-compound .chart-area {
-  top: 68.4px;
-  height: 127.6px;
-}
-
-.chart-compound .chart-area.second {
-  top: 24.04px;
-  height: 171.958px;
-  z-index: 2;
-}
-
-.chart-compound .chart-line {
-  top: 66.9px;
-  left: calc(8.0556% - 1.5px);
-  width: calc(88.3333% + 3px);
-  height: 72.6003px;
-}
-
-.chart-compound .chart-line.second {
-  top: 22.54px;
-  height: 116.958px;
-  z-index: 3;
-}
-
-.chart-line {
-  z-index: 3;
-}
-
-.chart-endpoint {
-  position: absolute;
-  z-index: 4;
-  left: 95.8333%;
-  width: 8px;
-  height: 8px;
-}
-
-.chart-college .chart-endpoint { top: 89.94px; }
-.chart-college .chart-endpoint.second { top: 43.15px; }
-.chart-debt .chart-endpoint,
-.chart-debt .chart-endpoint.second,
-.chart-retirement .chart-endpoint { top: 192px; }
-.chart-compound .chart-endpoint { top: 64.4px; }
-.chart-compound .chart-endpoint.second { top: 20.04px; }
+/* The chart artwork is now drawn as SVG; see the .chart-svg rules below. */
 
 .x-labels {
   position: absolute;
@@ -1611,8 +1515,84 @@ button {
   outline-offset: 2px;
 }
 
-/* Slight emphasis on the hovered series. */
-.chart-line.hover,
-.chart-area.hover {
-  filter: brightness(1.12) saturate(1.15);
+.field-warning {
+  margin: -6px 0 0;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: #ffddd5;
+  color: #da634e;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+/* The drawn chart. The SVG fills the plot box exactly, so the paths line up
+   with the gridlines and axis labels at any card width. */
+.chart-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  overflow: visible;
+}
+
+.chart-area {
+  fill: var(--accent);
+  opacity: 0.15;
+  stroke: none;
+}
+
+.chart-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 0.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.chart-line.second {
+  stroke: #c9a34e;
+}
+
+.chart-area.second {
+  fill: #c9a34e;
+}
+
+/* Endpoints are drawn as small dots over the final value. */
+.chart-endpoint {
+  position: absolute;
+  z-index: 4;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.chart-endpoint.second {
+  background: #c9a34e;
+}
+
+/* The retirement marker on the retirement chart. */
+.retire-line {
+  position: absolute;
+  z-index: 4;
+  top: 9.32%;
+  height: 73.69%;
+  width: 1px;
+  margin-left: -0.5px;
+  background: #da634e;
+}
+
+.plot em {
+  position: absolute;
+  z-index: 5;
+  top: 0;
+  color: #da634e;
+  font-size: 11px;
+  font-style: normal;
+  white-space: nowrap;
 }

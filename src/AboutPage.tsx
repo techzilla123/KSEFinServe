@@ -235,7 +235,8 @@ function App() {
             </div>
           </div>
         </div>
-        <p>Shell · ExxonMobil · Imperial Oil · CMHC</p>
+        <p>
+KSEFinServe · </p>
       </section>
 
       <section className="paths page-pad" id="paths">

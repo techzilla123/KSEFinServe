@@ -825,6 +825,11 @@ function CollegeForm({
         <Field label="Already saved" value={saved} currency={currency} numeric onChange={setSaved} />
         <Field label="Monthly contribution" value={monthly} currency={currency} numeric onChange={setMonthly} />
       </div>
+      {Number(startAge) < Number(childAge) && (
+        <p className="field-warning">
+          Education start age cannot be earlier than the child’s current age.
+        </p>
+      )}
       <span className="mini-label">Investment return scenario</span>
       <SegmentGroup
         className="segments spread"
@@ -1021,6 +1026,11 @@ function RetirementForm({
         <Field label="Age today" value={ageToday} suffix="years" onChange={setAgeToday} />
         <Field label="Retirement age" value={retireAge} suffix="years" onChange={setRetireAge} />
       </div>
+      {Number(retireAge) <= Number(ageToday) && (
+        <p className="field-warning">
+          Retirement age must be later than your current age.
+        </p>
+      )}
       <Field label="Monthly contribution" value={monthly} currency={currency} numeric onChange={setMonthly} />
       <Field label="Monthly income goal at retirement" value={incomeGoal} currency={currency} numeric onChange={setIncomeGoal} />
       <span className="mini-label">Investment return scenario</span>
@@ -1276,64 +1286,94 @@ function InputPanel({
 /* Charts                                                              */
 /* ------------------------------------------------------------------ */
 
-const chartAssets: Record<
-  Exclude<ToolId, "tax">,
-  {
-    area: string;
-    line: string;
-    endpoint: string;
-    area2?: string;
-    line2?: string;
-    endpoint2?: string;
-  }
-> = {
-  college: {
-    area: "/assets/38b99.svg",
-    line: "/assets/b4297.svg",
-    endpoint: "/assets/87459.svg",
-    line2: "/assets/c3dc1.png",
-    endpoint2: "/assets/6feb1.svg",
-  },
-  debt: {
-    area: "/assets/25d2c.svg",
-    line: "/assets/ab5c2.svg",
-    endpoint: "/assets/87459.svg",
-    line2: "/assets/560fe.svg",
-    endpoint2: "/assets/e0950.svg",
-  },
-  retirement: {
-    area: "/assets/7bbe7.svg",
-    line: "/assets/bc6e8.svg",
-    endpoint: "/assets/b9510.svg",
-  },
-  compound: {
-    area: "/assets/a0a0f.svg",
-    line: "/assets/04f3c.svg",
-    endpoint: "/assets/6feb1.svg",
-    area2: "/assets/86d26.svg",
-    line2: "/assets/8961a.svg",
-    endpoint2: "/assets/b9510.svg",
-  },
-};
-
 /* The series a chart shows, with the label and value each hover reveals. */
 type Series = {
   key: string;
   title: string;
   value: string;
   detail: string;
-  /** Which artwork element this series covers. */
-  target: "line" | "line2" | "area" | "area2";
+  /** Which drawn path this series covers. */
+  target: "line" | "line2";
 };
+
+/* A single point on a drawn series. */
+type Point = { x: number; y: number };
+
+/* Chart geometry, shared by the SVG and the hover targets. The SVG fills the
+   plot box, so x is a percentage of the plot width and y a percentage of the
+   plot height (0 = top, 100 = bottom). */
+const PLOT = { left: 8.0556, width: 88.3333, top: 9.32, bottom: 83.01 };
+
+/** Build an SVG path from points, scaled into the plot. */
+function linePath(points: Point[], yMax: number): string {
+  if (!points.length) return "";
+  const { left, width, top, bottom } = PLOT;
+  const span = bottom - top;
+  const px = (i: number) => left + (i / Math.max(1, points.length - 1)) * width;
+  const py = (v: number) => bottom - (Math.max(0, Math.min(v, yMax)) / yMax) * span;
+  return points
+    .map((p, i) => `${i === 0 ? "M" : "L"}${px(i).toFixed(2)} ${py(p.y).toFixed(2)}`)
+    .join(" ");
+}
+
+/** Build the filled area under a line. */
+function areaPath(points: Point[], yMax: number): string {
+  if (!points.length) return "";
+  const { left, width, bottom } = PLOT;
+  const line = linePath(points, yMax);
+  const lastX = left + width;
+  return `${line} L${lastX.toFixed(2)} ${bottom} L${left} ${bottom} Z`;
+}
+
+/** Round a value up to a tidy axis maximum that divides evenly into 4 steps. */
+function niceMax(value: number): number {
+  if (value <= 0) return 1;
+  const pow = Math.pow(10, Math.floor(Math.log10(value)));
+  const n = value / pow;
+  // Prefer a maximum whose quarters are whole numbers.
+  const nice = n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10;
+  return nice * pow;
+}
+
+/** Format an axis value compactly, keeping the steps readable. */
+function axisLabel(value: number): string {
+  if (value >= 1_000_000) {
+    const m = value / 1_000_000;
+    return `$${Number.isInteger(m) ? m : m.toFixed(1)}m`;
+  }
+  if (value >= 1000) {
+    const k = value / 1000;
+    return `$${Number.isInteger(k) ? k : k.toFixed(1)}k`;
+  }
+  return `$${Number.isInteger(value) ? value : value.toFixed(1)}`;
+}
+
+/** Build five tidy y-axis labels for a given maximum. */
+function axisLabels(yMax: number): string[] {
+  return [4, 3, 2, 1, 0].map((i) => axisLabel((yMax * i) / 4));
+}
 
 function Chart({
   id,
   series,
+  points,
+  points2,
+  yMax,
+  xLabels,
+  retireIndex,
+  retireAgeLabel,
 }: {
   id: Exclude<ToolId, "tax">;
   series: Series[];
+  points: Point[];
+  points2?: Point[];
+  yMax: number;
+  xLabels: string[];
+  /** Index of the retirement marker, when the chart shows one. */
+  retireIndex?: number;
+  /** The age shown on the retirement marker. */
+  retireAgeLabel?: string;
 }) {
-  const assets = chartAssets[id];
   const [active, setActive] = useState<Series | null>(null);
   // Where the tooltip sits, relative to the plot.
   const [tipPos, setTipPos] = useState({ x: 0, y: 0 });
@@ -1351,48 +1391,87 @@ function Chart({
     const y = Math.max(4, Math.min(rawY, rect.height - 78));
     setTipPos({ x, y });
   }
-  const labels =
-    id === "retirement"
-      ? ["40", "45", "50", "55", "60", "65", "70", "75", "80", "85", "90", "95"]
-      : id === "compound"
-        ? ["0", "2", "4", "6", "8", "10"]
-        : id === "debt"
-          ? ["0", "4", "8", "12", "16", "20", "24"]
-          : ["6", "8", "10", "12", "14", "16", "18"];
-  const y =
-    id === "retirement"
-      ? ["$1m", "$750k", "$500k", "$250k", "$0"]
-      : id === "college"
-        ? ["$120k", "$90k", "$60k", "$30k", "$0"]
-        : id === "debt"
-          ? ["$12k", "$9k", "$6k", "$3k", "$0"]
-          : ["$30k", "$22.5k", "$15k", "$7.5k", "$0"];
+
+  // Five gridlines, matching the original design.
+  const gridlines = [0, 1, 2, 3, 4].map(
+    (i) => PLOT.top + (i * (PLOT.bottom - PLOT.top)) / 4,
+  );
+  const yLabels = axisLabels(yMax);
+
+  const { left, width, top, bottom } = PLOT;
+  const retireX =
+    retireIndex !== undefined && points.length > 1
+      ? left + (retireIndex / (points.length - 1)) * width
+      : null;
 
   return (
     <div className={`chart chart-${id}`}>
-      <div className="y-labels">{y.map((item) => <span key={item}>{item}</span>)}</div>
+      <div className="y-labels">
+        {yLabels.map((item, i) => (
+          <span key={i} style={{ top: `${gridlines[i]}%` }}>{item}</span>
+        ))}
+      </div>
       <div className="plot" ref={plotRef}>
-        {[0, 1, 2, 3, 4].map((line) => <i key={line} />)}
-        {assets.area2 && <img className="chart-area second" src={assets.area2} alt="" />}
-        <img className="chart-area" src={assets.area} alt="" />
-        {assets.line2 && <img className="chart-line second" src={assets.line2} alt="" />}
-        <img className="chart-line" src={assets.line} alt="" />
-        {assets.endpoint2 && <img className="chart-endpoint second" src={assets.endpoint2} alt="" />}
-        <img className="chart-endpoint" src={assets.endpoint} alt="" />
-        {id === "retirement" && (
+        {gridlines.map((y, i) => (
+          <i key={i} className="gridline" style={{ top: `${y}%` }} />
+        ))}
+        <svg
+          className="chart-svg"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          {/* Filled areas sit under the lines, as in the original. */}
+          {points2 && (
+            <path d={areaPath(points2, yMax)} className="chart-area second" />
+          )}
+          <path d={areaPath(points, yMax)} className="chart-area" />
+          {points2 && (
+            <path d={linePath(points2, yMax)} className="chart-line second" />
+          )}
+          <path d={linePath(points, yMax)} className="chart-line" />
+        </svg>
+        {/* Endpoints mark the final value of each line. */}
+        {points.length > 0 && (
+          <i
+            className="chart-endpoint"
+            style={{
+              left: `${left + width}%`,
+              top: `${bottom - (Math.max(0, Math.min(points[points.length - 1].y, yMax)) / yMax) * (bottom - top)}%`,
+            }}
+          />
+        )}
+        {points2 && points2.length > 0 && (
+          <i
+            className="chart-endpoint second"
+            style={{
+              left: `${left + width}%`,
+              top: `${bottom - (Math.max(0, Math.min(points2[points2.length - 1].y, yMax)) / yMax) * (bottom - top)}%`,
+            }}
+          />
+        )}
+        {retireX !== null && (
           <>
-            <b className="retire-line" />
-            <em>Retire · 65</em>
+            <b className="retire-line" style={{ left: `${retireX}%` }} />
+            <em style={{ left: `${retireX - 5}%` }}>
+              Retire · {retireAgeLabel}
+            </em>
           </>
         )}
-        {/* Hover targets: one per series, positioned over its artwork. */}
-        {series.map((s) => (
+        {/* Hover targets: one per series, covering the plot. */}
+        {series.map((s, i) => (
           <button
             key={s.key}
             type="button"
             className="chart-hit"
             aria-label={`${s.title}: ${s.value}`}
-            style={hitStyle(s.target, id)}
+            style={{
+              left: `${left}%`,
+              top: `${top}%`,
+              width: `${width}%`,
+              height: `${bottom - top}%`,
+              zIndex: i === 0 ? 12 : 11,
+            }}
             onMouseMove={(e) => moveTip(e)}
             onMouseOver={() => setActive(s)}
             onMouseOut={() => setActive(null)}
@@ -1411,7 +1490,9 @@ function Chart({
           </div>
         )}
       </div>
-      <div className="x-labels">{labels.map((item) => <span key={item}>{item}</span>)}</div>
+      <div className="x-labels">
+        {xLabels.map((item, i) => <span key={i}>{item}</span>)}
+      </div>
       <small className="axis-title">
         {id === "college"
           ? "CHILD’S AGE (YEARS)"
@@ -1423,32 +1504,6 @@ function Chart({
       </small>
     </div>
   );
-}
-
-/* Position a hover target over the artwork it represents. The plot is
-   720x236 with the gridlines at 22/65.5/109/152.5/196, so each series is
-   given a band that follows its line. */
-function hitStyle(target: Series["target"], id: Exclude<ToolId, "tax">): React.CSSProperties {
-  // Each band spans the plot width and the vertical range of that series.
-  // Keys are prefixed to avoid colliding with CSS property names.
-  const bands: Record<string, Record<string, React.CSSProperties>> = {
-    college: {
-      line: { left: "8%", top: "38%", width: "88%", height: "26%" },
-      line2: { left: "8%", top: "16%", width: "88%", height: "22%" },
-    },
-    debt: {
-      line: { left: "8%", top: "8%", width: "88%", height: "40%" },
-      line2: { left: "8%", top: "8%", width: "88%", height: "40%" },
-    },
-    retirement: {
-      line: { left: "8%", top: "24%", width: "88%", height: "30%" },
-    },
-    compound: {
-      line: { left: "8%", top: "28%", width: "88%", height: "22%" },
-      line2: { left: "8%", top: "9%", width: "88%", height: "24%" },
-    },
-  };
-  return bands[id]?.[target] ?? { left: "8%", top: "20%", width: "88%", height: "30%" };
 }
 
 function Metric({
@@ -1753,10 +1808,131 @@ function ChartResult({
     ];
   })();
 
+  // The drawn series: points, axis labels, and the retirement marker.
+  const chartData: {
+    points: Point[];
+    points2?: Point[];
+    yMax: number;
+    xLabels: string[];
+    retireIndex?: number;
+    retireAgeLabel?: string;
+  } = (() => {
+    if (id === "college") {
+      const childAge = Number(college.childAge) || 0;
+      const startAge = Number(college.startAge) || childAge;
+      const years = Math.max(1, startAge - childAge);
+      const rate =
+        college.scenario === "Custom"
+          ? Number(college.customRate) / 100
+          : RETURN_SCENARIOS[college.scenario] ?? 0.05;
+      const saved = parseMoney(college.saved);
+      const monthly = parseMoney(college.monthly);
+      const goal = 4 * 18000 * Math.pow(1.03, years);
+      const pts: Point[] = [];
+      const pts2: Point[] = [];
+      for (let i = 0; i <= years; i++) {
+        pts.push({ x: i, y: futureValue(saved, monthly, rate, i, 12, 12) });
+        pts2.push({ x: i, y: goal });
+      }
+      const yMax = niceMax(Math.max(goal, pts[pts.length - 1].y) * 1.05);
+      const xLabels: string[] = [];
+      for (let a = childAge; a <= startAge; a++) xLabels.push(String(a));
+      return { points: pts, points2: pts2, yMax, xLabels };
+    }
+    if (id === "debt") {
+      const parsed = debts.map((d) => ({
+        bal: parseMoney(d.balance),
+        apr: (Number(d.apr) || 0) / 100,
+        min: parseMoney(d.payment),
+      }));
+      const extra = parseMoney(debtExtra);
+      // Simulate month by month for each strategy.
+      const simulate = (strategy: "Avalanche" | "Snowball") => {
+        const b = parsed.map((d) => ({ ...d }));
+        const out: Point[] = [{ x: 0, y: b.reduce((s, d) => s + d.bal, 0) }];
+        let month = 0;
+        while (b.some((d) => d.bal > 0.005) && month < 600) {
+          month++;
+          for (const d of b) if (d.bal > 0) d.bal += (d.bal * d.apr) / 12;
+          for (const d of b) d.bal -= Math.min(d.min, d.bal);
+          let rem = extra;
+          const order = [...b]
+            .filter((d) => d.bal > 0)
+            .sort((a, c) => (strategy === "Avalanche" ? c.apr - a.apr : a.bal - c.bal));
+          for (const d of order) {
+            const p = Math.min(rem, d.bal);
+            d.bal -= p;
+            rem -= p;
+            if (rem <= 0) break;
+          }
+          out.push({ x: month, y: b.reduce((s, d) => s + Math.max(0, d.bal), 0) });
+        }
+        return out;
+      };
+      const av = simulate("Avalanche");
+      const sn = simulate("Snowball");
+      const months = Math.max(av.length - 1, sn.length - 1);
+      const yMax = niceMax(Math.max(av[0]?.y ?? 0, sn[0]?.y ?? 0) * 1.05);
+      const xLabels: string[] = [];
+      const step = Math.max(1, Math.ceil(months / 6));
+      for (let m = 0; m <= months; m += step) xLabels.push(String(m));
+      if (xLabels[xLabels.length - 1] !== String(months)) xLabels.push(String(months));
+      return { points: av, points2: sn, yMax, xLabels };
+    }
+    if (id === "retirement") {
+      const ageToday = Number(retirement.ageToday) || 0;
+      const retireAge = Number(retirement.retireAge) || ageToday;
+      const years = Math.max(1, retireAge - ageToday);
+      const rate = RETIREMENT_SCENARIOS[retirement.scenario] ?? 0.05;
+      const monthly = parseMoney(retirement.monthly);
+      const pts: Point[] = [];
+      let peak = 0;
+      for (let i = 0; i <= years; i++) {
+        const v = futureValue(120000, monthly, rate, i, 12, 12);
+        peak = Math.max(peak, v);
+        pts.push({ x: i, y: v });
+      }
+      // After retirement the savings are drawn down at 4% a year.
+      for (let i = 1; i <= 30; i++) {
+        const v = Math.max(0, peak * Math.pow(0.96, i));
+        pts.push({ x: years + i, y: v });
+      }
+      const yMax = niceMax(peak * 1.05);
+      const xLabels: string[] = [];
+      const step = Math.max(1, Math.ceil((years + 30) / 6));
+      for (let i = 0; i <= years + 30; i += step) {
+        xLabels.push(String(ageToday + i));
+      }
+      return { points: pts, yMax, xLabels, retireIndex: years, retireAgeLabel: String(retireAge) };
+    }
+    // compound
+    const initial = parseMoney(compound.initial);
+    const contribution = parseMoney(compound.contribution);
+    const years = Math.max(1, Number(compound.years) || 0);
+    const rate = (Number(compound.rate) || 0) / 100;
+    const n = COMPOUND_FREQUENCIES[compound.compoundFreq] ?? 365;
+    const cpy = CONTRIBUTION_FREQUENCIES[compound.contributionFreq] ?? 12;
+    const pts: Point[] = [];
+    const pts2: Point[] = [];
+    let peak = 0;
+    for (let i = 0; i <= years; i++) {
+      const v = futureValue(initial, contribution, rate, i, n, cpy);
+      peak = Math.max(peak, v);
+      pts.push({ x: i, y: v });
+      pts2.push({ x: i, y: initial + contribution * i * cpy });
+    }
+    const yMax = niceMax(peak * 1.05);
+    const xLabels: string[] = [];
+    const step = Math.max(1, Math.ceil(years / 6));
+    for (let i = 0; i <= years; i += step) xLabels.push(String(i));
+    if (xLabels[xLabels.length - 1] !== String(years)) xLabels.push(String(years));
+    return { points: pts, points2: pts2, yMax, xLabels };
+  })();
+
   const callout: Record<typeof id, { title: string; copy: string }> = {
     college: {
       title: "A little more today can open more doors.",
-      copy: "At the same 5% return, a higher monthly contribution would meet this goal. Revisit the plan as costs, contributions and grant eligibility change.",
+      copy: "At the same return, a higher monthly contribution would meet this goal. Revisit the plan as costs, contributions and grant eligibility change.",
     },
     debt: {
       title: "Avalanche · less interest                 Snowball · smaller balance first",
@@ -1779,7 +1955,16 @@ function ChartResult({
       </div>
       <div className="result-divider" />
       <h3 className="chart-title">{chartTitle[id]}</h3>
-      <Chart id={id} series={series} />
+      <Chart
+        id={id}
+        series={series}
+        points={chartData.points}
+        points2={chartData.points2}
+        yMax={chartData.yMax}
+        xLabels={chartData.xLabels}
+        retireIndex={chartData.retireIndex}
+        retireAgeLabel={chartData.retireAgeLabel}
+      />
       <div className="legend">
         <span><i style={{ background: tool.accent }} />{id === "debt" ? "Avalanche" : id === "compound" ? "Total balance (deposits + interest)" : "Projected savings"}</span>
         {id !== "retirement" && <span><i className="gold-line" />{id === "debt" ? "Snowball" : id === "college" ? "Education goal" : "Total deposits"}</span>}
@@ -1825,6 +2010,28 @@ function ResultPanel({
   compound: CompoundInputs;
 }) {
   const [monthly, setMonthly] = useState(false);
+
+  // The header labels follow the inputs, not fixed copy.
+  const yearsToRetire = Math.max(
+    0,
+    Number(retirement.retireAge) - Number(retirement.ageToday),
+  );
+  const resultMeta =
+    tool.id === "retirement"
+      ? `${yearsToRetire} YEAR${yearsToRetire === 1 ? "" : "S"} TO RETIREMENT`
+      : tool.id === "debt"
+        ? `${debtStrategy.toUpperCase()} SELECTED`
+        : tool.id === "compound"
+          ? `${Number(compound.years) || 0}-YEAR PROJECTION`
+          : tool.id === "college"
+            ? `${Math.max(0, Number(college.startAge) - Number(college.childAge))}-YEAR HORIZON`
+            : tool.resultMeta;
+  const resultLabel =
+    tool.id === "retirement"
+      ? `Projected savings at age ${retirement.retireAge}`
+      : tool.id === "college"
+        ? `Projected savings at age ${college.startAge}`
+        : tool.resultLabel;
 
   // The headline figure and note are computed per tool.
   const headline = (() => {
@@ -1886,10 +2093,10 @@ function ResultPanel({
     <section className="card result-card">
       <header className="card-header">
         <h2>{tool.resultTitle}</h2>
-        <span>{tool.resultMeta}</span>
+        <span>{resultMeta}</span>
       </header>
       <div className="result-top">
-        <span>{tool.resultLabel}</span>
+        <span>{resultLabel}</span>
         <div>
           <strong>{headline.value}</strong>
           <small>{currency}</small>

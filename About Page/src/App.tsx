@@ -76,7 +76,7 @@ function App() {
               Elepe, RR, brings rigour, clarity and long-term thinking to every conversation.
             </p>
             <div className="button-row">
-              <a className="button button-gold" href="#contact">
+              <a className="button button-gold" href="/book-now">
                 Book a Strategy Session
               </a>
               <a className="button button-outline" href="#paths">
@@ -154,7 +154,7 @@ function App() {
                 For individuals, professionals and families planning for retirement, growing their assets and
                 making more confident financial decisions.
               </p>
-              <a className="button service-button-light" href="#contact">Book a Strategy Session</a>
+              <a className="button service-button-light" href="/book-now">Book a Strategy Session</a>
             </div>
           </article>
           <article className="service-card business-card">
@@ -167,7 +167,7 @@ function App() {
                 For purpose-driven professionals ready to launch or grow a financial services career.
                 Mentorship, systems and the support of someone who has done it.
               </p>
-              <a className="button service-button-blue" href="#contact">Explore the opportunity</a>
+              <a className="button service-button-blue" href="/career">Explore the opportunity</a>
             </div>
           </article>
         </div>

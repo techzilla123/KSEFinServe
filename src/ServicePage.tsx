@@ -461,7 +461,7 @@ export default function KseFinServeOurProcess() {
           data-name="hero-ctas"
         >
           <a
-            href="#contact"
+            href="/book-now"
             className="bg-[#081d2b] content-stretch drop-shadow-[0px_8px_10px_rgba(8,29,43,0.2)] flex flex-col items-center justify-center px-[28px] py-[14px] relative rounded-[100px] shrink-0 no-underline"
             data-node-id="1:60"
             data-name="primary-cta"
@@ -912,7 +912,7 @@ export default function KseFinServeOurProcess() {
             Helping You Multiply What Matters.
           </p>
           <a
-            href="#contact"
+            href="/contact"
             className="bg-[#1a1a1a] content-stretch flex items-center justify-center overflow-clip px-[12px] py-[13px] relative rounded-[100px] shrink-0 no-underline"
             data-node-id="1:126"
             data-name="Get in touch"
@@ -2126,7 +2126,7 @@ export default function KseFinServeOurProcess() {
             data-name="right"
           >
             <a
-              href="#contact"
+              href="/book-now"
               className="bg-[#c9a963] content-stretch drop-shadow-[0px_12px_15px_rgba(201,169,99,0.25)] flex flex-col items-center justify-center px-[40px] py-[18px] relative rounded-[100px] shrink-0 no-underline"
               data-node-id="1:295"
               data-name="book-btn"

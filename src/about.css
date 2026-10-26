@@ -492,6 +492,21 @@ a {
   flex-shrink: 0;
 }
 
+/* Alternate the weight and tone so the row reads as varied marks, not a
+   repeating pattern. */
+.trusted-marquee-track > div:nth-child(3n + 2) .trust-word {
+  font-family: "Mona Sans:SemiBold", Arial, sans-serif;
+  font-weight: 600;
+  font-size: 24px;
+  color: #1678bd;
+}
+
+.trusted-marquee-track > div:nth-child(4n + 3) .trust-word {
+  font-family: "DM Serif Display:Regular", Georgia, serif;
+  font-size: 28px;
+  color: #62717a;
+}
+
 .trust-strip > p {
   margin: 0;
   font-family: "Mona Sans:Light", sans-serif;

@@ -219,14 +219,20 @@ function App() {
           <div className="trusted-marquee">
             <div className="trusted-marquee-track">
               {[
-                ["Legacy", "Legacy"],
-                ["Clarity", "Clarity"],
-                ["Purpose", "Purpose"],
-                ["Legacy", "Legacy"],
-                ["Clarity", "Clarity"],
-                ["Purpose", "Purpose"],
-              ].map(([label, word]: string[], i: number) => (
-                <div key={`m-${label}-${i}`}>
+                "Clarity",
+                "Purpose",
+                "Legacy",
+                "Wealth",
+                "Leaders",
+                "Impact",
+                "Meaning",
+                "Tomorrow",
+                "Guidance",
+                "Families",
+                "Compounding",
+                "Trust",
+              ].map((word: string, i: number) => (
+                <div key={`m-${word}-${i}`}>
                   <span className="trust-word">{word}</span>
                 </div>
               ))}

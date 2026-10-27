@@ -8,6 +8,20 @@ import {
   type ComponentProps,
   type ReactNode,
 } from "react"
+import {
+  Eye,
+  Target,
+  Trees,
+  Coins,
+  Compass,
+  Users,
+  Star,
+  Shield,
+  TrendingUp,
+  EyeOff,
+  Navigation,
+  HeartHandshake,
+} from "lucide-react"
 import "./contact.css"
 import ContactPage from "./ContactPage"
 import SiteLayout from "./SiteLayout"
@@ -876,20 +890,21 @@ export default function App() {
             <div className="trusted-marquee">
               <div className="trusted-marquee-track">
                 {[
-                  "Clarity",
-                  "Purpose",
-                  "Legacy",
-                  "Wealth",
-                  "Guidance",
-                  "Families",
-                  "Impact",
-                  "Trust",
-                  "Growth",
-                  "Vision",
-                  "Compass",
-                  "Stewardship",
-                ].map((word, i) => (
-                  <div key={`m-${word}-${i}`}>
+                  { word: "Clarity", icon: Eye },
+                  { word: "Purpose", icon: Target },
+                  { word: "Legacy", icon: Trees },
+                  { word: "Wealth", icon: Coins },
+                  { word: "Guidance", icon: Compass },
+                  { word: "Families", icon: Users },
+                  { word: "Impact", icon: Star },
+                  { word: "Trust", icon: Shield },
+                  { word: "Growth", icon: TrendingUp },
+                  { word: "Vision", icon: EyeOff },
+                  { word: "Compass", icon: Navigation },
+                  { word: "Stewardship", icon: HeartHandshake },
+                ].map(({ word, icon: Icon }, i) => (
+                  <div key={`m-${word}-${i}`} className="trust-card">
+                    <Icon className="trust-icon" />
                     <span className="trust-word">{word}</span>
                   </div>
                 ))}

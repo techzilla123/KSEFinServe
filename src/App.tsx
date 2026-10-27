@@ -8,20 +8,6 @@ import {
   type ComponentProps,
   type ReactNode,
 } from "react"
-import {
-  Eye,
-  Target,
-  Trees,
-  Coins,
-  Compass,
-  Users,
-  Star,
-  Shield,
-  TrendingUp,
-  EyeOff,
-  Navigation,
-  HeartHandshake,
-} from "lucide-react"
 import "./contact.css"
 import ContactPage from "./ContactPage"
 import SiteLayout from "./SiteLayout"
@@ -890,21 +876,23 @@ export default function App() {
             <div className="trusted-marquee">
               <div className="trusted-marquee-track">
                 {[
-                  { word: "Clarity", icon: Eye },
-                  { word: "Purpose", icon: Target },
-                  { word: "Legacy", icon: Trees },
-                  { word: "Wealth", icon: Coins },
-                  { word: "Guidance", icon: Compass },
-                  { word: "Families", icon: Users },
-                  { word: "Impact", icon: Star },
-                  { word: "Trust", icon: Shield },
-                  { word: "Growth", icon: TrendingUp },
-                  { word: "Vision", icon: EyeOff },
-                  { word: "Compass", icon: Navigation },
-                  { word: "Stewardship", icon: HeartHandshake },
-                ].map(({ word, icon: Icon }, i) => (
+                  { word: "Clarity", path: "M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" },
+                  { word: "Purpose", path: "M12 2 2 7l10 5 10-5-10-5Z M2 17l10 5 10-5 M2 12l10 5 10-5" },
+                  { word: "Legacy", path: "M12 22v-7 M9 15l3-3 3 3 M6 11l6-4 6 4 M6 15l6-4 6 4" },
+                  { word: "Wealth", path: "M12 2v20 M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" },
+                  { word: "Guidance", path: "M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8Z M12 6v6l4 2" },
+                  { word: "Families", path: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" },
+                  { word: "Impact", path: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01Z" },
+                  { word: "Trust", path: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" },
+                  { word: "Growth", path: "M23 6l-9.5 9.5M5 6l9.5 9.5 M23 13l-9.5-9.5M5 13l9.5-9.5" },
+                  { word: "Vision", path: "M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" },
+                  { word: "Compass", path: "M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8Z M16.24 7.76l-4.24 8.48-8.48 4.24 4.24-8.48Z" },
+                  { word: "Stewardship", path: "M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z" },
+                ].map(({ word, path }, i) => (
                   <div key={`m-${word}-${i}`} className="trust-card">
-                    <Icon className="trust-icon" />
+                    <svg className="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d={path} />
+                    </svg>
                     <span className="trust-word">{word}</span>
                   </div>
                 ))}

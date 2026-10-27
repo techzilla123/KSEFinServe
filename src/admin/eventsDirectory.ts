@@ -177,8 +177,9 @@ export function upcomingEvents(events: KseEvent[], now = Date.now()): KseEvent[]
     .sort((a, b) => {
       const sortA = a.sortOrder ?? 0
       const sortB = b.sortOrder ?? 0
-      if (sortA !== 0 || sortB !== 0) return sortA - sortB
-      return eventStart(a) - eventStart(b)
+      if (sortA !== sortB) return sortA - sortB
+      // Preserve admin save order when sort_order is the same.
+      return a.createdAt.localeCompare(b.createdAt)
     })
 }
 

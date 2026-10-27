@@ -174,7 +174,12 @@ export function upcomingEvents(events: KseEvent[], now = Date.now()): KseEvent[]
   return events
     .filter((e) => e.status === 'Published')
     .filter((e) => eventIsUpcoming(e, now))
-    .sort((a, b) => eventStart(a) - eventStart(b))
+    .sort((a, b) => {
+      const sortA = a.sortOrder ?? 0
+      const sortB = b.sortOrder ?? 0
+      if (sortA !== 0 || sortB !== 0) return sortA - sortB
+      return eventStart(a) - eventStart(b)
+    })
 }
 
 export interface EventDirectory {

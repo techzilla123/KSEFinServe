@@ -866,12 +866,12 @@ export default function App() {
             </div>
           </div>
         </section>
-        <section className="trusted-strip" aria-label="Trusted organizations">
+        <section className="trusted-strip" aria-label="What we stand for">
           <div className="container trusted-inner flex items-center" data-reveal>
             <Eyebrow>
-              <Art src={artwork.trustedDot} /> TRUSTED{" "}
+              <Art src={artwork.trustedDot} /> WHAT WE{" "}
               <br />
-              ORGANIZATIONS
+              STAND FOR
             </Eyebrow>
             <div className="trusted-marquee">
               <div className="trusted-marquee-track">

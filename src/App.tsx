@@ -25,7 +25,7 @@ const artwork = {
   clarity: `${assetPathPrefix}/clarity-logo.png`,
   trust: `${assetPathPrefix}/trust-logo.png`,
   purpose: `${assetPathPrefix}/purpose-logo.png`,
-  wealth: `${assetPathPrefix}/wealth-logo.png`,
+  wealth: `${assetPathPrefix}/Gritty.png`,
   forest: `${assetPathPrefix}/bee26.webp`,
   wave: `${assetPathPrefix}/acbaa.webp`,
   land: `${assetPathPrefix}/22153.webp`,

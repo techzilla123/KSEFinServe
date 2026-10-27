@@ -24,6 +24,7 @@ const artwork = {
   million: `${assetPathPrefix}/a1806.webp`,
   clarity: `${assetPathPrefix}/clarity-logo.png`,
   trust: `${assetPathPrefix}/trust-logo.png`,
+  purpose: `${assetPathPrefix}/purpose-logo.png`,
   forest: `${assetPathPrefix}/bee26.webp`,
   wave: `${assetPathPrefix}/acbaa.webp`,
   land: `${assetPathPrefix}/22153.webp`,
@@ -880,12 +881,12 @@ export default function App() {
                 {[
                   ["Clarity", artwork.clarity],
                   ["Trust", artwork.trust],
-                  ["Registered Retirement Consultant", artwork.rrc],
+                  ["Purpose", artwork.purpose],
                   ["1Mfor1T", artwork.million],
                   ["MacPhini Foundation", artwork.macPhini],
                   ["Clarity", artwork.clarity],
                   ["Trust", artwork.trust],
-                  ["Registered Retirement Consultant", artwork.rrc],
+                  ["Purpose", artwork.purpose],
                   ["1Mfor1T", artwork.million],
                   ["MacPhini Foundation", artwork.macPhini],
                 ].map(([label, src], i) => (

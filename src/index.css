@@ -247,8 +247,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .trusted-marquee:hover .trusted-marquee-track { animation-play-state: paused; }
 .trusted-marquee-track > div { flex: 0 0 auto; background: rgba(255, 255, 255, 0.78); border: 1px solid rgba(6, 22, 33, 0.09); box-shadow: 0px 7px 18px -7px rgba(5, 18, 28, 0.08); border-radius: 14px; display: flex; align-items: center; justify-content: center; min-height: 80px; padding: 10px 16px; width: 248px; }
 .trust-word { font-family: "Mona Sans:Medium", Arial, sans-serif; font-size: 22px; font-weight: 500; letter-spacing: 0.5px; color: #0d2b42; white-space: nowrap; }
-.trust-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
-.trust-icon { width: 28px; height: 28px; stroke: #1678bd; stroke-width: 1.5; opacity: 0.9; }
+.trust-card { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 10px; }
+.trust-icon { width: 24px; height: 24px; stroke: #1678bd; stroke-width: 1.5; opacity: 0.9; flex-shrink: 0; }
 .trusted-marquee-track > div:nth-child(3n+2) .trust-icon { stroke: #dbab47; }
 .trusted-marquee-track > div:nth-child(4n+3) .trust-icon { stroke: #62717a; }
 .trusted-marquee-track > div:nth-child(3n+2) .trust-word { font-family: "Mona Sans:SemiBold", Arial, sans-serif; font-weight: 600; font-size: 20px; color: #1678bd; }

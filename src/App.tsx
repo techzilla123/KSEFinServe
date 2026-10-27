@@ -876,19 +876,21 @@ export default function App() {
             <div className="trusted-marquee">
               <div className="trusted-marquee-track">
                 {[
-                  ["MacPhini Foundation", artwork.macPhini],
-                  ["The Canadian Institute of Financial Planning", artwork.cifp],
-                  ["Registered Retirement Consultant", artwork.rrc],
-                  ["1Mfor1T", artwork.million],
-                  ["MacPhini Foundation", artwork.macPhini],
-                  ["MacPhini Foundation", artwork.macPhini],
-                  ["The Canadian Institute of Financial Planning", artwork.cifp],
-                  ["Registered Retirement Consultant", artwork.rrc],
-                  ["1Mfor1T", artwork.million],
-                  ["MacPhini Foundation", artwork.macPhini],
-                ].map(([label, src], i) => (
-                  <div key={`m-${label}-${i}`}>
-                    <img src={src} alt={label} />
+                  "Clarity",
+                  "Purpose",
+                  "Legacy",
+                  "Wealth",
+                  "Guidance",
+                  "Families",
+                  "Impact",
+                  "Trust",
+                  "Growth",
+                  "Vision",
+                  "Compass",
+                  "Stewardship",
+                ].map((word, i) => (
+                  <div key={`m-${word}-${i}`}>
+                    <span className="trust-word">{word}</span>
                   </div>
                 ))}
               </div>

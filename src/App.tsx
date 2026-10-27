@@ -882,7 +882,7 @@ export default function App() {
                   ["Registered Retirement Consultant", artwork.rrc],
                   ["1Mfor1T", artwork.million],
                   ["MacPhini Foundation", artwork.macPhini],
-                  ["MacPhini Foundation", artwork.macPhini],
+                  ["Clarity", artwork.clarity],
                   ["The Canadian Institute of Financial Planning", artwork.cifp],
                   ["Registered Retirement Consultant", artwork.rrc],
                   ["1Mfor1T", artwork.million],

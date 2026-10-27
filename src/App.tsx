@@ -23,6 +23,7 @@ const artwork = {
   rrc: `${assetPathPrefix}/8b8a5.webp`,
   million: `${assetPathPrefix}/a1806.webp`,
   clarity: `${assetPathPrefix}/clarity-logo.png`,
+  trust: `${assetPathPrefix}/trust-logo.png`,
   forest: `${assetPathPrefix}/bee26.webp`,
   wave: `${assetPathPrefix}/acbaa.webp`,
   land: `${assetPathPrefix}/22153.webp`,
@@ -878,12 +879,12 @@ export default function App() {
               <div className="trusted-marquee-track">
                 {[
                   ["Clarity", artwork.clarity],
-                  ["The Canadian Institute of Financial Planning", artwork.cifp],
+                  ["Trust", artwork.trust],
                   ["Registered Retirement Consultant", artwork.rrc],
                   ["1Mfor1T", artwork.million],
                   ["MacPhini Foundation", artwork.macPhini],
                   ["Clarity", artwork.clarity],
-                  ["The Canadian Institute of Financial Planning", artwork.cifp],
+                  ["Trust", artwork.trust],
                   ["Registered Retirement Consultant", artwork.rrc],
                   ["1Mfor1T", artwork.million],
                   ["MacPhini Foundation", artwork.macPhini],

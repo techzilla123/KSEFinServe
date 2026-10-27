@@ -170,10 +170,9 @@ export function eventIsUpcoming(e: KseEvent, now = Date.now()): boolean {
  * Events that have not happened yet, soonest first.
  * Past events are dropped so the page never advertises something over.
  */
-export function upcomingEvents(events: KseEvent[], now = Date.now()): KseEvent[] {
+export function upcomingEvents(events: KseEvent[]): KseEvent[] {
   return events
     .filter((e) => e.status === 'Published')
-    .filter((e) => eventIsUpcoming(e, now))
     .sort((a, b) => {
       const sortA = a.sortOrder ?? 0
       const sortB = b.sortOrder ?? 0

@@ -33,7 +33,6 @@ const artwork = {
   anna: `${assetPathPrefix}/994e3.webp`,
   roopam: `${assetPathPrefix}/de2e6.webp`,
   jared: `${assetPathPrefix}/34b30.webp`,
-  wealth: `${assetPathPrefix}/wealth-logo.png`,
   advisors: `${assetPathPrefix}/ee9ac.webp`,
   building: `${assetPathPrefix}/3ec07.webp`,
   wealthCard: `${assetPathPrefix}/wealthCard.webp`,

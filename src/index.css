@@ -246,7 +246,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .trusted-marquee-track { display: flex; align-items: center; gap: 20px; width: max-content; animation: trustedScroll 30s linear infinite; }
 .trusted-marquee:hover .trusted-marquee-track { animation-play-state: paused; }
 .trusted-marquee-track > div { flex: 0 0 auto; background: rgba(255, 255, 255, 0.78); border: 1px solid rgba(6, 22, 33, 0.09); box-shadow: 0px 7px 18px -7px rgba(5, 18, 28, 0.08); border-radius: 14px; display: flex; align-items: center; justify-content: center; min-height: 80px; padding: 10px 16px; width: 248px; }
-.trusted-marquee-track img { max-height: 54px; max-width: 100%; object-fit: contain; opacity: 0.85; }
+.trusted-marquee-track img { max-height: 54px; max-width: 100%; object-fit: contain; opacity: 0.75; }
 @keyframes trustedScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 .carousel-nav { display: none; }
 .insights-modal { display: none; }

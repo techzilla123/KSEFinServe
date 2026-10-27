@@ -26,6 +26,7 @@ const artwork = {
   trust: `${assetPathPrefix}/trust-logo.png`,
   purpose: `${assetPathPrefix}/purpose-logo.png`,
   wealth: `${assetPathPrefix}/wealth-logo.png`,
+  career: `${assetPathPrefix}/career-logo.png`,
   forest: `${assetPathPrefix}/bee26.webp`,
   wave: `${assetPathPrefix}/acbaa.webp`,
   land: `${assetPathPrefix}/22153.webp`,
@@ -883,12 +884,12 @@ export default function App() {
                   ["Trust", artwork.trust],
                   ["Purpose", artwork.purpose],
                   ["Wealth", artwork.wealth],
-                  ["MacPhini Foundation", artwork.macPhini],
+                  ["Career", artwork.career],
                   ["Clarity", artwork.clarity],
                   ["Trust", artwork.trust],
                   ["Purpose", artwork.purpose],
                   ["Wealth", artwork.wealth],
-                  ["MacPhini Foundation", artwork.macPhini],
+                  ["Career", artwork.career],
                 ].map(([label, src], i) => (
                   <div key={`m-${label}-${i}`}>
                     <img src={src} alt={label} />

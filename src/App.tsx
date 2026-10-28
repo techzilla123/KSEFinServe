@@ -572,6 +572,8 @@ const money = (amount: number) =>
 
 export default function App() {
   const [panel, setPanel] = useState<Panel | null>(null)
+  const [storyVideoPlaying, setStoryVideoPlaying] = useState(false)
+  const storyVideoRef = useRef<HTMLVideoElement>(null)
   const [mobileMenu, setMobileMenu] = useState(false)
   const [showInsights, setShowInsights] = useState(false)
   const [principal, setPrincipal] = useState(10000)
@@ -995,21 +997,56 @@ export default function App() {
                 />
               ))}
               <Button
-                variant="text"
-                className="story-photo-button"
-                onClick={() => setPanel({ kind: "story" })}
-                aria-label="Read Kayode's story"
-              >
-                <img
-                  src={artwork.story}
-                  alt="Kayode Samson Elepe"
-                  className="story-photo"
-                />
-                <span className="play-circle">
-                  <Art src={artwork.play} />
-                </span>
-                <span className="story-caption">MY STORY</span>
-              </Button>
+                              variant="text"
+                              className={`story-photo-button ${storyVideoPlaying ? 'is-playing' : ''}`}
+                              onClick={() => {
+                                if (!storyVideoPlaying) {
+                                  setStoryVideoPlaying(true)
+                                  storyVideoRef.current?.play()
+                                } else {
+                                  setStoryVideoPlaying(false)
+                                  storyVideoRef.current?.pause()
+                                  storyVideoRef.current.currentTime = 0
+                                }
+                              }}
+                              aria-label={storyVideoPlaying ? "Pause Kayode's story" : "Play Kayode's story"}
+                            >
+                              <img
+                                src={artwork.story}
+                                alt="Kayode Samson Elepe"
+                                className="story-photo"
+                              />
+                              <video
+                                                              ref={storyVideoRef}
+                                                              className="story-video"
+                                                              playsInline
+                                                              muted
+                                                              loop
+                                                              controls
+                                                              poster="/assets/profile pix-5.jpg"
+                                                            >
+                                <source src="/assets/kayode-story.mp4" type="video/mp4" />
+                                <source src="/assets/kayode-story.webm" type="video/webm" />
+                              </video>
+                              <span className="play-circle">
+                                <Art src={artwork.play} />
+                              </span>
+                              {storyVideoPlaying && (
+                                <button
+                                  className="story-video-close"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setStoryVideoPlaying(false)
+                                    storyVideoRef.current?.pause()
+                                    storyVideoRef.current.currentTime = 0
+                                  }}
+                                  aria-label="Close video"
+                                >
+                                  ×
+                                </button>
+                              )}
+                              <span className="story-caption">MY STORY</span>
+                            </Button>
             </div>
             <div className="about-identity">
               <Heading id="about-title">

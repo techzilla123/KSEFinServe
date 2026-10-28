@@ -2250,6 +2250,23 @@ function CreateUser({ close, mode, user, directory, onDone }: {
   const [emailNotice, setEmailNotice] = useState<string | null>(null)
   const [done, setDone] = useState<string | null>(null)
 
+  const handleDelete = async () => {
+    if (busy) return
+    setError(null)
+    const confirmed = window.confirm(
+      `Permanently delete ${firstName} ${lastName} (${email})?\n\nThis cannot be undone.`
+    )
+    if (!confirmed) return
+    setBusy(true)
+    const result = await directory.deleteUser(user!.id)
+    setBusy(false)
+    if (result.error) {
+      setError(result.error)
+      return
+    }
+    onDone()
+  }
+
   const togglePermission = (index: number) =>
     setGranted((current) => current.map((v, i) => (i === index ? !v : v)))
 
@@ -2405,6 +2422,23 @@ function CreateUser({ close, mode, user, directory, onDone }: {
             We email them a link to set their own password. If the email does not
             arrive, they can use “Forgot password?” on the sign-in screen.
           </Notice>
+        )}
+        {editing && !isSelf && (
+          <Notice title="Danger zone">
+            Deleting this user removes them from Supabase Auth permanently.
+            They will lose all access immediately.
+          </Notice>
+        )}
+        {editing && !isSelf && (
+          <div className="flex justify-end gap-3 border-t border-[#dddcd5] pt-4 mt-4">
+            <button
+              className="white-button text-[#b3382c]"
+              onClick={handleDelete}
+              disabled={busy}
+            >
+              {busy ? 'Deleting…' : 'Delete user'}
+            </button>
+          </div>
         )}
         <div className="flex justify-end gap-3">
           <button className="white-button" onClick={close}>

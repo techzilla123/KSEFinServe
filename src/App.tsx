@@ -1023,10 +1023,10 @@ export default function App() {
                                                               muted
                                                               loop
                                                               controls
-                                                              poster="/assets/profile pix-5.jpg"
+                                                              poster="/assets/kayode-poster.png"
                                                             >
-                                <source src="/assets/kayode-story.mp4" type="video/mp4" />
-                                <source src="/assets/kayode-story.webm" type="video/webm" />
+                                                              <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4" />
+                                                              <source src="https://www.w3schools.com/html/mov_bbb.webm" type="video/webm" />
                               </video>
                               <span className="play-circle">
                                 <Art src={artwork.play} />

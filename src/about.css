@@ -1646,7 +1646,7 @@ a {
 
   .button-row {
     flex-direction: row;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     gap: 10px;
   }
 
@@ -1762,13 +1762,36 @@ a {
 
   .service-content .service-button-light,
   .service-content .service-button-blue {
-    padding: 5px 10px;
-    font-size: 9px;
-    display: block;
-    width: fit-content;
-    margin: 0 auto;
-    white-space: nowrap;
-  }
+      padding: 5px 10px;
+      font-size: 9px;
+      display: block;
+      width: fit-content;
+      margin: 0 auto;
+      white-space: nowrap;
+    }
+
+    .service-card-cta {
+      display: block;
+      width: fit-content;
+      margin: 0 auto;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-family: "Mona Sans:SemiBold", sans-serif;
+      font-size: 9px;
+      font-weight: 600;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .service-card-cta.service-button-light {
+      background: white;
+      color: #081d2b;
+    }
+
+    .service-card-cta.service-button-blue {
+      background: #42b9fa;
+      color: #081d2b;
+    }
 
   .story {
     grid-template-columns: 1fr;

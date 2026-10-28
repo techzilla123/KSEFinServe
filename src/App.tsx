@@ -1297,15 +1297,17 @@ export default function App() {
                   image: artwork.wealth,
                   text: "Helping You Make Confident Financial Decisions Today While Preparing For Tomorrow.",
                   interest: "Wealth strategy",
+                  href: "/book-now",
                 },
                 {
                   title: "Financial Services Business Development",
                   image: artwork.advisors,
                   text: "Helping Purpose-Driven Professionals Build Meaningful Businesses Through Leadership, Mentorship, And Proven Systems.",
                   interest: "A career in financial services",
+                  href: "/career",
                 },
               ].map((item) => (
-                <article className="service-card" key={item.title}>
+                <a className="service-card" key={item.title} href={item.href}>
                   <img
                     src={item.image}
                     alt={
@@ -1317,8 +1319,12 @@ export default function App() {
                   />
                   <Heading level={3}>{item.title}</Heading>
                   <p>{item.text}</p>
-                  <BookingLink>Book a Strategy Session</BookingLink>
-                </article>
+                  <span className="button service-card-cta">
+                    {item.title === "Wealth Strategy"
+                      ? "Book a Strategy Session"
+                      : "Explore the opportunity"}
+                  </span>
+                </a>
               ))}
             </div>
           </div>

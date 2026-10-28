@@ -2358,13 +2358,25 @@ function CreateUser({ close, mode, user, directory, onDone }: {
         {done && <p className="rounded-[8px] border border-[#cfe0d6] bg-[#f1f7f3] px-4 py-3 text-[13px] text-[#276b55]">{done}</p>}
         <hr className="border-[#dddcd5]" />
         <div className="field-grid">
-          <Field label="First name *" value={firstName} onChange={setFirstName} />
-          <Field label="Last name *" value={lastName} onChange={setLastName} />
+          <Field
+            label="First name *"
+            value={firstName}
+            onChange={setFirstName}
+            autoComplete="new-first-name"
+          />
+          <Field
+            label="Last name *"
+            value={lastName}
+            onChange={setLastName}
+            autoComplete="new-last-name"
+          />
         </div>
         <Field
           label="Email address *"
           value={email}
           onChange={setEmail}
+          type="email"
+          autoComplete="new-email"
           hint={editing ? "The address they use to sign in." : "The address they will use to sign in."}
         />
         <label className="block">
@@ -2407,6 +2419,7 @@ function CreateUser({ close, mode, user, directory, onDone }: {
             type="password"
             value={password}
             onChange={setPassword}
+            autoComplete="new-password"
             hint="Leave blank to keep the current password. Minimum 12 characters."
           />
         )}

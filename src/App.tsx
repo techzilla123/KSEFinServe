@@ -18,6 +18,7 @@ const artwork = {
   footerLogo: `${assetPathPrefix}/14b9a.webp`,
   portrait: `${assetPathPrefix}/eab0f.webp`,
   story: `${assetPathPrefix}/profile pix-5.jpg`,
+  kayodePoster: `${assetPathPrefix}/kayode-poster.png`,
   macPhini: `${assetPathPrefix}/83ae0.webp`,
   cifp: `${assetPathPrefix}/1cf6f.webp`,
   rrc: `${assetPathPrefix}/8b8a5.webp`,
@@ -1012,21 +1013,21 @@ export default function App() {
                               aria-label={storyVideoPlaying ? "Pause Kayode's story" : "Play Kayode's story"}
                             >
                               <img
-                                src={artwork.story}
-                                alt="Kayode Samson Elepe"
-                                className="story-photo"
-                              />
+                                                              src={artwork.kayodePoster}
+                                                              alt="Kayode Samson Elepe"
+                                                              className="story-photo"
+                                                            />
                               <video
-                                                              ref={storyVideoRef}
-                                                              className="story-video"
-                                                              playsInline
-                                                              muted
-                                                              loop
-                                                              controls
-                                                              poster="/assets/kayode-poster.png"
-                                                            >
-                                                              <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4" />
-                                                              <source src="https://www.w3schools.com/html/mov_bbb.webm" type="video/webm" />
+                                                                                            ref={storyVideoRef}
+                                                                                            className="story-video"
+                                                                                            playsInline
+                                                                                            muted
+                                                                                            loop
+                                                                                            controls
+                                                                                            poster={artwork.kayodePoster}
+                                                                                          >
+                                                                                            <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4" />
+                                                                                            <source src="https://www.w3schools.com/html/mov_bbb.webm" type="video/webm" />
                               </video>
                               <span className="play-circle">
                                 <Art src={artwork.play} />

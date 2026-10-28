@@ -1307,14 +1307,7 @@ export default function App() {
                   href: "/career",
                 },
               ].map((item) => (
-                <button
-                  type="button"
-                  className="service-card"
-                  key={item.title}
-                  onClick={() => {
-                    window.location.href = item.href
-                  }}
-                >
+                <a className="service-card" key={item.title} href={item.href}>
                   <img
                     src={item.image}
                     alt={
@@ -1331,7 +1324,7 @@ export default function App() {
                       ? "Book a Strategy Session"
                       : "Explore the opportunity"}
                   </span>
-                </button>
+                </a>
               ))}
             </div>
           </div>

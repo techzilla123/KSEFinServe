@@ -595,6 +595,7 @@ export default function KseFinServeOurProcess() {
             >
               01
             </p>
+            <a href="/book-now"  >
             <div
               className="absolute content-stretch flex flex-col gap-[28px] h-[680px] items-start left-0 p-[60px] top-0 w-[720px]"
               data-node-id="1:81"
@@ -703,6 +704,7 @@ export default function KseFinServeOurProcess() {
                 </p>
               </div>
             </div>
+            </a>
             <div
               className="absolute flex h-[133.818px] items-center justify-center left-[529.55px] top-[60px] w-[159.628px]"
               data-node-id="1:97"
@@ -763,6 +765,7 @@ export default function KseFinServeOurProcess() {
             >
               02
             </p>
+            <a href="/career"  > 
             <div
               className="absolute content-stretch flex flex-col gap-[28px] h-[680px] items-start left-0 p-[60px] top-0 w-[720px]"
               data-node-id="1:105"
@@ -871,6 +874,7 @@ export default function KseFinServeOurProcess() {
                 </p>
               </div>
             </div>
+            </a>
             <div
               className="absolute flex h-[115.507px] items-center justify-center left-[540px] top-[47.1px] w-[156.414px]"
               data-node-id="1:121"

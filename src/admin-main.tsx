@@ -50,6 +50,17 @@ function insightIdFromUrl(): string | null {
   return id && id.length > 0 ? id : null
 }
 
+/** Check if the current URL has a Supabase recovery token (password reset flow). */
+function hasRecoveryToken(): boolean {
+  const url = new URL(window.location.href)
+  return (
+    url.searchParams.has("token") ||
+    url.searchParams.has("access_token") ||
+    url.hash.includes("access_token=") ||
+    url.hash.includes("type=recovery")
+  )
+}
+
 function AdminRoot() {
   const [screen, setScreen] = useState<Screen>(() => screenFromPath(window.location.pathname))
   const { status, signIn, signOut, requestPasswordReset, setNewPassword } = useAdminAuth()
@@ -84,10 +95,12 @@ function AdminRoot() {
   // A signed-in user never sees the auth screens; a signed-out user never sees
   // the workspace. This is what makes the auth pages real rather than decorative.
   useEffect(() => {
-    if (status === "signed-in" && (screen === "login" || screen === "request" || screen === "password")) {
+    // Allow password reset page to stay accessible when a recovery token is present
+    const isPasswordResetWithToken = screen === "password" && hasRecoveryToken()
+    if (status === "signed-in" && (screen === "login" || screen === "request" || (screen === "password" && !isPasswordResetWithToken))) {
       go("dashboard")
     }
-  }, [status]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [status, screen]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (status === "signed-out" && screen !== "login" && screen !== "request" && screen !== "password") {

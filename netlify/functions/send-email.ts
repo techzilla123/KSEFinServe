@@ -1,12 +1,17 @@
-/* Netlify Function: send transactional email via Brevo (Sendinblue).
-   Reads BREVO_API_KEY from Netlify environment variables (server-side only).
+/* Netlify Function: send transactional email via Namecheap hosting SMTP.
+   Uses the existing info@ksefinserve.com mailbox (included with hosting).
+   Reads SMTP credentials from Netlify environment variables (server-side only).
    Expects POST JSON: { to, subject, html, text?, fromName?, replyTo? } */
 
 import type { Request } from '@netlify/functions'
+import nodemailer from 'nodemailer'
 
-const BREVO_API_KEY = process.env.BREVO_API_KEY ?? ''
-const DEFAULT_FROM_EMAIL = process.env.EMAIL_FROM ?? 'info@ksefinserve.com'
-const DEFAULT_FROM_NAME = process.env.EMAIL_FROM_NAME ?? 'KSEFinServe'
+const SMTP_HOST = process.env.SMTP_HOST ?? 'server165.web-hosting.com'
+const SMTP_PORT = Number(process.env.SMTP_PORT ?? 465)
+const SMTP_USER = process.env.SMTP_USER ?? 'info@ksefinserve.com'
+const SMTP_PASS = process.env.SMTP_PASS ?? ''
+const EMAIL_FROM = process.env.EMAIL_FROM ?? 'info@ksefinserve.com'
+const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME ?? 'KSEFinServe'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': process.env.ADMIN_ALLOWED_ORIGIN ?? '*',
@@ -39,14 +44,40 @@ function validatePayload(payload: unknown): payload is EmailPayload {
   return true
 }
 
+// Create transporter once (reused across invocations)
+const transporter = nodemailer.createTransport({
+  host: SMTP_HOST,
+  port: SMTP_PORT,
+  secure: SMTP_PORT === 465, // true for 465 (SSL), false for 587 (TLS)
+  auth: {
+    user: SMTP_USER,
+    pass: SMTP_PASS,
+  },
+})
+
+// Verify transporter configuration on cold start
+let transporterVerified = false
+async function ensureTransporterReady() {
+  if (!transporterVerified) {
+    try {
+      await transporter.verify()
+      transporterVerified = true
+      console.log('SMTP transporter verified successfully')
+    } catch (err) {
+      console.error('SMTP transporter verification failed:', err)
+      throw new Error('Email service configuration error')
+    }
+  }
+}
+
 export default async function handler(req: Request) {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: corsHeaders })
   }
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
 
-  if (!BREVO_API_KEY) {
-    return json({ error: 'Email service not configured (missing BREVO_API_KEY).' }, 500)
+  if (!SMTP_USER || !SMTP_PASS) {
+    return json({ error: 'Email service not configured (missing SMTP credentials).' }, 500)
   }
 
   let payload: EmailPayload
@@ -62,44 +93,24 @@ export default async function handler(req: Request) {
 
   const to = Array.isArray(payload.to) ? payload.to : [payload.to]
 
-  const message = {
-    sender: {
-      name: payload.fromName ?? DEFAULT_FROM_NAME,
-      email: DEFAULT_FROM_EMAIL,
-    },
-    to: to.map((email) => ({ email: String(email).trim() })),
-    subject: payload.subject,
-    htmlContent: payload.html,
-    textContent: payload.text ?? payload.html.replace(/<[^>]*>/g, '').slice(0, 1000),
-    ...(payload.replyTo ? { replyTo: { email: payload.replyTo } } : {}),
-  }
-
   try {
-    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        'api-key': BREVO_API_KEY,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify(message),
+    await ensureTransporterReady()
+
+    const info = await transporter.sendMail({
+      from: `"${payload.fromName ?? EMAIL_FROM_NAME}" <${EMAIL_FROM}>`,
+      to: to.join(', '),
+      subject: payload.subject,
+      html: payload.html,
+      text: payload.text ?? payload.html.replace(/<[^>]*>/g, '').slice(0, 1000),
+      replyTo: payload.replyTo,
     })
 
-    const data = await res.json()
-
-    if (!res.ok) {
-      console.error('Brevo error:', data)
-      return json(
-        { error: data.message ?? 'Failed to send email', code: data.code },
-        res.status
-      )
-    }
-
-    return json({ ok: true, messageId: data.messageId })
-  } catch (e) {
-    console.error('Send email error:', e)
+    console.log('Email sent:', info.messageId)
+    return json({ ok: true, messageId: info.messageId })
+  } catch (err) {
+    console.error('Send email error:', err)
     return json(
-      { error: e instanceof Error ? e.message : 'Failed to send email' },
+      { error: err instanceof Error ? err.message : 'Failed to send email' },
       500
     )
   }

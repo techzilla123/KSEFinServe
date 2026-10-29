@@ -35,7 +35,16 @@ function ContactDialog({ onClose }: { onClose: () => void }) {
 
     setStatus("sending")
     const result = await submitContactMessage({ name, email, subject, message })
-    setStatus(result.ok ? "sent" : "failed")
+    if (result.ok) {
+      setStatus("sent")
+      // Show success modal briefly, then close everything
+      setTimeout(() => {
+        setStatus("idle")
+        onClose()
+      }, 2000)
+    } else {
+      setStatus("failed")
+    }
   }
 
   return (
@@ -109,27 +118,34 @@ function ContactDialog({ onClose }: { onClose: () => void }) {
             />
           </label>
           <div className="form-action">
-            <button className="send-button" type="submit" disabled={status === "sending"}>
-              {status === "sending" ? "Sending…" : "Send message"}
+            <button className="send-button" type="submit" disabled={status === "sending" || status === "sent"}>
+              {status === "sending" ? "Sending…" : status === "sent" ? "Sent!" : "Send message"}
             </button>
-            {status === "sent" && (
-              <p className="form-status form-status--ok" role="status">
-                Thank you — your message has been sent.
-              </p>
-            )}
-            {status === "failed" && (
-              <p className="form-status form-status--error" role="alert">
-                Something went wrong. Please try again.
-              </p>
-            )}
-            {status !== "sent" && status !== "failed" && (
-              <p className="privacy-note">
-                <img alt="" height="13" src={`${assets}/efaa1.svg`} width="13" />
-                Your information is only used to respond to your enquiry.
-              </p>
-            )}
           </div>
         </form>
+
+        <>
+          {status === "sent" && (
+            <div className="success-modal-overlay" role="status" aria-live="polite">
+              <div className="success-modal">
+                <div className="success-icon">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle cx="12" cy="12" r="11" stroke="#276b55" strokeWidth="2" />
+                    <path d="M8 12l3 3 7-7" stroke="#276b55" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                <h3>Message Sent</h3>
+                <p>Thank you — your message has been sent. We'll get back to you within 1–2 business days.</p>
+              </div>
+            </div>
+          )}
+
+          {status === "failed" && (
+            <p className="form-status form-status--error" role="alert">
+              Something went wrong. Please try again.
+            </p>
+          )}
+        </>
       </div>
     </div>
   )

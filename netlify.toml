@@ -102,6 +102,3 @@
   from = "/*"
   to = "/index.html"
   status = 200
-
-[functions."admin-directory"]
-  external_node_modules = ["@supabase/supabase-js"]

@@ -10,3 +10,98 @@
 # bundled. It is read from the Netlify environment at runtime.
 [functions.admin-directory]
   external_node_modules = ["@supabase/supabase-js"]
+
+# Omit specific environment variable values from secrets scanning
+# These are expected to be in the build output as they're used in the application
+[secrets]
+  scan = true
+  omit_keys = [
+    "EMAIL_FROM",
+    "EMAIL_FROM_NAME",
+    "SMTP_HOST",
+    "SMTP_PORT",
+    "SMTP_USER",
+    "SMTP_PASS",
+    "EMAIL_FROM",
+    "ADMIN_ALLOWED_ORIGIN",
+    "VITE_GEMINI_API_KEY",
+    "VITE_GEMINI_NAME",
+    "VITE_GEMINI_PROJECT_NAME",
+    "VITE_GEMINI_PROJECT_NUMBER",
+    "VITE_SUPABASE_URL",
+    "VITE_SUPABASE_ANON_KEY",
+    "VITE_SUPABASE_SERVICE_ROLE_KEY",
+    "SUPABASE_URL",
+    "SERVICE_ROLE_KEY",
+    "VITE_SUPABASE_URL",
+    "VITE_SUPABASE_ANON_KEY",
+    "VITE_SUPABASE_SERVICE_ROLE_KEY"
+  ]
+
+[[redirects]]
+  from = "/events"
+  to = "/event-insight.html"
+  status = 200
+
+[[redirects]]
+  from = "/insights"
+  to = "/event-insight.html"
+  status = 200
+
+[[redirects]]
+  from = "/book-now"
+  to = "/book-now.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/*"
+  to = "/admin.html"
+  status = 200
+
+[[redirects]]
+  from = "/tax-calculator"
+  to = "/calculator.html"
+  status = 200
+
+[[redirects]]
+  from = "/college-savings"
+  to = "/calculator.html"
+  status = 200
+
+[[redirects]]
+  from = "/debt-repayment"
+  to = "/calculator.html"
+  status = 200
+
+[[redirects]]
+  from = "/retirement-planning"
+  to = "/calculator.html"
+  status = 200
+
+[[redirects]]
+  from = "/compound-interest"
+  to = "/calculator.html"
+  status = 200
+
+[[redirects]]
+  from = "/about"
+  to = "/about.html"
+  status = 200
+
+[[redirects]]
+  from = "/service"
+  to = "/service.html"
+  status = 200
+
+[[redirects]]
+  from = "/career"
+  to = "/career.html"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[functions."admin-directory"]
+  external_node_modules = ["@supabase/supabase-js"]

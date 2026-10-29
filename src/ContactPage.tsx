@@ -139,7 +139,6 @@ function ContactDialog({ onClose, onSuccess }: { onClose: () => void; onSuccess:
 
 export default function ContactPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [pointerVisible, setPointerVisible] = useState(true)
   const pointerRef = useRef<HTMLSpanElement>(null)
 
@@ -277,31 +276,7 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {isDialogOpen && <ContactDialog onClose={() => setIsDialogOpen(false)} onSuccess={() => setShowSuccessModal(true)} />}
-      {showSuccessModal && (
-        <div className="success-modal-overlay" role="status" aria-live="polite">
-          <div className="success-modal">
-            <button
-              className="success-modal-close"
-              onClick={() => setShowSuccessModal(false)}
-              aria-label="Close"
-              type="button"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </button>
-            <div className="success-icon">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="12" cy="12" r="11" stroke="#276b55" strokeWidth="2" />
-                <path d="M8 12l3 3 7-7" stroke="#276b55" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <h3>Message Sent</h3>
-            <p>Thank you — your message has been sent. We'll get back to you within 1–2 business days.</p>
-          </div>
-        </div>
-      )}
+      {isDialogOpen && <ContactDialog onClose={() => setIsDialogOpen(false)} onSuccess={() => setIsDialogOpen(false)} />}
     </main>
   )
 }

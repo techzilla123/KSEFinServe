@@ -536,12 +536,30 @@ function CareerModal({ onClose }: { onClose: () => void }) {
   const [tab, setTab] = useState<'careers' | 'contacts'>('careers')
   const [careerId, setCareerId] = useState<string | null>(null)
   const [contactId, setContactId] = useState<string | null>(null)
+  const [detailModalOpen, setDetailModalOpen] = useState(false)
 
   const careerList = careers.applications
   const contactList = contacts.messages
 
   const career = careerId ? careerList.find((a) => a.id === careerId) ?? null : null
   const contact = contactId ? contactList.find((m) => m.id === contactId) ?? null : null
+
+  const openDetail = (id: string, type: 'career' | 'contact') => {
+    if (type === 'career') {
+      setCareerId(id)
+      setContactId(null)
+    } else {
+      setContactId(id)
+      setCareerId(null)
+    }
+    setDetailModalOpen(true)
+  }
+
+  const closeDetail = () => {
+    setDetailModalOpen(false)
+    setCareerId(null)
+    setContactId(null)
+  }
 
   return (
     <div className="modal-layer" role="dialog" aria-modal="true" aria-labelledby="enquiries-title">
@@ -586,7 +604,7 @@ function CareerModal({ onClose }: { onClose: () => void }) {
                   <button
                     key={a.id}
                     type="button"
-                    onClick={() => { setCareerId(a.id); setContactId(null) }}
+                    onClick={() => openDetail(a.id, 'career')}
                     className="flex w-full items-start gap-3 rounded-[12px] border border-[#e5e1d8] p-4 text-left transition-colors hover:border-[#c9a963] hover:bg-[#fffdfa]"
                   >
                     <div className="min-w-0 flex-1">
@@ -610,7 +628,7 @@ function CareerModal({ onClose }: { onClose: () => void }) {
                   <button
                     key={m.id}
                     type="button"
-                    onClick={() => { setContactId(m.id); setCareerId(null) }}
+                    onClick={() => openDetail(m.id, 'contact')}
                     className="flex w-full items-start gap-3 rounded-[12px] border border-[#e5e1d8] p-4 text-left transition-colors hover:border-[#c9a963] hover:bg-[#fffdfa]"
                   >
                     <div className="min-w-0 flex-1">
@@ -624,8 +642,21 @@ function CareerModal({ onClose }: { onClose: () => void }) {
             )}
           </div>
 
-          {career && <CareerDetail key={career.id} application={career} directory={careers} onClose={() => setCareerId(null)} />}
-          {contact && <ContactDetail key={contact.id} message={contact} directory={contacts} onClose={() => setContactId(null)} />}
+          {detailModalOpen && career && (
+            <CareerDetailModal
+              application={career}
+              directory={careers}
+              onClose={closeDetail}
+            />
+          )}
+
+          {detailModalOpen && contact && (
+            <ContactDetailModal
+              message={contact}
+              directory={contacts}
+              onClose={closeDetail}
+            />
+          )}
         </div>
       </section>
     </div>
@@ -769,14 +800,52 @@ function ContactDetail({ message: m, directory, onClose }: { message: ContactMes
       </div>
 
       <div className="mt-5 flex gap-3">
-        <a className="gold-button flex-1 text-center" href={`mailto:${m.email}`}>Reply by email</a>
-        <button className="white-button text-[#b3382c]" onClick={() => void remove()} disabled={busy}>Delete</button>
-      </div>
-    </div>
-  )
-}
+              <a className="gold-button flex-1 text-center" href={`mailto:${m.email}`}>Reply by email</a>
+              <button className="white-button text-[#b3382c]" onClick={() => void remove()} disabled={busy}>Delete</button>
+            </div>
+          </div>
+        )
+      }
 
-/** The bell's notification list. */
+      /** Modal wrapper for CareerDetail. */
+      function CareerDetailModal({ application: a, directory, onClose }: { application: CareerApplication; directory: ReturnType<typeof useCareers>; onClose: () => void }) {
+        return (
+          <div className="modal-layer" role="dialog" aria-modal="true" aria-labelledby="career-detail-title">
+            <button className="modal-scrim" aria-label="Close" onClick={onClose} />
+            <section className="event-modal event-modal--compact career-modal">
+              <button className="event-modal-close" onClick={onClose} aria-label="Close">
+                <svg className="size-[16px]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M2 2l12 12M14 2L2 14" stroke="#081d2b" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </button>
+              <div className="event-modal-body">
+                <CareerDetail application={a} directory={directory} onClose={onClose} />
+              </div>
+            </section>
+          </div>
+        )
+      }
+
+      /** Modal wrapper for ContactDetail. */
+      function ContactDetailModal({ message: m, directory, onClose }: { message: ContactMessage; directory: ReturnType<typeof useContactMessages>; onClose: () => void }) {
+        return (
+          <div className="modal-layer" role="dialog" aria-modal="true" aria-labelledby="contact-detail-title">
+            <button className="modal-scrim" aria-label="Close" onClick={onClose} />
+            <section className="event-modal event-modal--compact career-modal">
+              <button className="event-modal-close" onClick={onClose} aria-label="Close">
+                <svg className="size-[16px]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M2 2l12 12M14 2L2 14" stroke="#081d2b" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </button>
+              <div className="event-modal-body">
+                <ContactDetail message={m} directory={directory} onClose={onClose} />
+              </div>
+            </section>
+          </div>
+        )
+      }
+
+      /** The bell's notification list. */
 function NotificationModal({ items, onRemove, onClose }: { items: Notification[]; onRemove?: (item: Notification) => Promise<{ error: string | null }>; onClose: () => void }) {
   const [removing, setRemoving] = useState<string | null>(null)
   const [failed, setFailed] = useState<string | null>(null)

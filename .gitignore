@@ -30,3 +30,4 @@ learn_backup_*/
 # Build output. Netlify runs `npm run build` and publishes dist/ itself,
 # so committing it only risks leaking generated secrets.
 dist/
+NETLIFY_ENV_VARS.md

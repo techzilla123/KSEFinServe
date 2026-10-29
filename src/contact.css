@@ -165,7 +165,6 @@
   .privacy-note { align-items: flex-start; text-align: center; }
 }
 
-/* Success modal overlay */
 .success-modal-overlay {
   position: fixed;
   inset: 0;
@@ -186,10 +185,43 @@
   text-align: center;
   max-width: 360px;
   animation: slideUp 0.3s ease-out;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .success-icon {
   margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.success-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: #a7b2b9;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.success-modal-close:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.success-modal-close:focus {
+  outline: none;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .success-modal h3 {

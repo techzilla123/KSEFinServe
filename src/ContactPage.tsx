@@ -169,7 +169,7 @@ export default function ContactPage() {
         </header>
 
         <div className="contact-hero">
-          <a href="tel:+146****7416" aria-label="Call KSEFinServe" className="telephone-display">
+          <a href="tel:+14699747416" aria-label="Call KSEFinServe" className="telephone-display">
             <img className="halo-outline" height="368" src={`${assets}/7b0d5.svg`} width="368" />
             <img className="telephone-halo" height="336" src={`${assets}/24387.svg`} width="336" />
             <img className="telephone" height="360" src={`${assets}/39a77.png`} width="520" />
@@ -202,7 +202,7 @@ export default function ContactPage() {
             </p>
           </article>
 
-          <a href="tel:+146****7416" aria-label="Call KSEFinServe" className="telephone-display">
+          <a href="tel:+14699747416" aria-label="Call KSEFinServe" className="telephone-display">
             <img
               className="halo-outline"
               height="368"
@@ -281,6 +281,16 @@ export default function ContactPage() {
       {showSuccessModal && (
         <div className="success-modal-overlay" role="status" aria-live="polite">
           <div className="success-modal">
+            <button
+              className="success-modal-close"
+              onClick={() => setShowSuccessModal(false)}
+              aria-label="Close"
+              type="button"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
             <div className="success-icon">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <circle cx="12" cy="12" r="11" stroke="#276b55" strokeWidth="2" />

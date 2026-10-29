@@ -14,9 +14,8 @@
 import type { IncomingMessage } from 'node:http'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL ?? ''
-const SERVICE_ROLE_KEY =
-  process.env.SERVICE_ROLE_KEY ?? process.env.VITE_SUPABASE_SERVICE_ROLE_KEY ?? ''
+const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL!
+const SERVICE_ROLE_KEY = process.env.SERVICE_ROLE_KEY ?? process.env.VITE_SUPABASE_SERVICE_ROLE_KEY!
 
 /** Origins allowed to call this function. */
 const ALLOWED_ORIGIN = process.env.ADMIN_ALLOWED_ORIGIN ?? '*'

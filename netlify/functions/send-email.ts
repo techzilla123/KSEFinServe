@@ -6,12 +6,12 @@
 import type { Request } from '@netlify/functions'
 import nodemailer from 'nodemailer'
 
-const SMTP_HOST = process.env.SMTP_HOST ?? 'server165.web-hosting.com'
-const SMTP_PORT = Number(process.env.SMTP_PORT ?? 465)
-const SMTP_USER = process.env.SMTP_USER ?? 'info@ksefinserve.com'
-const SMTP_PASS = process.env.SMTP_PASS ?? ''
-const EMAIL_FROM = process.env.EMAIL_FROM ?? 'info@ksefinserve.com'
-const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME ?? 'KSEFinServe'
+const SMTP_HOST = process.env.SMTP_HOST!
+const SMTP_PORT = Number(process.env.SMTP_PORT!)
+const SMTP_USER = process.env.SMTP_USER!
+const SMTP_PASS = process.env.SMTP_PASS!
+const EMAIL_FROM = process.env.EMAIL_FROM!
+const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME!
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': process.env.ADMIN_ALLOWED_ORIGIN ?? '*',

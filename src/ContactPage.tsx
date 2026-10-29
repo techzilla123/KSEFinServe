@@ -3,7 +3,7 @@ import { submitContactMessage } from "./admin/contactDirectory"
 
 const assets = "/assets"
 
-function ContactDialog({ onClose }: { onClose: () => void }) {
+function ContactDialog({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const dialogRef = useRef<HTMLDivElement>(null)
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "failed">("idle")
 
@@ -37,8 +37,9 @@ function ContactDialog({ onClose }: { onClose: () => void }) {
     const result = await submitContactMessage({ name, email, subject, message })
     if (result.ok) {
       setStatus("sent")
-      // Show success modal briefly, then close everything
+      // Trigger success modal at parent level, then close dialog
       setTimeout(() => {
+        onSuccess()
         setStatus("idle")
         onClose()
       }, 2000)
@@ -125,21 +126,6 @@ function ContactDialog({ onClose }: { onClose: () => void }) {
         </form>
 
         <>
-          {status === "sent" && (
-            <div className="success-modal-overlay" role="status" aria-live="polite">
-              <div className="success-modal">
-                <div className="success-icon">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <circle cx="12" cy="12" r="11" stroke="#276b55" strokeWidth="2" />
-                    <path d="M8 12l3 3 7-7" stroke="#276b55" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-                <h3>Message Sent</h3>
-                <p>Thank you — your message has been sent. We'll get back to you within 1–2 business days.</p>
-              </div>
-            </div>
-          )}
-
           {status === "failed" && (
             <p className="form-status form-status--error" role="alert">
               Something went wrong. Please try again.
@@ -153,6 +139,7 @@ function ContactDialog({ onClose }: { onClose: () => void }) {
 
 export default function ContactPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [pointerVisible, setPointerVisible] = useState(true)
   const pointerRef = useRef<HTMLSpanElement>(null)
 
@@ -182,7 +169,7 @@ export default function ContactPage() {
         </header>
 
         <div className="contact-hero">
-          <a href="tel:+14699747416" aria-label="Call KSEFinServe" className="telephone-display">
+          <a href="tel:+146****7416" aria-label="Call KSEFinServe" className="telephone-display">
             <img className="halo-outline" height="368" src={`${assets}/7b0d5.svg`} width="368" />
             <img className="telephone-halo" height="336" src={`${assets}/24387.svg`} width="336" />
             <img className="telephone" height="360" src={`${assets}/39a77.png`} width="520" />
@@ -202,7 +189,7 @@ export default function ContactPage() {
             <div className="email-details">
               <h2>Drop us a line.</h2>
               <p>
-                {"For questions, collaborations, or a\nconversation about what comes next."}
+                {"For questions, collaborations, or a\\nconversation about what comes next."}
               </p>
             </div>
             <div className="email-address">
@@ -215,7 +202,7 @@ export default function ContactPage() {
             </p>
           </article>
 
-          <a href="tel:+14699747416" aria-label="Call KSEFinServe" className="telephone-display">
+          <a href="tel:+146****7416" aria-label="Call KSEFinServe" className="telephone-display">
             <img
               className="halo-outline"
               height="368"
@@ -290,7 +277,21 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {isDialogOpen && <ContactDialog onClose={() => setIsDialogOpen(false)} />}
+      {isDialogOpen && <ContactDialog onClose={() => setIsDialogOpen(false)} onSuccess={() => setShowSuccessModal(true)} />}
+      {showSuccessModal && (
+        <div className="success-modal-overlay" role="status" aria-live="polite">
+          <div className="success-modal">
+            <div className="success-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="11" stroke="#276b55" strokeWidth="2" />
+                <path d="M8 12l3 3 7-7" stroke="#276b55" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <h3>Message Sent</h3>
+            <p>Thank you — your message has been sent. We'll get back to you within 1–2 business days.</p>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

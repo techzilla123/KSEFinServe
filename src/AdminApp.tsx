@@ -426,11 +426,18 @@ function Dashboard({ go, onSignOut }: { go: (s: Screen, bookingId?: string | nul
         title="A clear view of what matters."
         intro={`${greeting}, Kayode. Here’s your workspace at a glance.`}
         actions={
-          <div className="flex gap-3">
-            <button className="white-button whitespace-nowrap" onClick={() => setShowCareers(true)}>Enquiries</button>
-            <button className="white-button whitespace-nowrap" onClick={() => go('bookings')}>View booked sessions</button>
-          </div>
-        }
+                  <div className="flex gap-3">
+                    <button className="white-button whitespace-nowrap relative" onClick={() => setShowCareers(true)}>
+                      Enquiries
+                      {(applications.length + contacts.length) > 0 && (
+                        <span className="absolute -top-2 -right-2 min-w-[18px] h-5 bg-[#c9a963] text-[#081d2b] text-[10px] font-semibold rounded-full flex items-center justify-center px-1.5">
+                          {applications.length + contacts.length}
+                        </span>
+                      )}
+                    </button>
+                    <button className="white-button whitespace-nowrap" onClick={() => go('bookings')}>View booked sessions</button>
+                  </div>
+                }
       />
       <Metrics items={[
         ['Booked sessions', String(bookings.length), `${upcomingBookings.length} upcoming · ${bookings.length} total`],

@@ -74,6 +74,16 @@ function fromEvent(r: Record<string, any>): Notification {
   }
 }
 
+function fromContact(r: Record<string, any>): Notification {
+  return {
+    id: `contact-${r.id}`,
+    kind: 'booking', // reuse booking kind for contact forms
+    title: `Contact form: ${r.name || r.email || 'New message'}`,
+    detail: `${r.subject || 'No subject'} · ${r.email}`,
+    createdAt: r.created_at ?? '',
+  }
+}
+
 export interface Notifications {
   items: Notification[]
   loading: boolean
@@ -104,13 +114,14 @@ export function useNotifications(): Notifications {
         return
       }
 
-      const [bookings, careers, interests, insights, events] = await Promise.all([
-        supabase.from('bookings').select('*').order('created_at', { ascending: false }).limit(20),
-        supabase.from('career_applications').select('*').order('created_at', { ascending: false }).limit(20),
-        supabase.from('event_interests').select('*').order('created_at', { ascending: false }).limit(20),
-        supabase.from('insights').select('*').order('updated_at', { ascending: false }).limit(20),
-        supabase.from('events').select('*').order('updated_at', { ascending: false }).limit(20),
-      ])
+      const [bookings, careers, interests, insights, events, contacts] = await Promise.all([
+              supabase.from('bookings').select('*').order('created_at', { ascending: false }).limit(20),
+              supabase.from('career_applications').select('*').order('created_at', { ascending: false }).limit(20),
+              supabase.from('event_interests').select('*').order('created_at', { ascending: false }).limit(20),
+              supabase.from('insights').select('*').order('updated_at', { ascending: false }).limit(20),
+              supabase.from('events').select('*').order('updated_at', { ascending: false }).limit(20),
+              supabase.from('contact_messages').select('*').order('created_at', { ascending: false }).limit(20),
+            ])
 
       // Dismissals live in the database so they follow the admin to any device.
       // If the table has not been created yet this rejects; the notifications
@@ -124,11 +135,12 @@ export function useNotifications(): Notifications {
       }
 
       const collected: Notification[] = []
-      if (bookings.data) collected.push(...bookings.data.map((r) => fromBooking(r as Record<string, any>)))
-      if (careers.data) collected.push(...careers.data.map((r) => fromCareer(r as Record<string, any>)))
-      if (interests.data) collected.push(...interests.data.map((r) => fromInterest(r as Record<string, any>)))
-      if (insights.data) collected.push(...insights.data.map((r) => fromInsight(r as Record<string, any>)))
-      if (events.data) collected.push(...events.data.map((r) => fromEvent(r as Record<string, any>)))
+            if (bookings.data) collected.push(...bookings.data.map((r) => fromBooking(r as Record<string, any>)))
+            if (careers.data) collected.push(...careers.data.map((r) => fromCareer(r as Record<string, any>)))
+            if (interests.data) collected.push(...interests.data.map((r) => fromInterest(r as Record<string, any>)))
+            if (insights.data) collected.push(...insights.data.map((r) => fromInsight(r as Record<string, any>)))
+            if (events.data) collected.push(...events.data.map((r) => fromEvent(r as Record<string, any>)))
+            if (contacts.data) collected.push(...contacts.data.map((r) => fromContact(r as Record<string, any>)))
 
       // Newest first, most recent 20 across every source.
       collected.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))

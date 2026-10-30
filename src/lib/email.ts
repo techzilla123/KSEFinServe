@@ -100,7 +100,7 @@ function footer() {
         363 N Sam Houston Pkwy E, Suite 200, Houston, TX 77060
       </p>
       <div style="margin-top: 24px;">
-        <a href="https://linkedin.com/in/kayode-samson-elepe" style="margin: 0 8px; color: rgba(255,255,255,0.7); text-decoration: none;">LinkedIn</a>
+        <a href="https://www.linkedin.com/company/ksefinserve" style="margin: 0 8px; color: rgba(255,255,255,0.7); text-decoration: none;">LinkedIn</a>
         <span style="color: rgba(255,255,255,0.3);">|</span>
         <a href="mailto:info@ksefinserve.com" style="margin: 0 8px; color: rgba(255,255,255,0.7); text-decoration: none;">Contact</a>
         <span style="color: rgba(255,255,255,0.3);">|</span>
@@ -159,7 +159,7 @@ function buildEmail(opts) {
         363 N Sam Houston Pkwy E, Suite 200, Houston, TX 77060
       </p>
       <div style="margin-top: 24px;">
-        <a href="https://linkedin.com/in/kayode-samson-elepe" style="margin: 0 8px; color: rgba(255,255,255,0.7); text-decoration: none;">LinkedIn</a>
+        <a href="https://www.linkedin.com/company/ksefinserve" style="margin: 0 8px; color: rgba(255,255,255,0.7); text-decoration: none;">LinkedIn</a>
         <span style="color: rgba(255,255,255,0.3);">|</span>
         <a href="mailto:info@ksefinserve.com" style="margin: 0 8px; color: rgba(255,255,255,0.7); text-decoration: none;">Contact</a>
         <span style="color: rgba(255,255,255,0.3);">|</span>
@@ -241,7 +241,7 @@ function buildEmail(opts) {
         363 N Sam Houston Pkwy E, Suite 200, Houston, TX 77060
       </p>
       <div style="margin-top: 24px;">
-        <a href="https://linkedin.com/in/kayode-samson-elepe" style="margin: 0 8px; color: rgba(255,255,255,0.7); text-decoration: none;">LinkedIn</a>
+        <a href="https://www.linkedin.com/company/ksefinserve" style="margin: 0 8px; color: rgba(255,255,255,0.7); text-decoration: none;">LinkedIn</a>
         <span style="color: rgba(255,255,255,0.3);">|</span>
         <a href="mailto:info@ksefinserve.com" style="margin: 0 8px; color: rgba(255,255,255,0.7); text-decoration: none;">Contact</a>
         <span style="color: rgba(255,255,255,0.3);">|</span>
@@ -696,7 +696,7 @@ export async function sendBookingConfirmation(params) {
   });
 
   const [user, admin] = await Promise.all([
-    sendEmail({ to: params.userEmail, subject: "Booking Confirmed &mdash; KSEFinServe", html: userHtml }),
+    sendEmail({ to: params.userEmail, subject: "Booking Confirmed — KSEFinServe", html: userHtml }),
         sendEmail({ to: adminEmail, subject: `New Booking Received — KSEFinServe (${reference})`, html: adminHtml }),
   ]);
 
@@ -741,7 +741,7 @@ export async function sendCareerConfirmation(params) {
   });
   return sendEmail({
     to: params.userEmail,
-    subject: `Application Received &mdash; KSEFinServe (${params.reference})`,
+    subject: `Application Received — KSEFinServe (${params.reference})`,
     html,
   });
 }
@@ -762,7 +762,7 @@ export async function sendEventInterestConfirmation(params) {
   });
   return sendEmail({
     to: params.userEmail,
-    subject: `Interest Confirmed: ${params.eventTitle} &mdash; KSEFinServe (${params.reference})`,
+    subject: `Interest Confirmed: ${params.eventTitle} — KSEFinServe (${params.reference})`,
     html,
   });
 }
@@ -771,7 +771,7 @@ export async function sendPasswordReset(params) {
   const html = passwordResetTemplate(params);
   return sendEmail({
     to: params.userEmail,
-    subject: "Reset Your Password &mdash; KSEFinServe",
+    subject: "Reset Your Password — KSEFinServe",
     html,
   });
 }

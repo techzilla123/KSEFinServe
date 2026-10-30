@@ -98,7 +98,14 @@ function AdminRoot() {
     // Allow password reset page to stay accessible when a recovery token is present
     const isPasswordResetWithToken = screen === "password" && hasRecoveryToken()
     if (status === "signed-in" && (screen === "login" || screen === "request" || (screen === "password" && !isPasswordResetWithToken))) {
-      go("dashboard")
+      // Check for redirect parameter
+      const urlParams = new URLSearchParams(window.location.search)
+      const redirect = urlParams.get('redirect')
+      if (redirect) {
+        window.location.href = redirect
+      } else {
+        go("dashboard")
+      }
     }
   }, [status, screen]) // eslint-disable-line react-hooks/exhaustive-deps
 

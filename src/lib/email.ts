@@ -255,7 +255,7 @@ function buildEmail(opts) {
 
 const ADMIN_BASE = "https://ksefinserve.netlify.app";
 function adminLink(path) {
-  return ADMIN_BASE + "/admin/auth/login?redirect=" + encodeURIComponent(path);
+  return ADMIN_BASE + "/admin/auth/login?redirect=" + encodeURIComponent("/admin" + path);
 }
 
 // Template functions

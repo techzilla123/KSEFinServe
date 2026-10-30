@@ -134,7 +134,15 @@ function AuthScreen({ screen, go, auth }: { screen: 'login' | 'request' | 'passw
       setError(describeAuthError({ message: error }))
       return
     }
-    go('dashboard')
+    // Check for redirect parameter
+    const urlParams = new URLSearchParams(window.location.search)
+    const redirect = urlParams.get('redirect')
+    if (redirect) {
+      // Navigate to the redirect path
+      window.location.href = redirect
+    } else {
+      go('dashboard')
+    }
   }
 
   const submitResetRequest = async () => {

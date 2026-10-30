@@ -961,7 +961,7 @@ export default function BookNowPage() {
   } else {
     content = (
       <BookPage
-        path={quick.topic || "Wealth planning"}
+        path="Wealth planning"
         onDetailed={() => top("about")}
         onQuickSubmit={(data) => {
           const [firstName, ...rest] = data.name.trim().split(" ");

@@ -279,8 +279,7 @@ function contactNotificationTemplate(params) {
       },
       {
         title: "Message",
-        content: `<div style="white-space: pre-wrap; line-height: 1.7; background: #f0ede6; padding: 20px; border-radius: 8px; border-left: 4px solid #c9a963;">${params.message.replace(/
-/g, "<br>")}</div>`,
+        content: `<div style="white-space: pre-wrap; line-height: 1.7; background: #f0ede6; padding: 20px; border-radius: 8px; border-left: 4px solid #c9a963;">${params.message.split("\n").join("<br>")}</div>`,
       },
     ],
     button: {
@@ -621,9 +620,3 @@ export async function sendPasswordReset(params) {
   });
 }
 
-export { buildEmail, adminLink };
-export { contactNotificationTemplate, bookingConfirmationUserTemplate, bookingNotificationAdminTemplate };
-export { careerApplicationNotificationTemplate, careerApplicationConfirmationTemplate };
-export { adminNotificationTemplate, passwordResetTemplate };
-export { sendBookingConfirmation, sendContactNotification, sendCareerNotification };
-export { sendCareerConfirmation, sendPasswordReset };

@@ -11,6 +11,7 @@ logs/
 .claude-replay.*
 .tmp-*
 /.figma/design-context/
+netlify_env_vars_final.txt
 
 # build.mjs writes the real config.js (with keys) into public/ and dist/ at
 # build time. The committed placeholder in public/ is safe to track; the

@@ -104,6 +104,11 @@ export default async function handler(req: Request) {
       html: payload.html,
       text: payload.text ?? payload.html.replace(/<[^>]*>/g, '').slice(0, 1000),
       replyTo: payload.replyTo,
+      headers: {
+        'Precedence': 'bulk',
+        'List-Unsubscribe': '<mailto:unsubscribe@ksefinserve.com>, <https://ksefinserve.com/unsubscribe>',
+        'X-Auto-Response-Suppress': 'OOF, AutoReply',
+      },
     })
 
     console.log('Email sent:', info.messageId, 'to:', to)

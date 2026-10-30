@@ -217,6 +217,7 @@ function ApplicationForm() {
   const [contact, setContact] = useState("WhatsApp");
   const [interests, setInterests] = useState<string[]>([]);
   const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -328,7 +329,7 @@ function ApplicationForm() {
               <hr />
               {submitError && <p className="form-error" role="alert">{submitError}</p>}
               <div className="consents"><label><input type="checkbox" required /><span>I agree that KSEFinServe may contact me by email, phone or WhatsApp about my career enquiry. *</span></label><label><input type="checkbox" required /><span>I consent to the collection and use of the information in this form to review my career enquiry and arrange relevant follow-up. *</span></label></div>
-              <button className="submit form-nav-submit" type="submit">Send my career interest</button>
+              <button className="submit form-nav-submit" type="submit" disabled={submitting}>{submitting ? "Sending..." : "Send my career interest"}</button>
             </div>}
           </form>}
           <p className="form-note">Submitting interest does not guarantee a role, an offer or income.</p>

@@ -115,12 +115,12 @@ export function useNotifications(): Notifications {
       }
 
       const [bookings, careers, interests, insights, events, contacts] = await Promise.all([
-              supabase.from('bookings').select('*').order('created_at', { ascending: false }).limit(20),
-              supabase.from('career_applications').select('*').order('created_at', { ascending: false }).limit(20),
-              supabase.from('event_interests').select('*').order('created_at', { ascending: false }).limit(20),
-              supabase.from('insights').select('*').order('updated_at', { ascending: false }).limit(20),
-              supabase.from('events').select('*').order('updated_at', { ascending: false }).limit(20),
-              supabase.from('contact_messages').select('*').order('created_at', { ascending: false }).limit(20),
+              supabase.from('bookings').select('*').order('created_at', { ascending: false }),
+              supabase.from('career_applications').select('*').order('created_at', { ascending: false }),
+              supabase.from('event_interests').select('*').order('created_at', { ascending: false }),
+              supabase.from('insights').select('*').order('updated_at', { ascending: false }),
+              supabase.from('events').select('*').order('updated_at', { ascending: false }),
+              supabase.from('contact_messages').select('*').order('created_at', { ascending: false }),
             ])
 
       // Dismissals live in the database so they follow the admin to any device.

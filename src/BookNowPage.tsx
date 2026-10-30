@@ -382,12 +382,14 @@ function BookPage({
     setQuick((current) => ({ ...current, [key]: value }));
   const submit = (event: FormEvent) => {
     event.preventDefault();
+    // Derive route from path: if path is the default "Wealth planning", it's short form; otherwise detailed
+    const derivedRoute = path && path !== "Wealth planning" && path !== "Share the full picture" ? "Detailed form" : "Short form";
     onQuickSubmit({
       ...quick,
       city: location?.city ?? "",
       province: location?.province ?? "",
       country: location?.country ?? "",
-      route: route,
+      route: derivedRoute,
       path: path,
     });
   };

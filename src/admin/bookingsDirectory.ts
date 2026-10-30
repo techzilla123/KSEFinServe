@@ -260,6 +260,19 @@ export function useBookings(): BookingDirectory {
           bookingDate: input.availableDate ? new Date(input.availableDate).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'To be arranged',
           bookingTime: input.availableTime || 'To be confirmed',
           serviceType: input.path || input.topic || 'Wealth Strategy Session',
+          city: input.city,
+          province: input.province,
+          country: input.country,
+          path: input.path,
+          topic: input.topic,
+          priorities: input.priorities,
+          outcome: input.outcome,
+          context: input.context,
+          question: input.question,
+          consentContact: input.consentContact,
+          consentUpdates: input.consentUpdates,
+          contactMethod: input.contactMethod,
+          source: input.source,
         })
       } catch {
         console.warn('Booking confirmation emails failed to send')

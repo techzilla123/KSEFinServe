@@ -337,6 +337,8 @@ function bookingConfirmationUserTemplate(params) {
 }
 
 function bookingNotificationAdminTemplate(params) {
+  const hasDetailedData = params.path || params.topic || params.priorities || params.outcome || params.context || params.question || params.city || params.province || params.country || params.contactMethod || params.source;
+  
   return buildEmail({
     preheaderText: `New booking: ${params.userName} - ${params.serviceType}`,
     hero: {
@@ -352,6 +354,9 @@ function bookingNotificationAdminTemplate(params) {
             <tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Name:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.userName}</td></tr>
             <tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Email:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><a href="mailto:${params.userEmail}" style="color: #081d2b;">${params.userEmail}</a></td></tr>
             <tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Phone:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.userPhone}</td></tr>
+            ${params.city ? `<tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">City:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.city}</td></tr>` : ''}
+            ${params.province ? `<tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Province/State:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.province}</td></tr>` : ''}
+            ${params.country ? `<tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Country:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.country}</td></tr>` : ''}
             <tr><td style="padding: 12px 0;"><strong style="color: #c9a963;">Service:</strong></td><td style="padding: 12px 0;">${params.serviceType}</td></tr>
           </table>`,
       },
@@ -360,7 +365,18 @@ function bookingNotificationAdminTemplate(params) {
         content: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
             <tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Date:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.bookingDate}</td></tr>
             <tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Time:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.bookingTime}</td></tr>
+            ${params.path ? `<tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Discussion Path:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.path}</td></tr>` : ''}
+            ${params.topic ? `<tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Topic:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.topic}</td></tr>` : ''}
+            ${params.contactMethod ? `<tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Preferred Contact:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.contactMethod}</td></tr>` : ''}
+            ${params.source ? `<tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Source:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.source}</td></tr>` : ''}
             <tr><td style="padding: 12px 0;"><strong style="color: #c9a963;">Reference:</strong></td><td style="padding: 12px 0;">${params.reference}</td></tr>
+          </table>`,
+      },
+      {
+        title: "Consent & Permissions",
+        content: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+            <tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Session Contact:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.consentContact ? 'Agreed ✓' : 'Not provided'}</td></tr>
+            <tr><td style="padding: 12px 0;"><strong style="color: #c9a963;">Email Updates:</strong></td><td style="padding: 12px 0;">${params.consentUpdates ? 'Opted in ✓' : 'Not opted in'}</td></tr>
           </table>`,
       },
     ],
@@ -368,9 +384,17 @@ function bookingNotificationAdminTemplate(params) {
       title: "Client Priorities",
       content: `<ul style="margin: 0; padding-left: 20px;">${params.priorities.map(p => `<li>${p}</li>`).join("")}</ul>`,
     }] : [],
-    sections: params.notes ? [{
-      title: "Client Notes",
-      content: `<div style="background: #f0ede6; padding: 20px; border-radius: 8px; border-left: 4px solid #c9a963; white-space: pre-wrap;">${params.notes}</div>`,
+    sections: params.outcome ? [{
+      title: "Desired Outcome",
+      content: `<div style="background: #f0ede6; padding: 20px; border-radius: 8px; border-left: 4px solid #c9a963; white-space: pre-wrap;">${params.outcome}</div>`,
+    }] : [],
+    sections: params.context ? [{
+      title: "Relevant Context",
+      content: `<div style="background: #f0ede6; padding: 20px; border-radius: 8px; border-left: 4px solid #c9a963; white-space: pre-wrap;">${params.context}</div>`,
+    }] : [],
+    sections: params.question ? [{
+      title: "Questions",
+      content: `<div style="background: #f0ede6; padding: 20px; border-radius: 8px; border-left: 4px solid #c9a963; white-space: pre-wrap;">${params.question}</div>`,
     }] : [],
     button: {
       text: "View Booking in Admin",

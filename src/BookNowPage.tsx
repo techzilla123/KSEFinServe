@@ -320,6 +320,7 @@ function BookPage({
   submitting,
   error,
 }: {
+  path: string;
   onDetailed: () => void;
   onQuickSubmit: (data: {
     name: string;

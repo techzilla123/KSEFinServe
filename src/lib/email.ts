@@ -584,13 +584,25 @@ export async function sendBookingConfirmation(params) {
   const adminHtml = bookingNotificationAdminTemplate({
     userName: params.userName,
     userEmail: params.userEmail,
-    userPhone: "",
+    userPhone: params.userPhone ?? "",
     bookingDate: params.bookingDate,
     bookingTime: params.bookingTime,
     serviceType: params.serviceType,
     reference,
     priorities: params.priorities,
     notes: params.notes,
+    city: params.city,
+    province: params.province,
+    country: params.country,
+    path: params.path,
+    topic: params.topic,
+    outcome: params.outcome,
+    context: params.context,
+    question: params.question,
+    consentContact: params.consentContact,
+    consentUpdates: params.consentUpdates,
+    contactMethod: params.contactMethod,
+    source: params.source,
   });
 
   const [user, admin] = await Promise.all([

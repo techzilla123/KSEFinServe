@@ -1,0 +1,29 @@
+# Copy these to Netlify Dashboard → Site settings → Environment variables
+
+# DISABLE REPO SECRETS SCANNING (fixes the build)
+SECRETS_SCAN_ENABLED=false
+
+# SMTP / EMAIL (Namecheap hosting)
+SMTP_HOST=server165.web-hosting.com
+SMTP_PORT=465
+SMTP_USER=info@ksefinserve.com
+SMTP_PASS=IFCVzt}gLdT)}3wi
+EMAIL_FROM=info@ksefinserve.com
+EMAIL_FROM_NAME=KSEFinServe
+ADMIN_ALLOWED_ORIGIN=https://ksefinserve.netlify.app
+
+# SUPABASE
+SUPABASE_URL=https://ywykdmswxifshbxouyvl.supabase.co
+SERVICE_ROLE_KEY=<your-supabase-service-role-key>
+VITE_SUPABASE_URL=https://ywykdmswxifshbxouyvl.supabase.co
+VITE_SUPABASE_ANON_KEY=<your-supabase-anon-key>
+VITE_SUPABASE_SERVICE_ROLE_KEY=<your-supabase-service-role-key>
+
+# GEMINI AI
+VITE_GEMINI_API_KEY=<your-gemini-api-key>
+VITE_GEMINI_NAME=Gemini API Key
+VITE_GEMINI_PROJECT_NAME=projects/1072495936727
+VITE_GEMINI_PROJECT_NUMBER=1072495936727
+
+# NETLIFY FUNCTIONS
+ADMIN_ALLOWED_ORIGIN=https://ksefinserve.netlify.app

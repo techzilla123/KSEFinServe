@@ -273,6 +273,7 @@ export function useBookings(): BookingDirectory {
           consentUpdates: input.consentUpdates,
           contactMethod: input.contactMethod,
           source: input.source,
+          reference,
         })
       } catch {
         console.warn('Booking confirmation emails failed to send')

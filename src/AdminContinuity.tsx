@@ -1453,7 +1453,10 @@ export function BookingDetail({ go, bookingId }: { go: Go; bookingId?: string | 
           <Panel title="Consent & contact permissions" aside={`Captured ${received}`}>
             <div className="space-y-4 text-[13px]">
               <p className="flex items-center gap-3">
-                <img className="size-[16px]" src={`${A}/b5a53.svg`} alt="" />
+                <svg className="size-[16px] flex-shrink-0" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="1" y="1" width="18" height="18" rx="3" stroke="#c9a963" strokeWidth="2" fill={booking.consentContact ? "#c9a963" : "transparent"}/>
+                  {booking.consentContact && <path d="M5 10l3 3 7-7" stroke="#081d2b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>}
+                </svg>
                 <b>Session contact · {booking.consentContact ? "Agreed" : "Not agreed"}</b>
               </p>
               <p className="pl-7 text-[12px] text-[#66757d]">
@@ -1461,11 +1464,14 @@ export function BookingDetail({ go, bookingId }: { go: Go; bookingId?: string | 
                 provided to discuss and arrange this session.
               </p>
               <p className="flex items-center gap-3">
-                <img className="size-[16px]" src={`${A}/3be92.svg`} alt="" />
+                <svg className="size-[16px] flex-shrink-0" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="1" y="1" width="18" height="18" rx="3" stroke="#c9a963" strokeWidth="2" fill={booking.consentUpdates ? "#c9a963" : "transparent"}/>
+                  {booking.consentUpdates && <path d="M5 10l3 3 7-7" stroke="#081d2b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>}
+                </svg>
                 <b>Insights & updates by email · {booking.consentUpdates ? "Opted in" : "Not opted in"}</b>
               </p>
               <p className="pl-7 text-[12px] text-[#66757d]">
-                I’d also like KSE insights and updates by email. Optional — I
+                I'd also like KSE insights and updates by email. Optional — I
                 can unsubscribe at any time.
               </p>
             </div>

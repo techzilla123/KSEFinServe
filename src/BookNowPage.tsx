@@ -315,12 +315,12 @@ function DetailedShell({
 
 function BookPage({
   onDetailed,
-  path: string = "Wealth planning",
+  path,
   onQuickSubmit,
   submitting,
   error,
 }: {
-  path: string;
+  path?: string;
   onDetailed: () => void;
   onQuickSubmit: (data: {
     name: string;
@@ -337,6 +337,7 @@ function BookPage({
   submitting?: boolean;
   error?: string | null;
 }) {
+  const currentPath = path ?? "Wealth planning";
   const [quick, setQuick] = useState({
     name: "",
     email: "",
@@ -385,7 +386,6 @@ function BookPage({
   const submit = (event: FormEvent) => {
     event.preventDefault();
     // Derive route from path: if path is the default "Wealth planning", it's short form; otherwise detailed
-    const currentPath = path ?? "Wealth planning";
     const derivedRoute = currentPath !== "Wealth planning" && currentPath !== "Share the full picture" ? "Detailed form" : "Short form";
     onQuickSubmit({
       ...quick,

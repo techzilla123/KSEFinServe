@@ -315,6 +315,7 @@ function DetailedShell({
 
 function BookPage({
   onDetailed,
+  path: string = "Wealth planning",
   onQuickSubmit,
   submitting,
   error,

@@ -142,12 +142,12 @@ export function useNotifications(): Notifications {
             if (events.data) collected.push(...events.data.map((r) => fromEvent(r as Record<string, any>)))
             if (contacts.data) collected.push(...contacts.data.map((r) => fromContact(r as Record<string, any>)))
 
-      // Newest first, most recent 20 across every source.
+      // Newest first, all across every source.
       collected.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
 
       // Hide anything this admin has dismissed.
       const dismissed = new Set(dismissedRows.map((r) => r.notification_id).filter(Boolean))
-      setItems(collected.filter((n) => !dismissed.has(n.id)).slice(0, 20))
+      setItems(collected.filter((n) => !dismissed.has(n.id)))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not load notifications.')
       setItems([])

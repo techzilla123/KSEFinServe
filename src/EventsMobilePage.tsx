@@ -84,19 +84,33 @@ function MobileEventModal({ event, onClose }: { event: KseEvent; onClose: () => 
       return;
     }
     
-    // Send admin notification about new interest registration
+    // Send admin notification and user confirmation (non-blocking)
     try {
-      const { sendContactNotification } = await import('@/lib/email')
-      await sendContactNotification({
-        name: name,
-        email: email,
-        subjectPrefix: "Event Form",
-        subject: `Event Interest: ${event.title || event.name}`,
-        message: `A user has expressed interest in the event: ${event.title || event.name}\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone}`,
-      })
+      const { sendContactNotification, sendEventInterestConfirmation } = await import('@/lib/email')
+      const reference = `EVT-${Date.now().toString(36).toUpperCase()}`
+      await Promise.all([
+        sendContactNotification({
+          name: name,
+          email: email,
+          subjectPrefix: "Event Form",
+          subject: `Event Interest: ${event.title || event.name}`,
+          message: `A user has expressed interest in the event: ${event.title || event.name}\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone}`,
+        }),
+        sendEventInterestConfirmation({
+          userEmail: email,
+          userName: name,
+          eventTitle: event.title || event.name,
+          eventDate: event.startDate || 'TBA',
+          eventTime: event.startTime || 'TBA',
+          eventLocation: event.location || 'Online / TBD',
+          eventDescription: event.description || '',
+          reference,
+        }),
+      ])
     } catch {
-      console.warn('Event interest notification email failed to send')
-    }setDone(true);
+      console.warn('Event interest email failed to send')
+    }
+    setDone(true);
   };
 
   return (

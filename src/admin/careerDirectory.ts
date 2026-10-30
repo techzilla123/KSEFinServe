@@ -191,21 +191,37 @@ export async function submitCareerApplication(input: CareerInput): Promise<{ err
 
   // Send notification email to admin (non-blocking)
     try {
-      const { sendCareerNotification } = await import('@/lib/email')
-      await sendCareerNotification({
-        name: input.name.trim(),
-        email: input.email.trim(),
-        phone: input.phone.trim(),
-        location: input.location.trim(),
-        role: input.role ?? 'Not specified',
-        background: input.background ?? 'Not provided',
-        interests: input.interests ?? [],
-        licences: input.licences ?? 'Not specified',
-        reference: reference || 'CAR-' + new Date().getFullYear(),
-      })
+      const { sendCareerNotification, sendCareerConfirmation } = await import('@/lib/email')
+      await Promise.all([
+        sendCareerNotification({
+          name: input.name.trim(),
+          email: input.email.trim(),
+          phone: input.phone.trim(),
+          location: input.location.trim(),
+          role: input.role ?? 'Not specified',
+          background: input.background ?? 'Not provided',
+          interests: input.interests ?? [],
+          licences: input.licences ?? 'Not specified',
+          reference: reference || 'CAR-' + new Date().getFullYear(),
+        }),
+        sendCareerConfirmation({
+          userEmail: input.email.trim(),
+          userName: input.name.trim(),
+          name: input.name.trim(),
+          email: input.email.trim(),
+          phone: input.phone.trim(),
+          location: input.location.trim(),
+          role: input.role ?? 'Not specified',
+          licences: input.licences ?? 'Not specified',
+          interests: input.interests ?? [],
+          background: input.background ?? 'Not provided',
+          preferredContact: input.preferredContact ?? 'Email',
+          reference: reference || 'CAR-' + new Date().getFullYear(),
+        }),
+      ])
     } catch {
-    console.warn('Career application notification email failed to send')
-  }
+      console.warn('Career application email failed to send')
+    }
 
   return { error: null, reference }
 }

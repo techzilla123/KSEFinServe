@@ -292,11 +292,14 @@ function contactNotificationTemplate(params) {
 }
 
 function bookingConfirmationUserTemplate(params) {
+  // Build Google Calendar URL
+  const calendarUrl = params.calendarUrl || `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(params.serviceType + ' Session')}&dates=${encodeURIComponent(params.bookingDate + ' ' + params.bookingTime)}/&details=${encodeURIComponent('Your KSEFinServe session with Kayode Samson Elepe, RR. Reference: ' + params.reference)}`
+  
   return buildEmail({
-    preheaderText: `Booking confirmed: ${params.serviceType}`,
+    preheaderText: `Booking confirmed: ${params.serviceType} on ${params.bookingDate} at ${params.bookingTime}`,
     hero: {
       title: "Booking Confirmed ✓",
-      subtitle: "Your session has been scheduled successfully",
+      subtitle: `Your ${params.serviceType} session has been scheduled successfully`,
       bgColor: "#081d2b",
       textColor: "#ffffff",
     },
@@ -304,32 +307,34 @@ function bookingConfirmationUserTemplate(params) {
       {
         title: "Booking Summary",
         content: `<p style="margin: 0 0 16px; font-size: 16px;">Hi <strong>${params.userName}</strong>,</p>
-          <p style="margin: 0 0 24px;">Your <strong>${params.serviceType}</strong> session has been confirmed. Here are the details:</p>`,
+          <p style="margin: 0 0 24px;">Thank you for booking a session with KSEFinServe. We've received your request and confirmed the following details:</p>`,
       },
     ],
     cards: [
       { label: "Service", value: params.serviceType },
       { label: "Date", value: params.bookingDate },
       { label: "Time", value: params.bookingTime },
+      { label: "Discussion Path", value: params.path || 'Wealth planning' },
+      { label: "Topic", value: params.topic || 'General' },
       { label: "Reference", value: params.reference },
     ],
     sections: [
       {
         title: "What Happens Next",
         content: `<ul style="margin: 0; padding-left: 20px; line-height: 2;">
-            <li>We'll send a calendar invite with meeting details</li>
-            <li>Kayode will reach out 24 hours before to confirm</li>
+            <li>Kayode Samson Elepe, RR will reach out 24 hours before to confirm</li>
             <li>Prepare any questions or documents you'd like to discuss</li>
+            <li>If you need to reschedule, reply to this email at least 24 hours in advance</li>
           </ul>`,
       },
       {
-        title: "Need to Reschedule?",
-        content: `<p>Life happens. If you need to adjust your appointment, simply reply to this email or contact us at <a href="mailto:info@ksefinserve.com" style="color: #c9a963;">info@ksefinserve.com</a> at least 24 hours in advance.</p>`,
+        title: "Your Selected Details",
+        content: `<div style="background: #f0ede6; padding: 20px; border-radius: 8px; border-left: 4px solid #c9a963; white-space: pre-wrap; font-size: 14px;">${params.question || 'No additional notes provided.'}</div>`,
       },
     ],
     button: {
       text: "Add to Calendar",
-      href: "#",
+      href: calendarUrl,
       bgColor: "#c9a963",
       textColor: "#081d2b",
     },
@@ -455,7 +460,7 @@ function careerApplicationNotificationTemplate(params) {
 
 function careerApplicationConfirmationTemplate(params) {
   return buildEmail({
-    preheaderText: `Application received: ${params.role}`,
+    preheaderText: `Application received: ${params.role} - ${params.reference}`,
     hero: {
       title: "Application Received ✓",
       subtitle: "Thank you for your interest in joining KSEFinServe",
@@ -467,6 +472,26 @@ function careerApplicationConfirmationTemplate(params) {
         title: "Application Summary",
         content: `<p style="margin: 0 0 16px; font-size: 16px;">Hi <strong>${params.userName}</strong>,</p>
           <p style="margin: 0 0 24px;">We've received your application for the <strong>${params.role}</strong> position. Your reference number is <strong>${params.reference}</strong>.</p>`,
+      },
+      {
+        title: "Your Application Details",
+        content: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+            <tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Name:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.name}</td></tr>
+            <tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Email:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><a href="mailto:${params.email}" style="color: #081d2b;">${params.email}</a></td></tr>
+            <tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Phone:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.phone}</td></tr>
+            <tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Location:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.location}</td></tr>
+            <tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Preferred Role:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.role}</td></tr>
+            <tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Licences:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.licences || "Not specified"}</td></tr>
+            <tr><td style="padding: 12px 0;"><strong style="color: #c9a963;">Preferred Contact:</strong></td><td style="padding: 12px 0;">${params.preferredContact || 'Email'}</td></tr>
+          </table>`,
+      },
+      {
+        title: "Areas of Interest",
+        content: `<ul style="margin: 0; padding-left: 20px;">${params.interests && params.interests.length > 0 ? params.interests.map(i => `<li>${i}</li>`).join("") : '<li>Not specified</li>'}</ul>`,
+      },
+      {
+        title: "Background & Motivation",
+        content: `<div style="background: #f0ede6; padding: 20px; border-radius: 8px; border-left: 4px solid #c9a963; white-space: pre-wrap;">${params.background || 'Not provided'}</div>`,
       },
       {
         title: "What Happens Next",
@@ -484,6 +509,55 @@ function careerApplicationConfirmationTemplate(params) {
     button: {
       text: "Read Our Insights",
       href: "https://ksefinserve.com/insights",
+      bgColor: "#c9a963",
+      textColor: "#081d2b",
+    },
+  });
+}
+
+function eventInterestConfirmationTemplate(params) {
+  // Build Google Calendar URL for event
+  const calendarUrl = params.calendarUrl || `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(params.eventTitle)}&dates=${encodeURIComponent(params.eventDate + '/' + params.eventDate)}&details=${encodeURIComponent('Event: ' + params.eventTitle + '\n' + params.eventDescription + '\n\nYou expressed interest in this KSEFinServe event.')}`
+  
+  return buildEmail({
+    preheaderText: `Event interest confirmed: ${params.eventTitle}`,
+    hero: {
+      title: "Interest Confirmed ✓",
+      subtitle: `Thank you for your interest in ${params.eventTitle}`,
+      bgColor: "#081d2b",
+      textColor: "#ffffff",
+    },
+    sections: [
+      {
+        title: "Event Details",
+        content: `<p style="margin: 0 0 16px; font-size: 16px;">Hi <strong>${params.userName}</strong>,</p>
+          <p style="margin: 0 0 24px;">We've received your interest in the following event. Here are the details:</p>`,
+      },
+    ],
+    cards: [
+      { label: "Event", value: params.eventTitle },
+      { label: "Date", value: params.eventDate },
+      { label: "Time", value: params.eventTime || 'TBA' },
+      { label: "Location", value: params.eventLocation || 'Online / TBD' },
+      { label: "Reference", value: params.reference },
+    ],
+    sections: [
+      {
+        title: "About This Event",
+        content: `<div style="background: #f0ede6; padding: 20px; border-radius: 8px; border-left: 4px solid #c9a963; white-space: pre-wrap;">${params.eventDescription || 'No description provided.'}</div>`,
+      },
+      {
+        title: "What Happens Next",
+        content: `<ul style="margin: 0; padding-left: 20px; line-height: 2;">
+            <li>We'll keep you updated on event details and any changes</li>
+            <li>You'll receive a confirmation with final logistics closer to the date</li>
+            <li>Feel free to reach out with any questions at <a href="mailto:info@ksefinserve.com" style="color: #c9a963;">info@ksefinserve.com</a></li>
+          </ul>`,
+      },
+    ],
+    button: {
+      text: "Add to Calendar",
+      href: calendarUrl,
       bgColor: "#c9a963",
       textColor: "#081d2b",
     },
@@ -582,12 +656,19 @@ export async function sendBookingConfirmation(params) {
   const adminEmail = params.adminEmail ?? "admin@ksefinserve.com";
   const reference = params.reference ?? `SES-${Date.now().toString(36).toUpperCase()}`;
 
+  // Build Google Calendar URL for user
+  const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(params.serviceType + ' Session')}&dates=${encodeURIComponent(params.bookingDate + ' ' + params.bookingTime)}/&details=${encodeURIComponent('Your KSEFinServe session with Kayode Samson Elepe, RR. Reference: ' + reference)}`
+
   const userHtml = bookingConfirmationUserTemplate({
     userName: params.userName,
     bookingDate: params.bookingDate,
     bookingTime: params.bookingTime,
     serviceType: params.serviceType,
     reference,
+    path: params.path,
+    topic: params.topic,
+    question: params.question,
+    calendarUrl,
   });
 
   const adminHtml = bookingNotificationAdminTemplate({
@@ -647,12 +728,41 @@ export async function sendCareerNotification(params) {
 export async function sendCareerConfirmation(params) {
   const html = careerApplicationConfirmationTemplate({
     userName: params.userName,
-    reference: params.reference,
+    name: params.name,
+    email: params.email,
+    phone: params.phone,
+    location: params.location,
     role: params.role,
+    licences: params.licences,
+    interests: params.interests,
+    background: params.background,
+    preferredContact: params.preferredContact,
+    reference: params.reference,
   });
   return sendEmail({
     to: params.userEmail,
     subject: `Application Received &mdash; KSEFinServe (${params.reference})`,
+    html,
+  });
+}
+
+export async function sendEventInterestConfirmation(params) {
+  // Build Google Calendar URL
+  const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(params.eventTitle)}&dates=${encodeURIComponent(params.eventDate + '/' + params.eventDate)}&details=${encodeURIComponent('Event: ' + params.eventTitle + '\n' + params.eventDescription + '\n\nYou expressed interest in this KSEFinServe event.')}`
+  
+  const html = eventInterestConfirmationTemplate({
+    userName: params.userName,
+    eventTitle: params.eventTitle,
+    eventDate: params.eventDate,
+    eventTime: params.eventTime,
+    eventLocation: params.eventLocation,
+    eventDescription: params.eventDescription,
+    reference: params.reference,
+    calendarUrl,
+  });
+  return sendEmail({
+    to: params.userEmail,
+    subject: `Interest Confirmed: ${params.eventTitle} &mdash; KSEFinServe (${params.reference})`,
     html,
   });
 }

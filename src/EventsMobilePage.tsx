@@ -90,6 +90,7 @@ function MobileEventModal({ event, onClose }: { event: KseEvent; onClose: () => 
       await sendContactNotification({
         name: name,
         email: email,
+        subjectPrefix: "Event Form",
         subject: `Event Interest: ${event.title || event.name}`,
         message: `A user has expressed interest in the event: ${event.title || event.name}\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone}`,
       })

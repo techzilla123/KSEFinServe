@@ -256,6 +256,7 @@ export function useBookings(): BookingDirectory {
         await sendBookingConfirmation({
           userEmail: input.email.trim(),
           userName: `${input.firstName.trim()} ${input.lastName.trim()}`.trim(),
+          userPhone: input.phone ?? 'Not provided',
           bookingDate: input.availableDate ? new Date(input.availableDate).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'To be arranged',
           bookingTime: input.availableTime || 'To be confirmed',
           serviceType: input.path || input.topic || 'Wealth Strategy Session',

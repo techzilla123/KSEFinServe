@@ -91,7 +91,7 @@ function footer() {
   return `<div style="background-color: #081d2b; padding: 32px; text-align: center; border-radius: 0 0 16px 16px;">
       <div style="margin-bottom: 16px;">
         <a href="https://ksefinserve.com" style="display: inline-block; margin: 0 8px;">
-          <img src="https://ksefinserve.com/assets/logo-ksefin.webp" alt="KSEFinServe" width="120" style="display: block; border: 0; outline: none; text-decoration: none;" />
+          <svg xmlns="http://www.w3.org/2000/svg" width="120" height="44" viewBox="0 0 120 44" fill="none"><rect width="120" height="44" fill="#081d2b"/><text x="60" y="30" font-family="Georgia,serif" font-size="16" font-weight="600" fill="#c9a963" text-anchor="middle" alignment-baseline="middle">KSEFinServe</text></svg>
         </a>
       </div>
       <p style="margin: 8px 0; font-size: 14px; color: rgba(255,255,255,0.7);">Clarity · Growth · Impact</p>
@@ -150,7 +150,7 @@ function buildEmail(opts) {
   const footerHtml = opts.footer !== false ? `<div style="background-color: #081d2b; padding: 32px; text-align: center; border-radius: 0 0 16px 16px;">
       <div style="margin-bottom: 16px;">
         <a href="https://ksefinserve.com" style="display: inline-block; margin: 0 8px;">
-          <img src="https://ksefinserve.com/assets/logo-ksefin.webp" alt="KSEFinServe" width="120" style="display: block; border: 0; outline: none; text-decoration: none;" />
+          <svg xmlns="http://www.w3.org/2000/svg" width="120" height="44" viewBox="0 0 120 44" fill="none"><rect width="120" height="44" fill="#081d2b"/><text x="60" y="30" font-family="Georgia,serif" font-size="16" font-weight="600" fill="#c9a963" text-anchor="middle" alignment-baseline="middle">KSEFinServe</text></svg>
         </a>
       </div>
       <p style="margin: 8px 0; font-size: 14px; color: rgba(255,255,255,0.7);">Clarity · Growth · Impact</p>
@@ -232,7 +232,7 @@ function buildEmail(opts) {
     <div style="background-color: #081d2b; padding: 32px; text-align: center; border-radius: 0 0 16px 16px;">
       <div style="margin-bottom: 16px;">
         <a href="https://ksefinserve.com" style="display: inline-block; margin: 0 8px;">
-          <img src="https://ksefinserve.com/assets/logo-ksefin.webp" alt="KSEFinServe" width="120" style="display: block; border: 0; outline: none; text-decoration: none;" />
+          <svg xmlns="http://www.w3.org/2000/svg" width="120" height="44" viewBox="0 0 120 44" fill="none"><rect width="120" height="44" fill="#081d2b"/><text x="60" y="30" font-family="Georgia,serif" font-size="16" font-weight="600" fill="#c9a963" text-anchor="middle" alignment-baseline="middle">KSEFinServe</text></svg>
         </a>
       </div>
       <p style="margin: 8px 0; font-size: 14px; color: rgba(255,255,255,0.7);">Clarity · Growth · Impact</p>
@@ -580,9 +580,10 @@ export async function sendBookingConfirmation(params) {
 export async function sendContactNotification(params) {
   const adminEmail = params.adminEmail ?? "admin@ksefinserve.com";
   const html = contactNotificationTemplate(params);
+  const subjectPrefix = params.subjectPrefix || "Contact Form";
   return sendEmail({
     to: adminEmail,
-    subject: `Contact Form: ${params.subject}`,
+    subject: `${subjectPrefix}: ${params.subject}`,
     html,
     replyTo: params.email,
   });

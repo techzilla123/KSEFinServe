@@ -190,14 +190,20 @@ export async function submitCareerApplication(input: CareerInput): Promise<{ err
   if (err) return { error: err.message, reference }
 
   // Send notification email to admin (non-blocking)
-  try {
-    const { sendContactNotification } = await import('@/lib/email')
-    await sendContactNotification({
-      name: input.name.trim(),
-      email: input.email.trim(),
-      message: `Career Application: ${input.role || 'Not specified'}\n\nLocation: ${input.location.trim()}\nPhone: ${input.phone.trim()}\nPreferred Contact: ${input.preferredContact || 'Email'}\n\nBackground:\n${input.background || 'Not provided'}\n\nInterests: ${(input.interests || []).join(', ')}\n\nLicences: ${input.licences || 'Not provided'}`,
-    })
-  } catch {
+    try {
+      const { sendCareerNotification } = await import('@/lib/email')
+      await sendCareerNotification({
+        name: input.name.trim(),
+        email: input.email.trim(),
+        phone: input.phone.trim(),
+        location: input.location.trim(),
+        role: input.role ?? 'Not specified',
+        background: input.background ?? 'Not provided',
+        interests: input.interests ?? [],
+        licences: input.licences ?? 'Not specified',
+        reference: reference || 'CAR-' + new Date().getFullYear(),
+      })
+    } catch {
     console.warn('Career application notification email failed to send')
   }
 

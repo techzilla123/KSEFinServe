@@ -235,7 +235,7 @@ export function useBookings(): BookingDirectory {
           country: (input.country ?? '').trim(),
           contact_method: input.contactMethod ?? 'Email',
           source: (input.source ?? '').trim(),
-          route: input.route ?? 'Short form',
+          route: input.route ?? input.path ?? 'Short form',
           path: input.path ?? 'Wealth planning',
           topic: (input.topic ?? '').trim(),
           priorities: input.priorities ?? [],

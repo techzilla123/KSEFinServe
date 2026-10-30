@@ -116,6 +116,18 @@ function EventModal({ event, onClose }: { event: KseEvent; onClose: () => void }
       setError(result.error)
       return
     }
+    // Send admin notification about new interest registration
+    try {
+      const { sendContactNotification } = await import('@/lib/email')
+      await sendContactNotification({
+        name: name,
+        email: email,
+        subject: `Event Interest: ${event.title || event.name}`,
+        message: `A user has expressed interest in the event: ${event.title || event.name}\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone}`,
+      })
+    } catch {
+      console.warn('Event interest notification email failed to send')
+    }
     setDone(true)
   }
 

@@ -85,14 +85,15 @@ export async function submitContactMessage(input: {
   if (error) return { ok: false, error: error.message }
 
   // Send notification email to admin (non-blocking)
-  try {
-    const { sendContactNotification } = await import('@/lib/email')
-    await sendContactNotification({
-      name: input.name.trim(),
-      email: input.email.trim(),
-      message: input.message.trim(),
-    })
-  } catch {
+    try {
+      const { sendContactNotification } = await import('@/lib/email')
+      await sendContactNotification({
+        name: input.name.trim(),
+        email: input.email.trim(),
+        subject: input.subject.trim(),
+        message: input.message.trim(),
+      })
+    } catch {
     // Email failure shouldn't block the form submission
     console.warn('Contact notification email failed to send')
   }

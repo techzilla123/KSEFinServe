@@ -571,7 +571,7 @@ export async function sendBookingConfirmation(params) {
 
   const [user, admin] = await Promise.all([
     sendEmail({ to: params.userEmail, subject: "Booking Confirmed &mdash; KSEFinServe", html: userHtml }),
-    sendEmail({ to: adminEmail, subject: "New Booking &mdash; KSEFinServe", html: adminHtml }),
+        sendEmail({ to: adminEmail, subject: `New Booking &mdash; KSEFinServe (${reference})`, html: adminHtml }),
   ]);
 
   return { user, admin };

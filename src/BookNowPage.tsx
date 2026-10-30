@@ -387,6 +387,8 @@ function BookPage({
       city: location?.city ?? "",
       province: location?.province ?? "",
       country: location?.country ?? "",
+      route: route,
+      path: path,
     });
   };
   return (
@@ -871,7 +873,7 @@ function ReceivedPage({ details, reference, restart }: { details: Details; refer
           </div>
           <div className="confirmation-actions">
             <button className="primary" type="button" onClick={restart}>Return to KSEFinServe</button>
-            <button className="secondary" type="button">Explore insights →</button>
+            <button className="secondary" type="button" onClick={() => window.open(`https://www.google.com/calendar/render?text=KSEFinServe+Session+&details=${encodeURIComponent(details.topic || details.path || 'Wealth planning')}&dates=${when}&sf=true`, '_blank')}>Add to calendar</button>
           </div>
         </section>
         <figure>

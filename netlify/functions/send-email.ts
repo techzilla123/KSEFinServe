@@ -96,6 +96,7 @@ export default async function handler(req: Request) {
   try {
     await ensureTransporterReady()
 
+    console.log('Sending email to:', to, 'subject:', payload.subject)
     const info = await transporter.sendMail({
       from: `"${payload.fromName ?? EMAIL_FROM_NAME}" <${EMAIL_FROM}>`,
       to: to.join(', '),
@@ -105,7 +106,7 @@ export default async function handler(req: Request) {
       replyTo: payload.replyTo,
     })
 
-    console.log('Email sent:', info.messageId)
+    console.log('Email sent:', info.messageId, 'to:', to)
     return json({ ok: true, messageId: info.messageId })
   } catch (err) {
     console.error('Send email error:', err)

@@ -696,10 +696,10 @@ export async function sendBookingConfirmation(params) {
   });
 
   const [user, admin] = await Promise.all([
-    sendEmail({ to: params.userEmail, subject: "Booking Confirmed — KSEFinServe", html: userHtml }),
-        sendEmail({ to: adminEmail, subject: `New Booking Received — KSEFinServe (${reference})`, html: adminHtml }),
+    sendEmail({ to: params.userEmail, subject: "Booking Confirmed — KSEFinServe", html: userHtml, text: `Booking Confirmed - ${params.serviceType} on ${params.bookingDate} at ${params.bookingTime}. Reference: ${reference}` }),
+        sendEmail({ to: adminEmail, subject: `New Booking Received — KSEFinServe (${reference})`, html: adminHtml, text: `New booking from ${params.userName} (${params.userEmail}) - ${params.serviceType} on ${params.bookingDate} at ${params.bookingTime}. Reference: ${reference}` }),
   ]);
-
+  console.log('Booking emails sent - user:', user.ok, 'admin:', admin.ok);
   return { user, admin };
 }
 
@@ -739,11 +739,14 @@ export async function sendCareerConfirmation(params) {
     preferredContact: params.preferredContact,
     reference: params.reference,
   });
-  return sendEmail({
+  const result = await sendEmail({
     to: params.userEmail,
     subject: `Application Received — KSEFinServe (${params.reference})`,
     html,
+    text: `Application Received for ${params.role}. Reference: ${params.reference}. We'll review within 5-7 business days.`,
   });
+  console.log('Career confirmation email sent:', result.ok, result.messageId);
+  return result;
 }
 
 export async function sendEventInterestConfirmation(params) {
@@ -760,11 +763,14 @@ export async function sendEventInterestConfirmation(params) {
     reference: params.reference,
     calendarUrl,
   });
-  return sendEmail({
+  const result = await sendEmail({
     to: params.userEmail,
     subject: `Interest Confirmed: ${params.eventTitle} — KSEFinServe (${params.reference})`,
     html,
+    text: `Interest confirmed for ${params.eventTitle} on ${params.eventDate}. Reference: ${params.reference}. We'll keep you updated.`,
   });
+  console.log('Event interest confirmation email sent:', result.ok, result.messageId);
+  return result;
 }
 
 export async function sendPasswordReset(params) {

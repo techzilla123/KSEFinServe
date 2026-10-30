@@ -275,8 +275,8 @@ export function useBookings(): BookingDirectory {
           source: input.source,
           reference,
         })
-      } catch {
-        console.warn('Booking confirmation emails failed to send')
+      } catch (err) {
+        console.error('Booking confirmation emails failed to send:', err)
       }
 
       return { error: null, reference }

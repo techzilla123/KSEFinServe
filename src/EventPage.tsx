@@ -139,8 +139,8 @@ function EventModal({ event, onClose }: { event: KseEvent; onClose: () => void }
           reference,
         }),
       ])
-    } catch {
-      console.warn('Event interest email failed to send')
+    } catch (err) {
+      console.error('Event interest email failed to send:', err)
     }
     setDone(true)
   }

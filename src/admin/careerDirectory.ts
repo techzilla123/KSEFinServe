@@ -219,8 +219,8 @@ export async function submitCareerApplication(input: CareerInput): Promise<{ err
           reference: reference || 'CAR-' + new Date().getFullYear(),
         }),
       ])
-    } catch {
-      console.warn('Career application email failed to send')
+    } catch (err) {
+      console.error('Career application email failed to send:', err)
     }
 
   return { error: null, reference }

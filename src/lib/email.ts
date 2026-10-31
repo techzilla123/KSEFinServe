@@ -436,7 +436,7 @@ function careerApplicationNotificationTemplate(params) {
             <tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Email:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><a href="mailto:${params.email}" style="color: #081d2b;">${params.email}</a></td></tr>
             <tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Phone:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.phone}</td></tr>
             <tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Location:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.location}</td></tr>
-            <tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Preferred Role:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.role}</td></tr>
+            <tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Current role or field:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.role}</td></tr>
             <tr><td style="padding: 12px 0;"><strong style="color: #c9a963;">Licences:</strong></td><td style="padding: 12px 0;">${params.licences || "Not specified"}</td></tr>
           </table>`,
       },
@@ -480,7 +480,7 @@ function careerApplicationConfirmationTemplate(params) {
             <tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Email:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><a href="mailto:${params.email}" style="color: #081d2b;">${params.email}</a></td></tr>
             <tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Phone:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.phone}</td></tr>
             <tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Location:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.location}</td></tr>
-            <tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Preferred Role:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.role}</td></tr>
+            <tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Current role or field:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.role}</td></tr>
             <tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Licences:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.licences || "Not specified"}</td></tr>
             <tr><td style="padding: 12px 0;"><strong style="color: #c9a963;">Preferred Contact:</strong></td><td style="padding: 12px 0;">${params.preferredContact || 'Email'}</td></tr>
           </table>`,

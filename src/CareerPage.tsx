@@ -253,6 +253,8 @@ function ApplicationForm() {
   // read straight from the form so the stored record reflects what was ticked.
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    setSubmitting(true);
+    setSubmitError(null);
     const form = e.currentTarget as HTMLFormElement;
     const boxes = Array.from(form.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
     const result = await submitCareerApplication({
@@ -273,6 +275,7 @@ function ApplicationForm() {
       consentContact: boxes[0]?.checked ?? false,
       consentData: boxes[1]?.checked ?? false,
     });
+    setSubmitting(false);
     if (result.error) {
       setSubmitError(result.error);
       return;

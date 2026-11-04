@@ -583,6 +583,300 @@ function adminNotificationTemplate(params) {
   });
 }
 
+
+/* ------------------------------------------------------------------ */
+/* Financial Tool Report Templates                                   */
+/* ------------------------------------------------------------------ */
+
+function taxReportTemplate(params) {
+  return buildEmail({
+    preheaderText: `Your Tax Clarity Report - \${params.reference}`,
+    hero: {
+      title: "Your Tax Clarity Report",
+      subtitle: `Reference: \${params.reference} · \${params.currency}`,
+      bgColor: "#081d2b",
+      textColor: "#ffffff",
+    },
+    sections: [
+      {
+        title: "Report Overview",
+        content: `<p style="margin: 0 0 16px; font-size: 16px;">Hi <strong>\${params.userName}</strong>,</p>
+          <p style="margin: 0 0 24px;">Thank you for using the KSEFinServe Tax Calculator. Your personalized tax clarity report is ready. This report summarizes your estimated tax breakdown based on the inputs you provided.</p>`,
+      },
+    ],
+    cards: [
+      { label: "Annual Employment Income", value: params.income },
+      { label: "State", value: params.state },
+      { label: "Tax Year", value: params.taxYear },
+      { label: "Federal Income Tax", value: params.federalTax },
+      { label: "State Income Tax", value: params.stateTax },
+      { label: "FICA (Social Security + Medicare)", value: params.ficaTax },
+      { label: "Total Estimated Tax", value: params.totalTax },
+      { label: "After-Tax Income", value: params.afterTaxIncome },
+      { label: "Average Tax Rate", value: params.avgRate },
+      { label: "Assumed Marginal Rate", value: params.marginalRate },
+      { label: "Income You Keep", value: params.keepPct },
+    ],
+    sections: [
+      {
+        title: "Important Notes",
+        content: `<ul style="margin: 0; padding-left: 20px; line-height: 2;">
+            <li>This is an illustrative estimate based on simplified 2025 tax brackets for single filers</li>
+            <li>Excludes CPP/QPP, EI, payroll contributions, credits, and individual circumstances</li>
+            <li>Not personalized tax advice - consult a qualified tax professional for filing decisions</li>
+            <li>Tax brackets apply progressively; your marginal rate applies only to your next dollar of income</li>
+          </ul>`,
+      },
+      {
+        title: "Your PDF Report",
+        content: `<p style="margin: 0 0 16px;">A detailed PDF version of this report is attached to this email, including the full tax breakdown chart and assumptions.</p>
+          <p style="margin: 0;">You can also access this report anytime by logging into your KSEFinServe account.</p>`,
+      },
+    ],
+    button: {
+      text: "View in Dashboard",
+      href: "https://ksefinserve.netlify.app/tax-calculator",
+      bgColor: "#c9a963",
+      textColor: "#081d2b",
+    },
+  });
+}
+
+function collegeSavingsReportTemplate(params) {
+  return buildEmail({
+    preheaderText: `Your Education Savings Plan - \${params.reference}`,
+    hero: {
+      title: "Your Education Savings Plan",
+      subtitle: `Reference: \${params.reference} · \${params.currency}`,
+      bgColor: "#081d2b",
+      textColor: "#ffffff",
+    },
+    sections: [
+      {
+        title: "Report Overview",
+        content: `<p style="margin: 0 0 16px; font-size: 16px;">Hi <strong>\${params.userName}</strong>,</p>
+          <p style="margin: 0 0 24px;">Thank you for using the KSEFinServe College Savings Calculator. Your personalized education savings plan is ready, showing how your contributions could help fund your child's future education.</p>`,
+      },
+    ],
+    cards: [
+      { label: "Child's Current Age", value: params.childAge + " years" },
+      { label: "Education Start Age", value: params.startAge + " years" },
+      { label: "Years Until College", value: params.yearsToCollege + " years" },
+      { label: "Country", value: params.country },
+      { label: "State/Province", value: params.state },
+      { label: "Already Saved", value: params.alreadySaved },
+      { label: "Monthly Contribution", value: params.monthlyContribution },
+      { label: "Investment Scenario", value: params.scenario },
+      { label: "Assumed Annual Return", value: params.annualReturn },
+      { label: "Projected Savings at Age " + params.startAge, value: params.projectedSavings },
+      { label: "Education Funding Goal (4 years)", value: params.fundingGoal },
+      { label: "Estimated Funding Gap", value: params.fundingGap },
+      { label: "Contribution to Close Gap", value: params.contributionToCloseGap },
+      { label: "Percentage of Goal Funded", value: params.percentFunded },
+    ],
+    sections: [
+      {
+        title: "Key Assumptions",
+        content: `<ul style="margin: 0; padding-left: 20px; line-height: 2;">
+            <li>4 years of education at $18,000/year (today's dollars), rising 3% annually</li>
+            <li>Contributions made monthly at period-end; returns compound monthly</li>
+            <li>Covers 100% of costs; no grants or other funding included</li>
+            <li>Household income $100k-$150k assumed for context</li>
+            <li>\${params.country === "Canada" ? "Canadian" : "US"} scenario in \${params.currency}</li>
+          </ul>`,
+      },
+      {
+        title: "Your PDF Report",
+        content: `<p style="margin: 0 0 16px;">A detailed PDF version of this plan is attached, including the age-by-age savings timeline, savings vs. goal chart, and full assumptions.</p>
+          <p style="margin: 0;">Revisit this plan annually as costs, contributions, and grant eligibility change.</p>`,
+      },
+    ],
+    button: {
+      text: "View in Dashboard",
+      href: "https://ksefinserve.netlify.app/college-savings",
+      bgColor: "#c9a963",
+      textColor: "#081d2b",
+    },
+  });
+}
+
+function debtRepaymentReportTemplate(params) {
+  return buildEmail({
+    preheaderText: `Your Payoff Blueprint - \${params.reference}`,
+    hero: {
+      title: "Your Payoff Blueprint",
+      subtitle: `Reference: \${params.reference} · \${params.currency}`,
+      bgColor: "#081d2b",
+      textColor: "#ffffff",
+    },
+    sections: [
+      {
+        title: "Report Overview",
+        content: `<p style="margin: 0 0 16px; font-size: 16px;">Hi <strong>\${params.userName}</strong>,</p>
+          <p style="margin: 0 0 24px;">Thank you for using the KSEFinServe Debt Repayment Calculator. Your personalized payoff blueprint compares two strategies so you can choose the path that fits your goals.</p>`,
+      },
+    ],
+    cards: [
+      { label: "Selected Strategy", value: params.strategy },
+      { label: "Total Monthly Payment", value: params.totalMonthlyPayment },
+      { label: "Debt-Free Timeline", value: params.debtFreeMonths + " months" },
+      { label: "Total Interest (Selected)", value: params.totalInterest },
+      { label: "Other Strategy", value: params.otherStrategy },
+      { label: "Other Strategy Timeline", value: params.otherStrategyMonths + " months" },
+      { label: "Other Strategy Interest", value: params.otherStrategyInterest },
+      { label: "Interest Savings with Selected", value: params.interestSavings },
+      { label: "Time Saved with Selected", value: params.timeSaved + " months" },
+    ],
+    sections: [
+      {
+        title: "Your Debts",
+        content: params.debtsHtml,
+      },
+      {
+        title: "Strategy Comparison",
+        content: `<p style="margin: 0 0 16px;">\${params.strategy === "Avalanche" ? "Avalanche targets the highest APR first and usually costs less overall." : "Snowball targets the smallest balance first for earlier psychological wins."}</p>
+          <p style="margin: 0;">Your selected strategy saves \${params.interestSavings} in interest and \${params.timeSaved} months vs. the alternative.</p>`,
+      },
+      {
+        title: "Important Notes",
+        content: `<ul style="margin: 0; padding-left: 20px; line-height: 2;">
+            <li>Illustrative, not personalized advice. Fixed APRs assumed; interest added monthly</li>
+            <li>Fixed minimums and fixed extra payment roll over as debts are cleared</li>
+            <li>Actual payoff may vary with rate changes, fees, or additional borrowing</li>
+            <li>Consider consulting a financial advisor for a comprehensive debt plan</li>
+          </ul>`,
+      },
+      {
+        title: "Your PDF Report",
+        content: `<p style="margin: 0 0 16px;">A detailed PDF version of this blueprint is attached, including the month-by-month payoff timeline for both strategies and the remaining debt chart.</p>
+          <p style="margin: 0;">A little extra each month can change your debt-free date significantly.</p>`,
+      },
+    ],
+    button: {
+      text: "View in Dashboard",
+      href: "https://ksefinserve.netlify.app/debt-repayment",
+      bgColor: "#c9a963",
+      textColor: "#081d2b",
+    },
+  });
+}
+
+function retirementReportTemplate(params) {
+  return buildEmail({
+    preheaderText: `Your Retirement Roadmap - \${params.reference}`,
+    hero: {
+      title: "Your Retirement Roadmap",
+      subtitle: `Reference: \${params.reference} · \${params.currency}`,
+      bgColor: "#081d2b",
+      textColor: "#ffffff",
+    },
+    sections: [
+      {
+        title: "Report Overview",
+        content: `<p style="margin: 0 0 16px; font-size: 16px;">Hi <strong>\${params.userName}</strong>,</p>
+          <p style="margin: 0 0 24px;">Thank you for using the KSEFinServe Retirement Planning Calculator. Your personalized retirement roadmap shows how today's savings could support tomorrow's income.</p>`,
+      },
+    ],
+    cards: [
+      { label: "Age Today", value: params.ageToday + " years" },
+      { label: "Retirement Age", value: params.retireAge + " years" },
+      { label: "Years to Retirement", value: params.yearsToRetirement + " years" },
+      { label: "Monthly Contribution", value: params.monthlyContribution },
+      { label: "Investment Scenario", value: params.scenario },
+      { label: "Assumed Growth Return", value: params.growthReturn },
+      { label: "Projected Savings at Age " + params.retireAge, value: params.projectedSavings },
+      { label: "Estimated Annual Income (4% draw + CPP/OAS)", value: params.estimatedAnnualIncome },
+      { label: "Annual Income Goal", value: params.annualIncomeGoal },
+      { label: "Annual Funding Gap", value: params.fundingGap },
+      { label: "Assumed Inflation", value: "2%" },
+      { label: "Retirement Return Assumption", value: "3%" },
+    ],
+    sections: [
+      {
+        title: "Key Assumptions",
+        content: `<ul style="margin: 0; padding-left: 20px; line-height: 2;">
+            <li>Starting assets: RRSP $80,000 · TFSA $30,000 · Other $10,000</li>
+            <li>CPP/OAS: $1,500/month at age 65 (approx. $18,000/year)</li>
+            <li>Plan through age 95 · Inflation 2% · Growth return \${params.growthReturn}</li>
+            <li>Retirement draw: 4% initial annual withdrawal, rising 2% yearly</li>
+            <li>All amounts in future nominal \${params.currency}</li>
+          </ul>`,
+      },
+      {
+        title: "Your PDF Report",
+        content: `<p style="margin: 0 0 16px;">A detailed PDF version of this roadmap is attached, including the age-by-age savings buildup chart, withdrawal timeline, and income gap analysis.</p>
+          <p style="margin: 0;">Use this as a conversation starter for your next financial planning review.</p>`,
+      },
+    ],
+    button: {
+      text: "View in Dashboard",
+      href: "https://ksefinserve.netlify.app/retirement-planning",
+      bgColor: "#c9a963",
+      textColor: "#081d2b",
+    },
+  });
+}
+
+function compoundInterestReportTemplate(params) {
+  return buildEmail({
+    preheaderText: `Your Growth Report - \${params.reference}`,
+    hero: {
+      title: "Your Growth Report",
+      subtitle: `Reference: \${params.reference} · \${params.currency}`,
+      bgColor: "#081d2b",
+      textColor: "#ffffff",
+    },
+    sections: [
+      {
+        title: "Report Overview",
+        content: `<p style="margin: 0 0 16px; font-size: 16px;">Hi <strong>\${params.userName}</strong>,</p>
+          <p style="margin: 0 0 24px;">Thank you for using the KSEFinServe Compound Interest Calculator. Your personalized growth report shows how time and consistency can make your money work harder.</p>`,
+      },
+    ],
+    cards: [
+      { label: "Initial Deposit", value: params.initialDeposit },
+      { label: "Years of Growth", value: params.years + " years" },
+      { label: "Estimated Annual Rate", value: params.annualRate + "%" },
+      { label: "Compounding Frequency", value: params.compoundFreq },
+      { label: "Recurring Contribution", value: params.contribution },
+      { label: "Contribution Frequency", value: params.contributionFreq },
+      { label: "Total Balance After " + params.years + " Years", value: params.totalBalance },
+      { label: "Total Deposits", value: params.totalDeposits },
+      { label: "Interest Earned", value: params.interestEarned },
+      { label: "Interest as % of Ending Balance", value: params.interestPct },
+      { label: "Without Contributions (Same Rate)", value: params.withoutContributions },
+      { label: "Effective Annual Yield (APY)", value: params.apy },
+    ],
+    sections: [
+      {
+        title: "Key Assumptions",
+        content: `<ul style="margin: 0; padding-left: 20px; line-height: 2;">
+            <li>Contributions at period-end · Constant annual rate · \${params.compoundFreq.toLowerCase()} compounding</li>
+            <li>No taxes, fees, or withdrawals · All values in \${params.currency}</li>
+            <li>\${params.annualRate}% is the annual rate before compounding, not APY</li>
+            <li>\${params.compoundFreq.toLowerCase()} compounding gives an effective annual yield of about \${params.apy}</li>
+          </ul>`,
+      },
+      {
+        title: "The Power of Time",
+        content: `<p style="margin: 0 0 16px;">The space between your deposits and your total balance is the interest earned—and the interest on that interest. Time and consistency do the heavy lifting.</p>
+          <p style="margin: 0;">Staying invested lets compounding accelerate your growth in the later years.</p>`,
+      },
+      {
+        title: "Your PDF Report",
+        content: `<p style="margin: 0 0 16px;">A detailed PDF version of this report is attached, including the deposits vs. balance chart, year-by-year breakdown, and interest timeline.</p>
+          <p style="margin: 0;">Keep this projection as a reminder that small, steady steps build significant wealth over time.</p>`,
+      },
+    ],
+    button: {
+      text: "View in Dashboard",
+      href: "https://ksefinserve.netlify.app/compound-interest",
+      bgColor: "#c9a963",
+      textColor: "#081d2b",
+    },
+  });
+}
+
 function passwordResetTemplate(params) {
   return buildEmail({
     preheaderText: "Reset your KSEFinServe password",
@@ -773,6 +1067,67 @@ export async function sendEventInterestConfirmation(params) {
   return result;
 }
 
+
+export async function sendTaxReport(params) {
+  const html = taxReportTemplate(params);
+  const result = await sendEmail({
+    to: params.userEmail,
+    subject: `Your Tax Clarity Report — KSEFinServe (\${params.reference})`,
+    html,
+    text: `Your tax clarity report for \${params.income} income in \${params.state}. Reference: \${params.reference}.`,
+  });
+  console.log('Tax report email sent:', result.ok, result.messageId);
+  return result;
+}
+
+export async function sendCollegeSavingsReport(params) {
+  const html = collegeSavingsReportTemplate(params);
+  const result = await sendEmail({
+    to: params.userEmail,
+    subject: `Your Education Savings Plan — KSEFinServe (\${params.reference})`,
+    html,
+    text: `Your education savings plan for child age \${params.childAge}, starting at \${params.startAge}. Reference: \${params.reference}.`,
+  });
+  console.log('College savings report email sent:', result.ok, result.messageId);
+  return result;
+}
+
+export async function sendDebtRepaymentReport(params) {
+  const html = debtRepaymentReportTemplate(params);
+  const result = await sendEmail({
+    to: params.userEmail,
+    subject: `Your Payoff Blueprint — KSEFinServe (\${params.reference})`,
+    html,
+    text: `Your debt repayment blueprint using \${params.strategy} strategy. Debt-free in \${params.debtFreeMonths} months. Reference: \${params.reference}.`,
+  });
+  console.log('Debt repayment report email sent:', result.ok, result.messageId);
+  return result;
+}
+
+export async function sendRetirementReport(params) {
+  const html = retirementReportTemplate(params);
+  const result = await sendEmail({
+    to: params.userEmail,
+    subject: `Your Retirement Roadmap — KSEFinServe (\${params.reference})`,
+    html,
+    text: `Your retirement roadmap: \${params.yearsToRetirement} years to retirement, projected savings \${params.projectedSavings}. Reference: \${params.reference}.`,
+  });
+  console.log('Retirement report email sent:', result.ok, result.messageId);
+  return result;
+}
+
+export async function sendCompoundInterestReport(params) {
+  const html = compoundInterestReportTemplate(params);
+  const result = await sendEmail({
+    to: params.userEmail,
+    subject: `Your Growth Report — KSEFinServe (\${params.reference})`,
+    html,
+    text: `Your compound interest growth report: \${params.years} years, total balance \${params.totalBalance}. Reference: \${params.reference}.`,
+  });
+  console.log('Compound interest report email sent:', result.ok, result.messageId);
+  return result;
+}
+
 export async function sendPasswordReset(params) {
   const html = passwordResetTemplate(params);
   return sendEmail({
@@ -781,4 +1136,23 @@ export async function sendPasswordReset(params) {
     html,
   });
 }
+
+// Export template functions for use in Netlify functions
+export {
+  taxReportTemplate,
+  collegeSavingsReportTemplate,
+  debtRepaymentReportTemplate,
+  retirementReportTemplate,
+  compoundInterestReportTemplate,
+  buildEmail,
+  BRAND,
+  css,
+  preheader,
+  heroSection,
+  contentSection,
+  cardSection,
+  button,
+  footer,
+  adminLink,
+};
 

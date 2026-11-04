@@ -2388,7 +2388,18 @@ export default function App() {
           compound={compound}
         />
       </div>
-      <ReportBanner tool={tool} />
+      <ReportBanner
+          tool={tool}
+          currency={currency}
+          state={state}
+          income={income}
+          debtStrategy={debtStrategy}
+          debts={debts}
+          debtExtra={debtExtra}
+          college={college}
+          retirement={retirement}
+          compound={compound}
+        />
     </main>
   );
 }

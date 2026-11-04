@@ -364,8 +364,8 @@ async function generateTaxReportPDF(params: ReportPayload['data'], currency: 'US
   page.drawText('Your Inputs', { x: leftMargin, y, size: 14, font: fontBold, color: navy })
   y -= 22
   const inputs = [
-    ['Annual Employment Income', money(Number(params.income) || 0, currency)],
-    ['State', String(params.state || '')],
+    ['Annual Employment Income', money(parseMoneyStr(params.income) || 80000, currency)],
+    ['State', String(params.state || 'California')],
     ['Tax Year', String(params.taxYear || '2025')],
   ]
   for (const [label, value] of inputs) {
@@ -435,15 +435,15 @@ async function generateCollegeReportPDF(params: ReportPayload['data'], currency:
   page.drawText('Your Inputs', { x: leftMargin, y, size: 14, font: fontBold, color: navy })
   y -= 22
   const inputs = [
-    ["Child's Current Age", String(params.childAge || '') + ' years'],
-    ['Education Start Age', String(params.startAge || '') + ' years'],
-    ['Years Until College', String(params.yearsToCollege || '') + ' years'],
-    ['Country', String(params.country || '')],
-    ['State/Province', String(params.state || '')],
-    ['Already Saved', money(parseMoneyStr(params.alreadySaved), currency)],
-    ['Monthly Contribution', money(parseMoneyStr(params.monthlyContribution), currency)],
-    ['Investment Scenario', String(params.scenario || '')],
-    ['Assumed Annual Return', String(params.annualReturn || '')],
+    ["Child's Current Age", String(params.childAge || '6') + ' years'],
+    ['Education Start Age', String(params.startAge || '18') + ' years'],
+    ['Years Until College', String(params.yearsToCollege || '12') + ' years'],
+    ['Country', String(params.country || 'United States')],
+    ['State/Province', String(params.state || 'California')],
+    ['Already Saved', money(parseMoneyStr(params.alreadySaved) || 12000, currency)],
+    ['Monthly Contribution', money(parseMoneyStr(params.monthlyContribution) || 250, currency)],
+    ['Investment Scenario', String(params.scenario || 'Moderate')],
+    ['Assumed Annual Return', String(params.annualReturn || '5')],
   ]
   for (const [label, value] of inputs) {
     page.drawText(label + ':', { x: leftMargin, y, size: 11, font: fontBold, color: rgb(0.2, 0.2, 0.2) })
@@ -516,7 +516,10 @@ async function generateDebtReportPDF(params: ReportPayload['data'], currency: 'U
 
   page.drawText('Your Debts', { x: leftMargin, y, size: 12, font: fontBold, color: navy })
   y -= 20
-  const debts = params.debts as Array<{ title: string; balance: string; apr: string; payment: string }> || []
+  const debts = params.debts as Array<{ title: string; balance: string; apr: string; payment: string }> || [
+    { title: 'Credit card', balance: '$8,000', apr: '19.99', payment: '$240' },
+    { title: 'Personal loan', balance: '$4,000', apr: '6.99', payment: '$120' },
+  ]
   page.drawText('Debt', { x: leftMargin, y, size: 10, font: fontBold, color: rgb(0.2, 0.2, 0.2) })
   page.drawText('Balance', { x: leftMargin + 150, y, size: 10, font: fontBold, color: rgb(0.2, 0.2, 0.2) })
   page.drawText('APR', { x: leftMargin + 250, y, size: 10, font: fontBold, color: rgb(0.2, 0.2, 0.2) })
@@ -591,12 +594,12 @@ async function generateRetirementReportPDF(params: ReportPayload['data'], curren
   page.drawText('Your Inputs', { x: leftMargin, y, size: 14, font: fontBold, color: navy })
   y -= 22
   const inputs = [
-    ['Age Today', String(params.ageToday || '') + ' years'],
-    ['Retirement Age', String(params.retireAge || '') + ' years'],
-    ['Years to Retirement', String(params.yearsToRetirement || '') + ' years'],
-    ['Monthly Contribution', money(parseMoneyStr(params.monthlyContribution), currency)],
-    ['Investment Scenario', String(params.scenario || '')],
-    ['Assumed Growth Return', String(params.growthReturn || '')],
+    ['Age Today', String(params.ageToday || '40') + ' years'],
+    ['Retirement Age', String(params.retireAge || '65') + ' years'],
+    ['Years to Retirement', String(params.yearsToRetirement || '25') + ' years'],
+    ['Monthly Contribution', money(parseMoneyStr(params.monthlyContribution) || 600, currency)],
+    ['Investment Scenario', String(params.scenario || 'Moderate')],
+    ['Assumed Growth Return', String(params.growthReturn || '5')],
   ]
   for (const [label, value] of inputs) {
     page.drawText(label + ':', { x: leftMargin, y, size: 11, font: fontBold, color: rgb(0.2, 0.2, 0.2) })
@@ -664,12 +667,12 @@ async function generateCompoundReportPDF(params: ReportPayload['data'], currency
   page.drawText('Your Inputs', { x: leftMargin, y, size: 14, font: fontBold, color: navy })
   y -= 22
   const inputs = [
-    ['Initial Deposit', money(parseMoneyStr(params.initialDeposit), currency)],
-    ['Years of Growth', String(params.years || '') + ' years'],
-    ['Estimated Annual Rate', String(params.annualRate || '') + '%'],
-    ['Compounding Frequency', String(params.compoundFreq || '')],
-    ['Recurring Contribution', money(parseMoneyStr(params.contribution), currency)],
-    ['Contribution Frequency', String(params.contributionFreq || '')],
+    ['Initial Deposit', money(parseMoneyStr(params.initialDeposit) || 10000, currency)],
+    ['Years of Growth', String(params.years || '10') + ' years'],
+    ['Estimated Annual Rate', String(params.annualRate || '4') + '%'],
+    ['Compounding Frequency', String(params.compoundFreq || 'Daily (365 times / year)')],
+    ['Recurring Contribution', money(parseMoneyStr(params.contribution) || 100, currency)],
+    ['Contribution Frequency', String(params.contributionFreq || 'Monthly')],
   ]
   for (const [label, value] of inputs) {
     page.drawText(label + ':', { x: leftMargin, y, size: 11, font: fontBold, color: rgb(0.2, 0.2, 0.2) })

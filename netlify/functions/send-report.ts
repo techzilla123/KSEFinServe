@@ -47,7 +47,6 @@ function validatePayload(payload: unknown): payload is ReportPayload {
   return true
 }
 
-// Create transporter once
 const transporter = nodemailer.createTransport({
   host: SMTP_HOST,
   port: SMTP_PORT,
@@ -82,28 +81,271 @@ function pct(value: number, decimals = 2): string {
   return (value * 100).toFixed(decimals) + '%'
 }
 
-// Generate reference number
-function generateReference(): string {
-  const timestamp = Date.now().toString(36).toUpperCase()
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase()
-  return `KSE-${timestamp}-${random}`
+const NAVY = '#081d2b'
+const GOLD = '#c9a963'
+const CREAM = '#f0ede6'
+const WHITE = '#ffffff'
+const GRAY = '#6b7280'
+const GRAY_LIGHT = '#e5e7eb'
+const TEXT_DARK = '#1f2937'
+
+function buildEmailHtml(opts: {
+  preheaderText: string
+  hero: { title: string; subtitle: string; bgColor: string; textColor: string }
+  sections: Array<{ title: string; content: string; bgColor?: string }>
+  cards?: Array<{ label: string; value: string }>
+  button?: { text: string; href: string; bgColor: string; textColor: string }
+}): string {
+  const heroHtml = `
+    <div style="background-color: ${opts.hero.bgColor}; padding: 48px 32px; text-align: center; border-radius: 16px 16px 0 0;">
+      <h1 style="margin: 0 0 16px; font-family: Georgia, serif; font-size: 32px; font-weight: 600; line-height: 1.3; color: ${opts.hero.textColor};">${opts.hero.title}</h1>
+      <p style="margin: 0; font-size: 18px; line-height: 1.5; opacity: 0.9; color: ${opts.hero.textColor};">${opts.hero.subtitle}</p>
+    </div>`
+
+  const sectionsHtml = opts.sections.map(s => `
+    <div style="background-color: ${s.bgColor || WHITE}; padding: 32px;">
+      <h2 style="margin: 0 0 16px; font-family: Georgia, serif; font-size: 24px; font-weight: 600; color: ${NAVY};">${s.title}</h2>
+      <div style="color: ${TEXT_DARK}; line-height: 1.7;">${s.content}</div>
+    </div>`).join('')
+
+  const cardsHtml = opts.cards && opts.cards.length ? `
+    <div style="background-color: ${CREAM}; padding: 32px; border-radius: 12px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        ${opts.cards.map(item => `
+          <tr>
+            <td style="padding: 12px 0; border-bottom: 1px solid ${GRAY_LIGHT}; vertical-align: top;">
+              <span style="display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: ${GOLD}; margin-bottom: 4px;">${item.label}</span>
+              <span style="font-size: 16px; color: ${TEXT_DARK}; line-height: 1.5;">${item.value}</span>
+            </td>
+          </tr>
+        `).join('')}
+      </table>
+    </div>` : ''
+
+  const buttonHtml = opts.button ? `
+    <div style="text-align: center; margin: 32px 0;">
+      <!--[if mso]>
+      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${opts.button.href}" style="height:48px;v-text-anchor:middle;width:200px;" arcsize="8%" stroke="f" fillcolor="${opts.button.bgColor}">
+        <w:anchorlock/>
+        <center style="color:${opts.button.textColor};font-family:Arial,sans-serif;font-size:16px;font-weight:600;">${opts.button.text}</center>
+      </v:roundrect>
+      <![endif]-->
+      <a href="${opts.button.href}" style="display: inline-block; background-color: ${opts.button.bgColor}; color: ${opts.button.textColor}; padding: 16px 32px; border-radius: 8px; font-size: 16px; font-weight: 600; text-decoration: none; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif;">${opts.button.text}</a>
+    </div>` : ''
+
+  const footerHtml = `
+    <div style="background-color: ${NAVY}; padding: 32px; text-align: center; border-radius: 0 0 16px 16px;">
+      <div style="margin-bottom: 16px;">
+        <a href="https://ksefinserve.com" style="display: inline-block; margin: 0 8px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="120" height="44" viewBox="0 0 120 44" fill="none"><rect width="120" height="44" fill="${NAVY}"/><text x="60" y="30" font-family="Georgia,serif" font-size="16" font-weight="600" fill="${GOLD}" text-anchor="middle" alignment-baseline="middle">KSEFinServe</text></svg>
+        </a>
+      </div>
+      <p style="margin: 8px 0; font-size: 14px; color: rgba(255,255,255,0.7);">Clarity \u00b7 Growth \u00b7 Impact</p>
+      <p style="margin: 16px 0 0; font-size: 12px; color: rgba(255,255,255,0.5);">
+        \u00a9 2026 KSEFinServe. All rights reserved.<br>
+        363 N Sam Houston Pkwy E, Suite 200, Houston, TX 77060
+      </p>
+      <div style="margin-top: 24px;">
+        <a href="https://www.linkedin.com/company/ksefinserve" style="margin: 0 8px; color: rgba(255,255,255,0.7); text-decoration: none;">LinkedIn</a>
+        <span style="color: rgba(255,255,255,0.3);">|</span>
+        <a href="mailto:info@ksefinserve.com" style="margin: 0 8px; color: rgba(255,255,255,0.7); text-decoration: none;">Contact</a>
+        <span style="color: rgba(255,255,255,0.3);">|</span>
+        <a href="https://ksefinserve.com/unsubscribe" style="margin: 0 8px; color: rgba(255,255,255,0.7); text-decoration: none;">Unsubscribe</a>
+      </div>
+    </div>`
+
+  return `<!DOCTYPE html>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="x-apple-disable-message-reformatting">
+  <title>${opts.hero.title}</title>
+  <!--[if mso]>
+  <xml>
+    <o:OfficeDocumentSettings>
+      <o:AllowPNG/>
+      <o:PixelsPerInch>96</o:PixelsPerInch>
+    </o:OfficeDocumentSettings>
+  </xml>
+  <![endif]-->
+  <style>
+    @media only screen and (max-width: 600px) {
+      .email-container { width: 100% !important; }
+      .padding { padding: 24px !important; }
+      h1 { font-size: 28px !important; }
+      h2 { font-size: 22px !important; }
+    }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: ${CREAM}; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
+  <div style="display: none; font-size: 1px; line-height: 1px; max-height: 0; max-width: 0; opacity: 0; overflow: hidden; mso-hide: all;">${opts.preheaderText}</div>
+  <div style="max-width: 600px; margin: 0 auto; background-color: ${WHITE}; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif; color: ${TEXT_DARK}; line-height: 1.6;">
+    ${heroHtml}
+    ${sectionsHtml}
+    ${cardsHtml}
+    ${buttonHtml}
+    ${footerHtml}
+  </div>
+</body>
+</html>`
 }
 
-/* ---------- PDF Generation Functions ---------- */
+function taxReportTemplate(params: { userName: string; reference: string; currency: string; income: string; state: string; taxYear: string; federalTax: string; stateTax: string; ficaTax: string; totalTax: string; afterTaxIncome: string; avgRate: string; marginalRate: string; keepPct: string }) {
+  return buildEmailHtml({
+    preheaderText: `Your Tax Clarity Report - ${params.reference}`,
+    hero: { title: 'Your Tax Clarity Report', subtitle: `Reference: ${params.reference} \u00b7 ${params.currency}`, bgColor: NAVY, textColor: WHITE },
+    sections: [
+      { title: 'Report Overview', content: `<p style="margin: 0 0 16px; font-size: 16px;">Hi <strong>${params.userName}</strong>,</p><p style="margin: 0 0 24px;">Thank you for using the KSEFinServe Tax Calculator. Your personalized tax clarity report is ready. This report summarizes your estimated tax breakdown based on the inputs you provided.</p>` },
+      { title: 'Important Notes', content: `<ul style="margin: 0; padding-left: 20px; line-height: 2;"><li>This is an illustrative estimate based on simplified 2025 tax brackets for single filers</li><li>Excludes CPP/QPP, EI, payroll contributions, credits, and individual circumstances</li><li>Not personalized tax advice - consult a qualified tax professional for filing decisions</li><li>Tax brackets apply progressively; your marginal rate applies only to your next dollar of income</li></ul>` },
+      { title: 'Your PDF Report', content: `<p style="margin: 0 0 16px;">A detailed PDF version of this report is attached to this email, including the full tax breakdown chart and assumptions.</p><p style="margin: 0;">You can also access this report anytime by logging into your KSEFinServe account.</p>` },
+    ],
+    cards: [
+      { label: 'Annual Employment Income', value: params.income },
+      { label: 'State', value: params.state },
+      { label: 'Tax Year', value: params.taxYear },
+      { label: 'Federal Income Tax', value: params.federalTax },
+      { label: 'State Income Tax', value: params.stateTax },
+      { label: 'FICA (Social Security + Medicare)', value: params.ficaTax },
+      { label: 'Total Estimated Tax', value: params.totalTax },
+      { label: 'After-Tax Income', value: params.afterTaxIncome },
+      { label: 'Average Tax Rate', value: params.avgRate },
+      { label: 'Assumed Marginal Rate', value: params.marginalRate },
+      { label: 'Income You Keep', value: params.keepPct },
+    ],
+    button: { text: 'View in Dashboard', href: 'https://ksefinserve.netlify.app/tax-calculator', bgColor: GOLD, textColor: NAVY },
+  })
+}
+
+function collegeSavingsReportTemplate(params: { userName: string; reference: string; currency: string; childAge: string; startAge: string; yearsToCollege: number; country: string; state: string; alreadySaved: string; monthlyContribution: string; scenario: string; annualReturn: string; projectedSavings: string; fundingGoal: string; fundingGap: string; contributionToCloseGap: string; percentFunded: string }) {
+  return buildEmailHtml({
+    preheaderText: `Your Education Savings Plan - ${params.reference}`,
+    hero: { title: 'Your Education Savings Plan', subtitle: `Reference: ${params.reference} \u00b7 ${params.currency}`, bgColor: NAVY, textColor: WHITE },
+    sections: [
+      { title: 'Report Overview', content: `<p style="margin: 0 0 16px; font-size: 16px;">Hi <strong>${params.userName}</strong>,</p><p style="margin: 0 0 24px;">Thank you for using the KSEFinServe College Savings Calculator. Your personalized education savings plan is ready, showing how your contributions could help fund your child's future education.</p>` },
+      { title: 'Key Assumptions', content: `<ul style="margin: 0; padding-left: 20px; line-height: 2;"><li>4 years of education at $18,000/year (today's dollars), rising 3% annually</li><li>Contributions made monthly at period-end; returns compound monthly</li><li>Covers 100% of costs; no grants or other funding included</li><li>Household income $100k-$150k assumed for context</li><li>${params.country === 'Canada' ? 'Canadian' : 'US'} scenario in ${params.currency}</li></ul>` },
+      { title: 'Your PDF Report', content: `<p style="margin: 0 0 16px;">A detailed PDF version of this plan is attached, including the age-by-age savings timeline, savings vs. goal chart, and full assumptions.</p><p style="margin: 0;">Revisit this plan annually as costs, contributions, and grant eligibility change.</p>` },
+    ],
+    cards: [
+      { label: "Child's Current Age", value: params.childAge + ' years' },
+      { label: 'Education Start Age', value: params.startAge + ' years' },
+      { label: 'Years Until College', value: params.yearsToCollege + ' years' },
+      { label: 'Country', value: params.country },
+      { label: 'State/Province', value: params.state },
+      { label: 'Already Saved', value: params.alreadySaved },
+      { label: 'Monthly Contribution', value: params.monthlyContribution },
+      { label: 'Investment Scenario', value: params.scenario },
+      { label: 'Assumed Annual Return', value: params.annualReturn },
+      { label: 'Projected Savings at Age ' + params.startAge, value: params.projectedSavings },
+      { label: 'Education Funding Goal (4 years)', value: params.fundingGoal },
+      { label: 'Estimated Funding Gap', value: params.fundingGap },
+      { label: 'Contribution to Close Gap', value: params.contributionToCloseGap },
+      { label: 'Percentage of Goal Funded', value: params.percentFunded },
+    ],
+    button: { text: 'View in Dashboard', href: 'https://ksefinserve.netlify.app/college-savings', bgColor: GOLD, textColor: NAVY },
+  })
+}
+
+function debtRepaymentReportTemplate(params: { userName: string; reference: string; currency: string; strategy: string; extraPayment: string; totalMonthlyPayment: string; debtFreeMonths: number; totalInterest: string; otherStrategy: string; otherStrategyMonths: number; otherStrategyInterest: string; interestSavings: string; timeSaved: number; debts: Array<{ title: string; balance: string; apr: string; payment: string }> }) {
+  const debtsHtml = `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+      <tr style="background: ${CREAM};"><th style="padding: 12px; text-align: left; color: ${GOLD};">Debt</th><th style="padding: 12px; text-align: left; color: ${GOLD};">Balance</th><th style="padding: 12px; text-align: left; color: ${GOLD};">APR</th><th style="padding: 12px; text-align: left; color: ${GOLD};">Min Payment</th></tr>
+      ${params.debts.map(d => `<tr><td style="padding: 12px; border-bottom: 1px solid ${GRAY_LIGHT};">${d.title}</td><td style="padding: 12px; border-bottom: 1px solid ${GRAY_LIGHT};">${d.balance}</td><td style="padding: 12px; border-bottom: 1px solid ${GRAY_LIGHT};">${d.apr}%</td><td style="padding: 12px; border-bottom: 1px solid ${GRAY_LIGHT};">${d.payment}</td></tr>`).join('')}
+    </table>`
+
+  return buildEmailHtml({
+    preheaderText: `Your Payoff Blueprint - ${params.reference}`,
+    hero: { title: 'Your Payoff Blueprint', subtitle: `Reference: ${params.reference} \u00b7 ${params.currency}`, bgColor: NAVY, textColor: WHITE },
+    sections: [
+      { title: 'Report Overview', content: `<p style="margin: 0 0 16px; font-size: 16px;">Hi <strong>${params.userName}</strong>,</p><p style="margin: 0 0 24px;">Thank you for using the KSEFinServe Debt Repayment Calculator. Your personalized payoff blueprint compares two strategies so you can choose the path that fits your goals.</p>` },
+      { title: 'Your Debts', content: debtsHtml },
+      { title: 'Strategy Comparison', content: `<p style="margin: 0 0 16px;">${params.strategy === 'Avalanche' ? 'Avalanche targets the highest APR first and usually costs less overall.' : 'Snowball targets the smallest balance first for earlier psychological wins.'}</p><p style="margin: 0;">Your selected strategy saves ${params.interestSavings} in interest and ${params.timeSaved} months vs. the alternative.</p>` },
+      { title: 'Important Notes', content: `<ul style="margin: 0; padding-left: 20px; line-height: 2;"><li>Illustrative, not personalized advice. Fixed APRs assumed; interest added monthly</li><li>Fixed minimums and fixed extra payment roll over as debts are cleared</li><li>Actual payoff may vary with rate changes, fees, or additional borrowing</li><li>Consider consulting a financial advisor for a comprehensive debt plan</li></ul>` },
+      { title: 'Your PDF Report', content: `<p style="margin: 0 0 16px;">A detailed PDF version of this blueprint is attached, including the month-by-month payoff timeline for both strategies and the remaining debt chart.</p><p style="margin: 0;">A little extra each month can change your debt-free date significantly.</p>` },
+    ],
+    cards: [
+      { label: 'Selected Strategy', value: params.strategy },
+      { label: 'Total Monthly Payment', value: params.totalMonthlyPayment },
+      { label: 'Debt-Free Timeline', value: params.debtFreeMonths + ' months' },
+      { label: 'Total Interest (Selected)', value: params.totalInterest },
+      { label: 'Other Strategy', value: params.otherStrategy },
+      { label: 'Other Strategy Timeline', value: params.otherStrategyMonths + ' months' },
+      { label: 'Other Strategy Interest', value: params.otherStrategyInterest },
+      { label: 'Interest Savings with Selected', value: params.interestSavings },
+      { label: 'Time Saved with Selected', value: params.timeSaved + ' months' },
+    ],
+    button: { text: 'View in Dashboard', href: 'https://ksefinserve.netlify.app/debt-repayment', bgColor: GOLD, textColor: NAVY },
+  })
+}
+
+function retirementReportTemplate(params: { userName: string; reference: string; currency: string; ageToday: string; retireAge: string; yearsToRetirement: number; monthlyContribution: string; scenario: string; growthReturn: string; projectedSavings: string; estimatedAnnualIncome: string; annualIncomeGoal: string; fundingGap: string }) {
+  return buildEmailHtml({
+    preheaderText: `Your Retirement Roadmap - ${params.reference}`,
+    hero: { title: 'Your Retirement Roadmap', subtitle: `Reference: ${params.reference} \u00b7 ${params.currency}`, bgColor: NAVY, textColor: WHITE },
+    sections: [
+      { title: 'Report Overview', content: `<p style="margin: 0 0 16px; font-size: 16px;">Hi <strong>${params.userName}</strong>,</p><p style="margin: 0 0 24px;">Thank you for using the KSEFinServe Retirement Planning Calculator. Your personalized retirement roadmap shows how today's savings could support tomorrow's income.</p>` },
+      { title: 'Key Assumptions', content: `<ul style="margin: 0; padding-left: 20px; line-height: 2;"><li>Starting assets: RRSP $80,000 \u00b7 TFSA $30,000 \u00b7 Other $10,000</li><li>CPP/OAS: $1,500/month at age 65 (approx. $18,000/year)</li><li>Plan through age 95 \u00b7 Inflation 2% \u00b7 Growth return ${params.growthReturn}</li><li>Retirement draw: 4% initial annual withdrawal, rising 2% yearly</li><li>All amounts in future nominal ${params.currency}</li></ul>` },
+      { title: 'Your PDF Report', content: `<p style="margin: 0 0 16px;">A detailed PDF version of this roadmap is attached, including the age-by-age savings buildup chart, withdrawal timeline, and income gap analysis.</p><p style="margin: 0;">Use this as a conversation starter for your next financial planning review.</p>` },
+    ],
+    cards: [
+      { label: 'Age Today', value: params.ageToday + ' years' },
+      { label: 'Retirement Age', value: params.retireAge + ' years' },
+      { label: 'Years to Retirement', value: params.yearsToRetirement + ' years' },
+      { label: 'Monthly Contribution', value: params.monthlyContribution },
+      { label: 'Investment Scenario', value: params.scenario },
+      { label: 'Assumed Growth Return', value: params.growthReturn },
+      { label: 'Projected Savings at Age ' + params.retireAge, value: params.projectedSavings },
+      { label: 'Estimated Annual Income (4% draw + CPP/OAS)', value: params.estimatedAnnualIncome },
+      { label: 'Annual Income Goal', value: params.annualIncomeGoal },
+      { label: 'Annual Funding Gap', value: params.fundingGap },
+      { label: 'Assumed Inflation', value: '2%' },
+      { label: 'Retirement Return Assumption', value: '3%' },
+    ],
+    button: { text: 'View in Dashboard', href: 'https://ksefinserve.netlify.app/retirement-planning', bgColor: GOLD, textColor: NAVY },
+  })
+}
+
+function compoundInterestReportTemplate(params: { userName: string; reference: string; currency: string; initialDeposit: string; years: number; annualRate: string; compoundFreq: string; contribution: string; contributionFreq: string; totalBalance: string; totalDeposits: string; interestEarned: string; interestPct: string; withoutContributions: string; apy: string }) {
+  return buildEmailHtml({
+    preheaderText: `Your Growth Report - ${params.reference}`,
+    hero: { title: 'Your Growth Report', subtitle: `Reference: ${params.reference} \u00b7 ${params.currency}`, bgColor: NAVY, textColor: WHITE },
+    sections: [
+      { title: 'Report Overview', content: `<p style="margin: 0 0 16px; font-size: 16px;">Hi <strong>${params.userName}</strong>,</p><p style="margin: 0 0 24px;">Thank you for using the KSEFinServe Compound Interest Calculator. Your personalized growth report shows how time and consistency can make your money work harder.</p>` },
+      { title: 'Key Assumptions', content: `<ul style="margin: 0; padding-left: 20px; line-height: 2;"><li>Contributions at period-end \u00b7 Constant annual rate \u00b7 ${params.compoundFreq.toLowerCase()} compounding</li><li>No taxes, fees, or withdrawals \u00b7 All values in ${params.currency}</li><li>${params.annualRate}% is the annual rate before compounding, not APY</li><li>${params.compoundFreq.toLowerCase()} compounding gives an effective annual yield of about ${params.apy}</li></ul>` },
+      { title: 'The Power of Time', content: `<p style="margin: 0 0 16px;">The space between your deposits and your total balance is the interest earned\u2014and the interest on that interest. Time and consistency do the heavy lifting.</p><p style="margin: 0;">Staying invested lets compounding accelerate your growth in the later years.</p>` },
+      { title: 'Your PDF Report', content: `<p style="margin: 0 0 16px;">A detailed PDF version of this report is attached, including the deposits vs. balance chart, year-by-year breakdown, and interest timeline.</p><p style="margin: 0;">Keep this projection as a reminder that small, steady steps build significant wealth over time.</p>` },
+    ],
+    cards: [
+      { label: 'Initial Deposit', value: params.initialDeposit },
+      { label: 'Years of Growth', value: params.years + ' years' },
+      { label: 'Estimated Annual Rate', value: params.annualRate + '%' },
+      { label: 'Compounding Frequency', value: params.compoundFreq },
+      { label: 'Recurring Contribution', value: params.contribution },
+      { label: 'Contribution Frequency', value: params.contributionFreq },
+      { label: 'Total Balance After ' + params.years + ' Years', value: params.totalBalance },
+      { label: 'Total Deposits', value: params.totalDeposits },
+      { label: 'Interest Earned', value: params.interestEarned },
+      { label: 'Interest as % of Ending Balance', value: params.interestPct },
+      { label: 'Without Contributions (Same Rate)', value: params.withoutContributions },
+      { label: 'Effective Annual Yield (APY)', value: params.apy },
+    ],
+    button: { text: 'View in Dashboard', href: 'https://ksefinserve.netlify.app/compound-interest', bgColor: GOLD, textColor: NAVY },
+  })
+}
 
 async function generateTaxReportPDF(params: ReportPayload['data'], currency: 'USD' | 'CAD', reference: string): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create()
-  const page = pdfDoc.addPage([612, 792]) // US Letter
+  const page = pdfDoc.addPage([612, 792])
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
-  const navy = rgb(0.031, 0.114, 0.169) // #081d2b
-  const gold = rgb(0.788, 0.663, 0.388) // #c9a963
+  const navy = rgb(0.031, 0.114, 0.169)
+  const gold = rgb(0.788, 0.663, 0.388)
 
   let y = 750
   const leftMargin = 50
   const lineHeight = 18
 
-  // Header
   page.drawText('KSEFinServe', { x: leftMargin, y, size: 28, font: fontBold, color: navy })
   y -= 30
   page.drawText('Tax Clarity Report', { x: leftMargin, y, size: 20, font: fontBold, color: gold })
@@ -111,7 +353,6 @@ async function generateTaxReportPDF(params: ReportPayload['data'], currency: 'US
   page.drawText(`Reference: ${reference}`, { x: leftMargin, y, size: 10, font, color: rgb(0.4, 0.4, 0.4) })
   y -= 30
 
-  // Inputs section
   page.drawText('Your Inputs', { x: leftMargin, y, size: 14, font: fontBold, color: navy })
   y -= 22
   const inputs = [
@@ -126,7 +367,6 @@ async function generateTaxReportPDF(params: ReportPayload['data'], currency: 'US
   }
   y -= 10
 
-  // Results section
   page.drawText('Estimated Tax Breakdown', { x: leftMargin, y, size: 14, font: fontBold, color: navy })
   y -= 22
   const results = [
@@ -146,7 +386,6 @@ async function generateTaxReportPDF(params: ReportPayload['data'], currency: 'US
   }
   y -= 15
 
-  // Disclaimer
   page.drawText('Important Notes:', { x: leftMargin, y, size: 11, font: fontBold, color: navy })
   y -= 16
   const notes = [
@@ -267,7 +506,6 @@ async function generateDebtReportPDF(params: ReportPayload['data'], currency: 'U
   page.drawText('Extra Monthly Payment: ' + money(Number(params.extraPayment) || 0, currency), { x: leftMargin, y, size: 11, font, color: rgb(0.3, 0.3, 0.3) })
   y -= lineHeight * 2
 
-  // Debts table header
   page.drawText('Your Debts', { x: leftMargin, y, size: 12, font: fontBold, color: navy })
   y -= 20
   const debts = params.debts as Array<{ title: string; balance: string; apr: string; payment: string }> || []
@@ -468,8 +706,6 @@ async function generateCompoundReportPDF(params: ReportPayload['data'], currency
   return pdfDoc.save()
 }
 
-/* ---------- Main Handler ---------- */
-
 export default async function handler(req: Request) {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: corsHeaders })
@@ -496,15 +732,11 @@ export default async function handler(req: Request) {
   try {
     await ensureTransporterReady()
 
-    // Generate PDF
     let pdfBytes: Uint8Array
     let subject: string
     let html: string
     let text: string
     let filename: string
-
-    // Import email templates dynamically
-    const { buildEmail, taxReportTemplate, collegeSavingsReportTemplate, debtRepaymentReportTemplate, retirementReportTemplate, compoundInterestReportTemplate } = await import('../../src/lib/email.ts')
 
     switch (tool) {
       case 'tax':

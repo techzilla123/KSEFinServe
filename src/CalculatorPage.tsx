@@ -1617,7 +1617,263 @@ function Metric({
 /* Report banner                                                       */
 /* ------------------------------------------------------------------ */
 
-function ReportBanner({ tool }: { tool: Tool }) {
+function ReportBanner({
+  tool,
+  currency,
+  state,
+  income,
+  debtStrategy,
+  debts,
+  debtExtra,
+  college,
+  retirement,
+  compound,
+}: {
+  tool: Tool;
+  currency: Currency;
+  state: string;
+  income: number;
+  debtStrategy: string;
+  debts: Array<{ title: string; balance: string; apr: string; payment: string }>;
+  debtExtra: string;
+  college: CollegeInputs;
+  retirement: RetirementInputs;
+  compound: CompoundInputs;
+}) {
+  const [email, setEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [sentEmail, setSentEmail] = useState("");
+
+  // Compute all data needed for the report based on the active tool
+  const reportData = (() => {
+    const ref = "KSE-" + Date.now().toString(36).toUpperCase() + "-" + Math.random().toString(36).substring(2, 6).toUpperCase();
+
+    if (tool.id === "tax") {
+      const federal = federalTax(income);
+      const stateAmount = stateTax(state, income);
+      const fica = ficaTax(income);
+      const total = federal + stateAmount + fica;
+      const afterTax = income - total;
+      const avgRate = income > 0 ? total / income : 0;
+      const marginal = marginalFederalRate(income);
+      const keepPct = income > 0 ? afterTax / income : 0;
+      return {
+        tool: "tax" as const,
+        reference: ref,
+        currency,
+        data: {
+          income: money(income, currency),
+          state,
+          taxYear: "2025",
+          federalTax: money(federal, currency),
+          stateTax: money(stateAmount, currency),
+          ficaTax: money(fica, currency),
+          totalTax: money(total, currency),
+          afterTaxIncome: money(afterTax, currency),
+          avgRate: pct(avgRate),
+          marginalRate: pct(marginal, 1),
+          keepPct: pct(keepPct),
+        },
+      };
+    }
+    if (tool.id === "college") {
+      const years = Math.max(0, Number(college.startAge) - Number(college.childAge));
+      const rate =
+        college.scenario === "Custom"
+          ? Number(college.customRate) / 100
+          : RETURN_SCENARIOS[college.scenario] ?? 0.05;
+      const saved = parseMoney(college.saved);
+      const monthly = parseMoney(college.monthly);
+      const goal = 4 * 18000 * Math.pow(1.03, years);
+      const total = futureValue(saved, monthly, rate, years, 12, 12);
+      const gap = goal - total;
+      const rm = rate / 12;
+      const annuityFactor = rm > 0 ? (Math.pow(1 + rm, years * 12) - 1) / rm : years * 12;
+      const needed = Math.max(0, (goal - saved * Math.pow(1 + rate, years)) / annuityFactor);
+      const percentFunded = goal > 0 ? Math.round((total / goal) * 100) : 0;
+      return {
+        tool: "college" as const,
+        reference: ref,
+        currency,
+        data: {
+          childAge: college.childAge,
+          startAge: college.startAge,
+          yearsToCollege: years,
+          country: college.country,
+          state: college.state,
+          alreadySaved: money(saved, currency),
+          monthlyContribution: money(monthly, currency),
+          scenario: college.scenario,
+          annualReturn: pct(rate),
+          projectedSavings: money(total, currency),
+          fundingGoal: money(goal, currency),
+          fundingGap: money(Math.max(0, gap), currency),
+          contributionToCloseGap: money(needed, currency),
+          percentFunded: percentFunded + "%",
+        },
+      };
+    }
+    if (tool.id === "debt") {
+      const parsed = debts.map((d) => ({
+        bal: parseMoney(d.balance),
+        apr: (Number(d.apr) || 0) / 100,
+        min: parseMoney(d.payment),
+      }));
+      const extra = parseMoney(debtExtra);
+      const av = payoffDebts(parsed, extra, "Avalanche");
+      const sn = payoffDebts(parsed, extra, "Snowball");
+      const totalMin = parsed.reduce((s, d) => s + d.min, 0);
+      const chosen = debtStrategy === "Snowball" ? sn : av;
+      const other = debtStrategy === "Snowball" ? av : sn;
+      return {
+        tool: "debt" as const,
+        reference: ref,
+        currency,
+        data: {
+          strategy: debtStrategy,
+          extraPayment: money(extra, currency),
+          totalMonthlyPayment: money(totalMin + extra, currency),
+          debtFreeMonths: chosen.months,
+          totalInterest: money(chosen.interest, currency),
+          otherStrategy: debtStrategy === "Snowball" ? "Avalanche" : "Snowball",
+          otherStrategyMonths: other.months,
+          otherStrategyInterest: money(other.interest, currency),
+          interestSavings: money(Math.abs(chosen.interest - other.interest), currency),
+          timeSaved: Math.abs(chosen.months - other.months),
+          debts: debts.map(d => ({
+            title: d.title,
+            balance: d.balance,
+            apr: d.apr,
+            payment: d.payment,
+          })),
+        },
+      };
+    }
+    if (tool.id === "retirement") {
+      const years = Math.max(0, Number(retirement.retireAge) - Number(retirement.ageToday));
+      const rate = RETIREMENT_SCENARIOS[retirement.scenario] ?? 0.05;
+      const monthly = parseMoney(retirement.monthly);
+      const goal = parseMoney(retirement.incomeGoal);
+      const total = futureValue(120000, monthly, rate, years, 12, 12);
+      const draw = total * 0.04;
+      const cppOas = 1500 * 12;
+      const income = draw + cppOas;
+      return {
+        tool: "retirement" as const,
+        reference: ref,
+        currency,
+        data: {
+          ageToday: retirement.ageToday,
+          retireAge: retirement.retireAge,
+          yearsToRetirement: years,
+          monthlyContribution: money(monthly, currency),
+          scenario: retirement.scenario,
+          growthReturn: pct(rate),
+          projectedSavings: money(total, currency),
+          estimatedAnnualIncome: money(income, currency),
+          annualIncomeGoal: money(goal * 12, currency),
+          fundingGap: money(Math.max(0, goal * 12 - income), currency),
+        },
+      };
+    }
+    // compound
+    const initial = parseMoney(compound.initial);
+    const contribution = parseMoney(compound.contribution);
+    const years = Number(compound.years) || 0;
+    const rate = (Number(compound.rate) || 0) / 100;
+    const n = COMPOUND_FREQUENCIES[compound.compoundFreq] ?? 365;
+    const cpy = CONTRIBUTION_FREQUENCIES[compound.contributionFreq] ?? 12;
+    const total = futureValue(initial, contribution, rate, years, n, cpy);
+    const deposits = initial + contribution * years * cpy;
+    const apy = Math.pow(1 + rate / n, n) - 1;
+    return {
+      tool: "compound" as const,
+      reference: ref,
+      currency,
+      data: {
+        initialDeposit: money(initial, currency),
+        years,
+        annualRate: compound.rate,
+        compoundFreq: compound.compoundFreq,
+        contribution: money(contribution, currency),
+        contributionFreq: compound.contributionFreq,
+        totalBalance: money(total, currency, 2),
+        totalDeposits: money(deposits, currency),
+        interestEarned: money(total - deposits, currency, 2),
+        interestPct: pct(deposits > 0 ? (total - deposits) / total : 0, 1),
+        withoutContributions: money(futureValue(initial, 0, rate, years, n, cpy), currency, 2),
+        apy: pct(apy),
+      },
+    };
+  })();
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!email || !email.includes("@")) {
+      setErrorMessage("Please enter a valid email address");
+      setSubmitStatus("error");
+      return;
+    }
+
+    setSubmitting(true);
+    setSubmitStatus("idle");
+    setErrorMessage("");
+
+    try {
+      const response = await fetch("/.netlify/functions/send-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tool: reportData.tool,
+          email,
+          userName: email.split("@")[0],
+          reference: reportData.reference,
+          currency: reportData.currency,
+          data: reportData.data,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.ok) {
+        setSubmitStatus("success");
+        setSentEmail(email);
+        setEmail("");
+      } else {
+        setSubmitStatus("error");
+        setErrorMessage(result.error || "Failed to send report. Please try again.");
+      }
+    } catch {
+      setSubmitStatus("error");
+      setErrorMessage("Network error. Please check your connection and try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (submitStatus === "success") {
+    return (
+      <section className="report" style={{ background: tool.soft }}>
+        <div className="report-icon"><img src="/assets/bb96e.svg" alt="" /></div>
+        <div className="report-copy">
+          <span>REPORT SENT</span>
+          <h2>Your report is on the way!</h2>
+          <p>We\'ve emailed your personalized <strong>{tool.reportTitle.toLowerCase()}</strong> to <strong>{sentEmail}</strong>.</p>
+          <p style={{ marginTop: 16, fontSize: 14, opacity: 0.8 }}>Reference: {reportData.reference}</p>
+        </div>
+        <button
+          className="report-resend"
+          type="button"
+          onClick={() => setSubmitStatus("idle")}
+        >
+          Send another report
+        </button>
+      </section>
+    );
+  }
+
   return (
     <section className="report" style={{ background: tool.soft }}>
       <div className="report-icon"><img src="/assets/bb96e.svg" alt="" /></div>
@@ -1626,74 +1882,28 @@ function ReportBanner({ tool }: { tool: Tool }) {
         <h2>{tool.reportTitle}</h2>
         <p>{tool.reportCopy}</p>
       </div>
-      <form className="report-form" onSubmit={(event) => event.preventDefault()}>
+      <form className="report-form" onSubmit={handleSubmit}>
         <label>
           <img src="/assets/6bffe.svg" alt="" />
-          <input type="email" placeholder="Your email address" aria-label="Your email address" />
+          <input
+            type="email"
+            placeholder="Your email address"
+            aria-label="Your email address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={submitting}
+            required
+          />
         </label>
-        <button type="submit">{tool.reportButton}</button>
-        <small>We’ll email a verification link to access your plan. No marketing signup.</small>
+        <button type="submit" disabled={submitting}>
+          {submitting ? "Sending..." : tool.reportButton}
+        </button>
+        {errorMessage && <p className="report-error" style={{ color: "#e75e48", marginTop: 8, fontSize: 14 }}>{errorMessage}</p>}
+        <small>We\'ll email your personalized report with PDF attachment. No marketing signup.</small>
       </form>
     </section>
   );
 }
-
-/* ------------------------------------------------------------------ */
-/* Chart result - metrics computed live, chart kept as designed        */
-/* ------------------------------------------------------------------ */
-
-type CollegeInputs = {
-  country: string;
-  state: string;
-  scenario: string;
-  customRate: string;
-  childAge: string;
-  startAge: string;
-  saved: string;
-  monthly: string;
-};
-
-type RetirementInputs = {
-  scenario: string;
-  ageToday: string;
-  retireAge: string;
-  monthly: string;
-  incomeGoal: string;
-};
-
-type CompoundInputs = {
-  initial: string;
-  years: string;
-  rate: string;
-  compoundFreq: string;
-  contribution: string;
-  contributionFreq: string;
-};
-
-/** Future value of an initial sum plus regular contributions.
-    `contribution` is paid once per contribution period, and `contributionsPerYear`
-    says how many times a year that is. */
-function futureValue(
-  initial: number,
-  contribution: number,
-  annualRate: number,
-  years: number,
-  compoundsPerYear: number,
-  contributionsPerYear: number,
-): number {
-  const r = annualRate / compoundsPerYear;
-  const periods = Math.round(years * compoundsPerYear);
-  const fvInitial = initial * Math.pow(1 + r, periods);
-  // Each contribution compounds for the periods remaining after it lands.
-  const gap = compoundsPerYear / contributionsPerYear;
-  let fvContrib = 0;
-  for (let k = 1; k <= Math.round(years * contributionsPerYear); k++) {
-    const remaining = periods - Math.round(k * gap);
-    if (remaining > 0) fvContrib += contribution * Math.pow(1 + r, remaining);
-  }
-  return fvInitial + fvContrib;
-}
-
 function ChartResult({
   tool,
   currency,

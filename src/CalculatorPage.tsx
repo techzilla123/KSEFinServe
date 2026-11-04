@@ -232,6 +232,30 @@ function groupThousands(digits: string): string {
   return rest.length ? grouped + "." + rest.join(".") : grouped;
 }
 
+/** Future value of an initial sum plus regular contributions.
+    `contribution` is paid once per contribution period, and `contributionsPerYear`
+    says how many times a year that is. */
+function futureValue(
+  initial: number,
+  contribution: number,
+  annualRate: number,
+  years: number,
+  compoundsPerYear: number,
+  contributionsPerYear: number,
+): number {
+  const r = annualRate / compoundsPerYear;
+  const periods = Math.round(years * compoundsPerYear);
+  const fvInitial = initial * Math.pow(1 + r, periods);
+  // Each contribution compounds for the periods remaining after it lands.
+  const gap = compoundsPerYear / contributionsPerYear;
+  let fvContrib = 0;
+  for (let k = 1; k <= Math.round(years * contributionsPerYear); k++) {
+    const remaining = periods - Math.round(k * gap);
+    if (remaining > 0) fvContrib += contribution * Math.pow(1 + r, remaining);
+  }
+  return fvInitial + fvContrib;
+}
+
 /* ------------------------------------------------------------------ */
 /* Custom dropdown: a rounded panel with a faint border, options in a
    vertical list, and the selected option highlighted with a blue tick. */

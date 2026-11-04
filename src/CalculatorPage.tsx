@@ -68,7 +68,7 @@ const CA_PROVINCES = [
 ];
 
 /* Tax years, newest first. */
-const TAX_YEARS = ["2025", "2024", "2023", "2022", "2021", "2020"];
+const TAX_YEARS = ["2026", "2025", "2024", "2023", "2022", "2021", "2020"];
 
 type Currency = "USD" | "CAD";
 
@@ -94,6 +94,7 @@ const tools: Tool[] = [
     reportCopy:
       "Personalized insights to explore with an advisor, a tax breakdown and a downloadable report of your scenario.",
     reportButton: "Get my tax clarity report →",
+    reportButtonLink: "https://ksefinserve.netlify.app/tax-calculator",
   },
   {
     id: "college",
@@ -116,6 +117,7 @@ const tools: Tool[] = [
     reportCopy:
       "Your funding gap, contribution guidance and an age-by-age savings timeline—in one useful education savings plan.",
     reportButton: "Get my education savings plan →",
+    reportButtonLink: "https://ksefinserve.netlify.app/college-savings",
   },
   {
     id: "debt",
@@ -138,6 +140,7 @@ const tools: Tool[] = [
     reportCopy:
       "A clear payment priority, balance-by-balance timeline and a payoff blueprint you can revisit as life changes.",
     reportButton: "Unlock my payoff blueprint →",
+    reportButtonLink: "https://ksefinserve.netlify.app/debt-repayment",
   },
   {
     id: "retirement",
@@ -160,6 +163,7 @@ const tools: Tool[] = [
     reportCopy:
       "Your income gap, savings milestones and an age-by-age timeline—a retirement roadmap to guide your next conversation.",
     reportButton: "Get my retirement roadmap →",
+    reportButtonLink: "https://ksefinserve.netlify.app/retirement-planning",
   },
   {
     id: "compound",
@@ -182,6 +186,7 @@ const tools: Tool[] = [
     reportCopy:
       "Keep your growth projection, deposit breakdown and interest timeline together. A simple report for a more intentional savings habit.",
     reportButton: "Get my growth report →",
+    reportButtonLink: "https://ksefinserve.netlify.app/compound-interest",
   },
 ];
 

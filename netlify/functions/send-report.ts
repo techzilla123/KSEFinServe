@@ -214,7 +214,7 @@ function taxReportTemplate(params: { userName: string; reference: string; curren
       { label: 'Assumed Marginal Rate', value: params.marginalRate },
       { label: 'Income You Keep', value: params.keepPct },
     ],
-    button: { text: 'View in Dashboard', href: 'https://ksefinserve.netlify.app/tax-calculator', bgColor: GOLD, textColor: NAVY },
+    button: { text: 'View Tax Calculator', href: 'https://ksefinserve.netlify.app/tax-calculator', bgColor: GOLD, textColor: NAVY },
   })
 }
 
@@ -243,7 +243,7 @@ function collegeSavingsReportTemplate(params: { userName: string; reference: str
       { label: 'Contribution to Close Gap', value: params.contributionToCloseGap },
       { label: 'Percentage of Goal Funded', value: params.percentFunded },
     ],
-    button: { text: 'View in Dashboard', href: 'https://ksefinserve.netlify.app/college-savings', bgColor: GOLD, textColor: NAVY },
+    button: { text: 'View College Savings', href: 'https://ksefinserve.netlify.app/college-savings', bgColor: GOLD, textColor: NAVY },
   })
 }
 
@@ -275,7 +275,7 @@ function debtRepaymentReportTemplate(params: { userName: string; reference: stri
       { label: 'Interest Savings with Selected', value: params.interestSavings },
       { label: 'Time Saved with Selected', value: params.timeSaved + ' months' },
     ],
-    button: { text: 'View in Dashboard', href: 'https://ksefinserve.netlify.app/debt-repayment', bgColor: GOLD, textColor: NAVY },
+    button: { text: 'View Debt Repayment', href: 'https://ksefinserve.netlify.app/debt-repayment', bgColor: GOLD, textColor: NAVY },
   })
 }
 
@@ -302,7 +302,7 @@ function retirementReportTemplate(params: { userName: string; reference: string;
       { label: 'Assumed Inflation', value: '2%' },
       { label: 'Retirement Return Assumption', value: '3%' },
     ],
-    button: { text: 'View in Dashboard', href: 'https://ksefinserve.netlify.app/retirement-planning', bgColor: GOLD, textColor: NAVY },
+    button: { text: 'View Retirement Planning', href: 'https://ksefinserve.netlify.app/retirement-planning', bgColor: GOLD, textColor: NAVY },
   })
 }
 
@@ -330,7 +330,7 @@ function compoundInterestReportTemplate(params: { userName: string; reference: s
       { label: 'Without Contributions (Same Rate)', value: params.withoutContributions },
       { label: 'Effective Annual Yield (APY)', value: params.apy },
     ],
-    button: { text: 'View in Dashboard', href: 'https://ksefinserve.netlify.app/compound-interest', bgColor: GOLD, textColor: NAVY },
+    button: { text: 'View Compound Interest', href: 'https://ksefinserve.netlify.app/compound-interest', bgColor: GOLD, textColor: NAVY },
   })
 }
 

@@ -81,6 +81,14 @@ function pct(value: number, decimals = 2): string {
   return (value * 100).toFixed(decimals) + '%'
 }
 
+/** Parse a formatted money string like "$61,199" or "23.50%" into a number. */
+function parseMoneyStr(str: string): number {
+  if (!str) return 0
+  const cleaned = str.replace(/[$,%\s]/g, '')
+  const val = Number(cleaned)
+  return Number.isFinite(val) ? val : 0
+}
+
 const NAVY = '#081d2b'
 const GOLD = '#c9a963'
 const CREAM = '#f0ede6'
@@ -370,11 +378,11 @@ async function generateTaxReportPDF(params: ReportPayload['data'], currency: 'US
   page.drawText('Estimated Tax Breakdown', { x: leftMargin, y, size: 14, font: fontBold, color: navy })
   y -= 22
   const results = [
-    ['Federal Income Tax', money(Number(params.federalTax) || 0, currency)],
-    ['State Income Tax', money(Number(params.stateTax) || 0, currency)],
-    ['FICA (Social Security + Medicare)', money(Number(params.ficaTax) || 0, currency)],
-    ['Total Estimated Tax', money(Number(params.totalTax) || 0, currency)],
-    ['After-Tax Income', money(Number(params.afterTaxIncome) || 0, currency)],
+    ['Federal Income Tax', money(parseMoneyStr(params.federalTax), currency)],
+    ['State Income Tax', money(parseMoneyStr(params.stateTax), currency)],
+    ['FICA (Social Security + Medicare)', money(parseMoneyStr(params.ficaTax), currency)],
+    ['Total Estimated Tax', money(parseMoneyStr(params.totalTax), currency)],
+    ['After-Tax Income', money(parseMoneyStr(params.afterTaxIncome), currency)],
     ['Average Tax Rate', String(params.avgRate || '')],
     ['Assumed Marginal Rate', String(params.marginalRate || '')],
     ['Income You Keep', String(params.keepPct || '')],
@@ -432,8 +440,8 @@ async function generateCollegeReportPDF(params: ReportPayload['data'], currency:
     ['Years Until College', String(params.yearsToCollege || '') + ' years'],
     ['Country', String(params.country || '')],
     ['State/Province', String(params.state || '')],
-    ['Already Saved', money(Number(params.alreadySaved) || 0, currency)],
-    ['Monthly Contribution', money(Number(params.monthlyContribution) || 0, currency)],
+    ['Already Saved', money(parseMoneyStr(params.alreadySaved), currency)],
+    ['Monthly Contribution', money(parseMoneyStr(params.monthlyContribution), currency)],
     ['Investment Scenario', String(params.scenario || '')],
     ['Assumed Annual Return', String(params.annualReturn || '')],
   ]
@@ -447,10 +455,10 @@ async function generateCollegeReportPDF(params: ReportPayload['data'], currency:
   page.drawText('Projections', { x: leftMargin, y, size: 14, font: fontBold, color: navy })
   y -= 22
   const results = [
-    ['Projected Savings at Age ' + params.startAge, money(Number(params.projectedSavings) || 0, currency)],
-    ['Education Funding Goal (4 years)', money(Number(params.fundingGoal) || 0, currency)],
-    ['Estimated Funding Gap', money(Number(params.fundingGap) || 0, currency)],
-    ['Contribution to Close Gap', money(Number(params.contributionToCloseGap) || 0, currency) + '/mo'],
+    ['Projected Savings at Age ' + params.startAge, money(parseMoneyStr(params.projectedSavings), currency)],
+    ['Education Funding Goal (4 years)', money(parseMoneyStr(params.fundingGoal), currency)],
+    ['Estimated Funding Gap', money(parseMoneyStr(params.fundingGap), currency)],
+    ['Contribution to Close Gap', money(parseMoneyStr(params.contributionToCloseGap), currency) + '/mo'],
     ['Percentage of Goal Funded', String(params.percentFunded || '')],
   ]
   for (const [label, value] of results) {
@@ -503,7 +511,7 @@ async function generateDebtReportPDF(params: ReportPayload['data'], currency: 'U
   y -= 22
   page.drawText('Selected Strategy: ' + String(params.strategy || ''), { x: leftMargin, y, size: 11, font: fontBold, color: navy })
   y -= lineHeight
-  page.drawText('Extra Monthly Payment: ' + money(Number(params.extraPayment) || 0, currency), { x: leftMargin, y, size: 11, font, color: rgb(0.3, 0.3, 0.3) })
+  page.drawText('Extra Monthly Payment: ' + money(parseMoneyStr(params.extraPayment), currency), { x: leftMargin, y, size: 11, font, color: rgb(0.3, 0.3, 0.3) })
   y -= lineHeight * 2
 
   page.drawText('Your Debts', { x: leftMargin, y, size: 12, font: fontBold, color: navy })
@@ -516,9 +524,9 @@ async function generateDebtReportPDF(params: ReportPayload['data'], currency: 'U
   y -= 16
   for (const debt of debts) {
     page.drawText(debt.title, { x: leftMargin, y, size: 10, font, color: rgb(0.3, 0.3, 0.3) })
-    page.drawText(money(Number(debt.balance) || 0, currency), { x: leftMargin + 150, y, size: 10, font, color: rgb(0.3, 0.3, 0.3) })
+    page.drawText(money(parseMoneyStr(debt.balance), currency), { x: leftMargin + 150, y, size: 10, font, color: rgb(0.3, 0.3, 0.3) })
     page.drawText(debt.apr + '%', { x: leftMargin + 250, y, size: 10, font, color: rgb(0.3, 0.3, 0.3) })
-    page.drawText(money(Number(debt.payment) || 0, currency), { x: leftMargin + 320, y, size: 10, font, color: rgb(0.3, 0.3, 0.3) })
+    page.drawText(money(parseMoneyStr(debt.payment), currency), { x: leftMargin + 320, y, size: 10, font, color: rgb(0.3, 0.3, 0.3) })
     y -= 16
   }
   y -= 10
@@ -526,13 +534,13 @@ async function generateDebtReportPDF(params: ReportPayload['data'], currency: 'U
   page.drawText('Strategy Comparison', { x: leftMargin, y, size: 14, font: fontBold, color: navy })
   y -= 22
   const results = [
-    ['Total Monthly Payment', money(Number(params.totalMonthlyPayment) || 0, currency)],
+    ['Total Monthly Payment', money(parseMoneyStr(params.totalMonthlyPayment), currency)],
     ['Debt-Free Timeline (Selected)', String(params.debtFreeMonths || '') + ' months'],
-    ['Total Interest (Selected)', money(Number(params.totalInterest) || 0, currency)],
+    ['Total Interest (Selected)', money(parseMoneyStr(params.totalInterest), currency)],
     ['Other Strategy', String(params.otherStrategy || '')],
     ['Other Strategy Timeline', String(params.otherStrategyMonths || '') + ' months'],
-    ['Other Strategy Interest', money(Number(params.otherStrategyInterest) || 0, currency)],
-    ['Interest Savings with Selected', money(Number(params.interestSavings) || 0, currency)],
+    ['Other Strategy Interest', money(parseMoneyStr(params.otherStrategyInterest), currency)],
+    ['Interest Savings with Selected', money(parseMoneyStr(params.interestSavings), currency)],
     ['Time Saved with Selected', String(params.timeSaved || '') + ' months'],
   ]
   for (const [label, value] of results) {
@@ -586,7 +594,7 @@ async function generateRetirementReportPDF(params: ReportPayload['data'], curren
     ['Age Today', String(params.ageToday || '') + ' years'],
     ['Retirement Age', String(params.retireAge || '') + ' years'],
     ['Years to Retirement', String(params.yearsToRetirement || '') + ' years'],
-    ['Monthly Contribution', money(Number(params.monthlyContribution) || 0, currency)],
+    ['Monthly Contribution', money(parseMoneyStr(params.monthlyContribution), currency)],
     ['Investment Scenario', String(params.scenario || '')],
     ['Assumed Growth Return', String(params.growthReturn || '')],
   ]
@@ -600,10 +608,10 @@ async function generateRetirementReportPDF(params: ReportPayload['data'], curren
   page.drawText('Projections', { x: leftMargin, y, size: 14, font: fontBold, color: navy })
   y -= 22
   const results = [
-    ['Projected Savings at Age ' + params.retireAge, money(Number(params.projectedSavings) || 0, currency)],
-    ['Estimated Annual Income (4% draw + CPP/OAS)', money(Number(params.estimatedAnnualIncome) || 0, currency)],
-    ['Annual Income Goal', money(Number(params.annualIncomeGoal) || 0, currency)],
-    ['Annual Funding Gap', money(Number(params.fundingGap) || 0, currency)],
+    ['Projected Savings at Age ' + params.retireAge, money(parseMoneyStr(params.projectedSavings), currency)],
+    ['Estimated Annual Income (4% draw + CPP/OAS)', money(parseMoneyStr(params.estimatedAnnualIncome), currency)],
+    ['Annual Income Goal', money(parseMoneyStr(params.annualIncomeGoal), currency)],
+    ['Annual Funding Gap', money(parseMoneyStr(params.fundingGap), currency)],
     ['Assumed Inflation', '2%'],
     ['Retirement Return Assumption', '3%'],
   ]
@@ -656,11 +664,11 @@ async function generateCompoundReportPDF(params: ReportPayload['data'], currency
   page.drawText('Your Inputs', { x: leftMargin, y, size: 14, font: fontBold, color: navy })
   y -= 22
   const inputs = [
-    ['Initial Deposit', money(Number(params.initialDeposit) || 0, currency)],
+    ['Initial Deposit', money(parseMoneyStr(params.initialDeposit), currency)],
     ['Years of Growth', String(params.years || '') + ' years'],
     ['Estimated Annual Rate', String(params.annualRate || '') + '%'],
     ['Compounding Frequency', String(params.compoundFreq || '')],
-    ['Recurring Contribution', money(Number(params.contribution) || 0, currency)],
+    ['Recurring Contribution', money(parseMoneyStr(params.contribution), currency)],
     ['Contribution Frequency', String(params.contributionFreq || '')],
   ]
   for (const [label, value] of inputs) {
@@ -673,11 +681,11 @@ async function generateCompoundReportPDF(params: ReportPayload['data'], currency
   page.drawText('Projections', { x: leftMargin, y, size: 14, font: fontBold, color: navy })
   y -= 22
   const results = [
-    ['Total Balance After ' + params.years + ' Years', money(Number(params.totalBalance) || 0, currency, 2)],
-    ['Total Deposits', money(Number(params.totalDeposits) || 0, currency)],
-    ['Interest Earned', money(Number(params.interestEarned) || 0, currency, 2)],
+    ['Total Balance After ' + params.years + ' Years', money(parseMoneyStr(params.totalBalance), currency, 2)],
+    ['Total Deposits', money(parseMoneyStr(params.totalDeposits), currency)],
+    ['Interest Earned', money(parseMoneyStr(params.interestEarned), currency, 2)],
     ['Interest as % of Ending Balance', String(params.interestPct || '')],
-    ['Without Contributions (Same Rate)', money(Number(params.withoutContributions) || 0, currency, 2)],
+    ['Without Contributions (Same Rate)', money(parseMoneyStr(params.withoutContributions), currency, 2)],
     ['Effective Annual Yield (APY)', String(params.apy || '')],
   ]
   for (const [label, value] of results) {

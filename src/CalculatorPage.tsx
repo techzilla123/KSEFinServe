@@ -1928,7 +1928,7 @@ function ReportBanner({
           {submitting ? "Sending..." : tool.reportButton}
         </button>
         {errorMessage && <p className="report-error" style={{ color: "#e75e48", marginTop: 8, fontSize: 14 }}>{errorMessage}</p>}
-        <small>We\'ll email your personalized report with PDF attachment. No marketing signup.</small>
+        <small>We'll email your personalized report with PDF attachment. No marketing signup.</small>
       </form>
     </section>
   );

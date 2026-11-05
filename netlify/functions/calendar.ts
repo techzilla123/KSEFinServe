@@ -19,6 +19,12 @@ function getAuth() {
   // Trim whitespace/BOM that can break JSON.parse
   const cleaned = json.trim().replace(/^\uFEFF/, "");
   const credentials = JSON.parse(cleaned);
+  
+  // Ensure private_key has actual newlines (not escaped \n)
+  if (credentials.private_key && credentials.private_key.includes("\\n") && !credentials.private_key.includes("\n")) {
+    credentials.private_key = credentials.private_key.replace(/\\n/g, "\n");
+  }
+  
   return new google.auth.GoogleAuth({
     credentials,
     scopes: SCOPES,
@@ -147,39 +153,46 @@ export const handler: Handler = async (event: HandlerEvent, _context: HandlerCon
   }
   
   try {
-    if (event.httpMethod === "GET") {
-      // GET /calendar/availability?date=YYYY-MM-DD
-      const date = event.queryStringParameters?.date;
-      if (!date) {
-        return { statusCode: 400, headers, body: JSON.stringify({ error: "date parameter required" }) };
+      if (event.httpMethod === "GET") {
+        // GET /calendar/availability?date=YYYY-MM-DD
+        const date = event.queryStringParameters?.date;
+        if (!date) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: "date parameter required" }) };
+        }
+      
+        // Validate date is not in the past (in client timezone)
+        const today = new Date();
+        const todayStr = today.toLocaleDateString("en-CA", { timeZone: CLIENT_TIMEZONE }); // YYYY-MM-DD
+        if (date < todayStr) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: "Cannot book past dates", slots: [] }) };
+        }
+     
+        // Generate all possible slots for the date
+        const allSlots = generateSlotsForDate(date);
+      
+        // Get busy slots from Google Calendar
+        const busySlots = await getBusySlots(calendar, calendarId, date);
+      
+        // Filter available slots
+        const availableSlots = allSlots.filter((slot) => 
+          isSlotAvailable(slot.start, slot.end, busySlots)
+        );
+      
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({
+            date,
+            timezone: CLIENT_TIMEZONE,
+            slots: availableSlots.map((s) => ({
+              label: s.label,
+              value: s.value, // ISO string
+              start: s.start.toISOString(),
+              end: s.end.toISOString(),
+            })),
+          }),
+        };
       }
-      
-      // Generate all possible slots for the date
-      const allSlots = generateSlotsForDate(date);
-      
-      // Get busy slots from Google Calendar
-      const busySlots = await getBusySlots(calendar, calendarId, date);
-      
-      // Filter available slots
-      const availableSlots = allSlots.filter((slot) => 
-        isSlotAvailable(slot.start, slot.end, busySlots)
-      );
-      
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          date,
-          timezone: CLIENT_TIMEZONE,
-          slots: availableSlots.map((s) => ({
-            label: s.label,
-            value: s.value, // ISO string
-            start: s.start.toISOString(),
-            end: s.end.toISOString(),
-          })),
-        }),
-      };
-    }
     
     if (event.httpMethod === "POST") {
       // POST /calendar/book - create event

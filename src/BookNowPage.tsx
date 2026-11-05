@@ -3,6 +3,8 @@ import { useBookings, type BookingInput } from "./admin/bookingsDirectory";
 
 const A = "/assets";
 
+const CLIENT_TIMEZONE = "America/Chicago"; // CDT timezone for booking
+
 type Step = "book" | "about" | "interests" | "review" | "received";
 
 type Details = {
@@ -180,10 +182,19 @@ function TimeSlotPicker({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [timezone, setTimezone] = useState(() => 
-    typeof window !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "America/Chicago"
-  );
+      typeof window !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "America/Chicago"
+    );
 
-  // Fetch available slots when date changes
+    // Get today's date in CDT timezone for min date validation
+    const getTodayInTimezone = (tz: string): string => {
+      try {
+        return new Date().toLocaleDateString("en-CA", { timeZone: tz }); // YYYY-MM-DD
+      } catch {
+        return new Date().toISOString().split("T")[0];
+      }
+    };
+
+    // Fetch available slots when date changes
   useEffect(() => {
     if (!date) {
       setSlots([]);
@@ -228,19 +239,19 @@ function TimeSlotPicker({
   };
 
   return (
-    <div className="field-group">
-      <p className="label">Available time{required ? " *" : ""}</p>
-      <div className="two-col">
-        <label className="field">
-          <span>Preferred date{required ? " *" : ""}</span>
-          <input
-            type="date"
-            required={required}
-            min={isToday ? new Date().toISOString().split("T")[0] : undefined}
-            value={date}
-            onChange={(event) => handleDate(event.target.value)}
-          />
-        </label>
+      <div className="field-group">
+        <p className="label">Available time{required ? " *" : ""}</p>
+        <div className="two-col">
+          <label className="field">
+            <span>Preferred date{required ? " *": ""}</span>
+            <input
+              type="date"
+              required={required}
+              min={getTodayInTimezone(CLIENT_TIMEZONE)}
+              value={date}
+              onChange={(event) => handleDate(event.target.value)}
+            />
+          </label>
         <label className="field">
           <span>Preferred time{required ? " *" : ""}</span>
           <div className="time-field-wrapper">

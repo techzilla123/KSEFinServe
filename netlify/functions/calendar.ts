@@ -39,7 +39,30 @@ function getCalendar() {
 // ===== HELPERS =====
 function parseDateInZone(dateStr: string, zone: string): Date {
   // dateStr is YYYY-MM-DD, treat as local date in zone
-  return new Date(`${dateStr}T00:00:00`);
+  // Create date at midnight in the target timezone
+  return new Date(`${dateStr}T00:00:00${getTimezoneOffset(zone, dateStr)}`);
+}
+
+function getTimezoneOffset(zone: string, dateStr: string): string {
+  // Get the offset for the given date in the target timezone
+  const date = new Date(`${dateStr}T12:00:00`); // Use noon to avoid DST boundary issues
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: zone,
+    hour12: false,
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+    timeZoneName: "shortOffset",
+  });
+  const parts = formatter.formatToParts(date);
+  const offsetPart = parts.find(p => p.type === "timeZoneName");
+  if (!offsetPart) return "Z";
+  // Parse offset like "GMT-6" or "GMT-5"
+  const match = offsetPart.value.match(/GMT([+-]\d+)/);
+  if (!match) return "Z";
+  const offsetHours = parseInt(match[1]);
+  const sign = offsetHours >= 0 ? "+" : "";
+  return `${sign}${String(offsetHours).padStart(2, "0")}:00`;
 }
 
 function formatTimeInZone(date: Date, zone: string): string {
@@ -77,10 +100,10 @@ function generateSlotsForDate(dateStr: string): Array<{ start: Date; end: Date; 
   }
   
   for (let hour = startHour; hour < endHour; hour += SLOT_DURATION_MINUTES / 60) {
-    const start = new Date(baseDate);
-    start.setHours(hour, 0, 0, 0);
-    const end = new Date(start);
-    end.setHours(hour + SLOT_DURATION_MINUTES / 60, 0, 0, 0);
+    // Create date in the target timezone by constructing ISO string with timezone offset
+    const offset = getTimezoneOffset(CLIENT_TIMEZONE, dateStr);
+    const start = new Date(`${dateStr}T${String(hour).padStart(2, "0")}:00:00${offset}`);
+    const end = new Date(`${dateStr}T${String(hour + SLOT_DURATION_MINUTES / 60).padStart(2, "0")}:00:00${offset}`);
     
     if (isWithinBusinessHours(start)) {
       slots.push({

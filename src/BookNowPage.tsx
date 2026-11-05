@@ -5,34 +5,40 @@ const A = "/assets";
 
 const CLIENT_TIMEZONE = "America/Chicago"; // CDT timezone for booking
 
-// Format ISO date/time to human-readable (e.g., "Nov 11, 2026 at 8:00 AM CDT")
+// Format ISO date/time to human-readable in USER'S LOCAL TIMEZONE (e.g., "Nov 11, 2026 at 8:00 AM WAT")
 function formatDateTime(dateStr: string, timeStr: string): string {
   if (!dateStr && !timeStr) return "Not set";
   if (!dateStr) return `Time ${timeStr}`;
   if (!timeStr) return dateStr;
-  
+
   try {
-    const date = new Date(`${dateStr}T${timeStr}`);
+    // Handle both ISO strings (2026-11-24T14:00:00.000Z) and time-only strings (14:00)
+    let date: Date;
+    if (timeStr.includes('T') || timeStr.includes('Z') || timeStr.includes('.')) {
+      // timeStr is already an ISO datetime string
+      date = new Date(timeStr);
+    } else {
+      // timeStr is time-only, combine with dateStr
+      date = new Date(`${dateStr}T${timeStr}`);
+    }
     if (isNaN(date.getTime())) return `${dateStr} at ${timeStr}`;
-    
+
+    // Use USER'S LOCAL timezone for display
     const day = date.toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",
       month: "long",
       day: "numeric",
-      timeZone: CLIENT_TIMEZONE,
     });
     const time = date.toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
-      timeZone: CLIENT_TIMEZONE,
     });
     const tz = date.toLocaleTimeString("en-US", {
-      timeZone: CLIENT_TIMEZONE,
       timeZoneName: "short",
     }).split(" ").pop() || "";
-    
+
     return `${day} at ${time} ${tz}`;
   } catch {
     return `${dateStr} at ${timeStr}`;

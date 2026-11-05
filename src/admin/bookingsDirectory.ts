@@ -82,7 +82,17 @@ function formatSessionTime(date: string, time: string): string {
     month: 'short',
     year: 'numeric',
   })
-  return `${day}${time ? ` · ${time}` : ''}`
+  const tz = parsed.toLocaleTimeString('en-US', {
+    timeZone: 'America/Chicago',
+    timeZoneName: 'short',
+  }).split(' ').pop() || ''
+  const timeStr = parsed.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'America/Chicago',
+  })
+  return `${day} · ${timeStr} ${tz}`
 }
 
 /** The US zone every session time is shown in. */

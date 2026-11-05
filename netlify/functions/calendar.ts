@@ -55,33 +55,63 @@ function getDayName(date: Date): string {
   return date.toLocaleDateString("en-US", { weekday: "long", timeZone: CLIENT_TIMEZONE });
 }
 
-function isWithinBusinessHours(date: Date): boolean {
-  const day = getDayName(date);
-  const hour = date.getHours();
-  if (day === "Sunday") {
-    return hour >= BUSINESS_HOURS.sunday.start && hour < BUSINESS_HOURS.sunday.end;
+function getTimezoneOffsetHours(dateStr: string): number {
+  // For America/Chicago, calculate DST manually (reliable in Netlify)
+  const date = new Date(`${dateStr}T12:00:00`);
+  const year = date.getUTCFullYear();
+  // DST starts 2nd Sunday March at 2 AM local (8 AM UTC)
+  // DST ends 1st Sunday November at 2 AM local (7 AM UTC)
+  const marchStart = new Date(Date.UTC(date.getUTCFullYear(), 2, 1, 6, 0, 0)); // March 1, 6 AM UTC
+  const marchSecondSunday = new Date(marchStart);
+  marchSecondSunday.setUTCDate(marchSecondSunday.getUTCDate() + (7 - marchSecondSunday.getUTCDay()) + 7);
+  marchSecondSunday.setUTCHours(8, 0, 0, 0); // 2 AM CDT = 8 AM UTC
+
+  const novemberStart = new Date(Date.UTC(date.getUTCFullYear(), 10, 1, 6, 0, 0)); // Nov 1, 6 AM UTC
+  const novemberFirstSunday = new Date(novemberStart);
+  novemberFirstSunday.setUTCDate(novemberFirstSunday.getUTCDate() + (7 - novemberFirstSunday.getUTCDay()));
+  novemberFirstSunday.setUTCHours(7, 0, 0, 0); // 2 AM CDT = 7 AM UTC (CDT is UTC-5)
+
+  // In DST period: CDT (UTC-5), else CST (UTC-6)
+  if (date >= marchSecondSunday && date < novemberFirstSunday) {
+    return -5; // CDT
   }
-  return hour >= BUSINESS_HOURS.start && hour < BUSINESS_HOURS.end;
+  return -6; // CST
+}
+
+function isWithinBusinessHours(date: Date): boolean {
+  // Check business hours in the target timezone (America/Chicago)
+  const day = getDayName(date);
+  // Get hour in the target timezone
+  const hour = date.toLocaleString("en-US", { timeZone: CLIENT_TIMEZONE, hour12: false, hour: "numeric" });
+  const hourNum = parseInt(hour);
+  if (day === "Sunday") {
+    return hourNum >= BUSINESS_HOURS.sunday.start && hourNum < BUSINESS_HOURS.sunday.end;
+  }
+  return hourNum >= BUSINESS_HOURS.start && hourNum < BUSINESS_HOURS.end;
 }
 
 function generateSlotsForDate(dateStr: string): Array<{ start: Date; end: Date; label: string; value: string }> {
   const slots: Array<{ start: Date; end: Date; label: string; value: string }> = [];
   const baseDate = parseDateInZone(dateStr, CLIENT_TIMEZONE);
   const day = getDayName(baseDate);
-  
+
   let startHour = BUSINESS_HOURS.start;
   let endHour = BUSINESS_HOURS.end;
   if (day === "Sunday") {
     startHour = BUSINESS_HOURS.sunday.start;
     endHour = BUSINESS_HOURS.sunday.end;
   }
-  
+
+  // Get the timezone offset for this date in America/Chicago (handles DST)
+  const offsetHours = getTimezoneOffsetHours(dateStr);
+  const offsetStr = `${offsetHours >= 0 ? "+" : ""}${String(offsetHours).padStart(2, "0")}:00`;
+
   for (let hour = startHour; hour < endHour; hour += SLOT_DURATION_MINUTES / 60) {
-    // Create date in the target timezone using toLocaleString to get the proper UTC time
-    const start = new Date(new Date(`${dateStr}T${String(hour).padStart(2, "0")}:00:00`).toLocaleString("en-US", { timeZone: CLIENT_TIMEZONE }));
+    // Create date in the target timezone by constructing ISO string with explicit offset
+    const start = new Date(`${dateStr}T${String(hour).padStart(2, "0")}:00:00${offsetStr}`);
     const endHourVal = hour + SLOT_DURATION_MINUTES / 60;
-    const end = new Date(new Date(`${dateStr}T${String(endHourVal).padStart(2, "0")}:00:00`).toLocaleString("en-US", { timeZone: CLIENT_TIMEZONE }));
-    
+    const end = new Date(`${dateStr}T${String(endHourVal).padStart(2, "0")}:00:00${offsetStr}`);
+
     if (isWithinBusinessHours(start)) {
       slots.push({
         start,

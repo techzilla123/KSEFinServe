@@ -854,6 +854,73 @@
   margin-right: -15px;
 }
 
+/* ===== TIME SLOT GRID ===== */
+.book-now-page .time-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.book-now-page .time-slot {
+  min-height: 44px;
+  border: 1px solid #d9d5cb;
+  border-radius: 6px;
+  background: #fffdfa;
+  color: #081d2b;
+  font-family: "Mona Sans:Medium", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.book-now-page .time-slot:hover:not(:disabled) {
+  border-color: #c9a963;
+  background: #fdf8ee;
+}
+
+.book-now-page .time-slot.selected {
+  border: 2px solid #c9a963;
+  background: #eee3cb;
+  color: #081d2b;
+}
+
+.book-now-page .time-slot:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgb(201 169 99 / 40%);
+}
+
+.book-now-page .time-slot:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.book-now-page .loading-slots {
+  color: #59666b;
+  font-size: 13px;
+  padding: 8px 0;
+}
+
+.book-now-page .slot-error {
+  color: #8f2f24;
+  font-size: 12px;
+  padding: 8px 0;
+}
+
+.book-now-page .no-slots {
+  color: #59666b;
+  font-size: 13px;
+  padding: 8px 0;
+}
+
+@media (max-width: 480px) {
+  .book-now-page .time-slot-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 /* Grouping wrappers used only by the mobile layout. On desktop they are
    transparent to layout (display: contents), so the intro renders exactly
    as the original Figma markup did. */

@@ -155,7 +155,15 @@ function TextArea({
   );
 }
 
-function AvailableTime({
+// Time slot types
+type TimeSlot = {
+  label: string;      // e.g., "8:00 AM"
+  value: string;      // ISO string for submission
+  start: string;      // ISO start
+  end: string;        // ISO end
+};
+
+function TimeSlotPicker({
   date,
   time,
   onDate,
@@ -168,54 +176,87 @@ function AvailableTime({
   onTime: (value: string) => void;
   required?: boolean;
 }) {
-  // Local (not UTC) today, so the boundary matches the user's own clock.
-  const now = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-  const currentTime = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-  const isToday = date === today;
+  const [slots, setSlots] = useState<TimeSlot[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [timezone, setTimezone] = useState("America/Chicago");
+
+  // Fetch available slots when date changes
+  useEffect(() => {
+    if (!date) {
+      setSlots([]);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    fetch(`/.netlify/functions/calendar?date=${date}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to load availability");
+        return res.json();
+      })
+      .then((data) => {
+        setSlots(data.slots || []);
+        setTimezone(data.timezone || "America/Chicago");
+        // If previously selected time is no longer available, clear it
+        if (time && !data.slots?.some((s: TimeSlot) => s.value === time)) {
+          onTime("");
+        }
+      })
+      .catch((err) => {
+        setError(err.message);
+        setSlots([]);
+      })
+      .finally(() => setLoading(false));
+  }, [date]);
 
   const handleDate = (value: string) => {
     onDate(value);
-    // If the newly chosen date is today and the time already picked has passed,
-    // clear it so a stale past time can't be submitted.
-    if (value === today && time && time < currentTime) onTime("");
+    onTime(""); // Clear time when date changes
   };
 
-  const handleTime = (value: string) => {
-    if (isToday && value && value < currentTime) return;
-    onTime(value);
-  };
+  const isToday = date === new Date().toISOString().split("T")[0];
 
   return (
     <div className="field-group">
       <p className="label">Available time{required ? " *" : ""}</p>
-      <div className="two-col">
-        <label className="field">
-          <span>Preferred date{required ? " *" : ""}</span>
-          <input
-            type="date"
-            required={required}
-            min={today}
-            value={date}
-            onChange={(event) => handleDate(event.target.value)}
-          />
-        </label>
-        <label className="field">
-          <span>Preferred time{required ? " *" : ""}</span>
-          <input
-            type="time"
-            required={required}
-            min={isToday ? currentTime : undefined}
-            value={time}
-            onChange={(event) => handleTime(event.target.value)}
-          />
-        </label>
-      </div>
+      <label className="field">
+        <span>Preferred date{required ? " *" : ""}</span>
+        <input
+          type="date"
+          required={required}
+          min={isToday ? new Date().toISOString().split("T")[0] : undefined}
+          value={date}
+          onChange={(event) => handleDate(event.target.value)}
+        />
+      </label>
+      <small>Time zone: CDT (America/Chicago)</small>
+      
+      {loading && <p className="loading-slots">Loading available times…</p>}
+      {error && <p className="slot-error">{error}</p>}
+      
+      {!loading && slots.length === 0 && date && (
+        <p className="no-slots">No available slots for this date. Please choose another date.</p>
+      )}
+      
+      {!loading && slots.length > 0 && (
+        <div className="time-slot-grid" role="radiogroup" aria-label="Available time slots">
+          {slots.map((slot) => (
+            <button
+              key={slot.value}
+              type="button"
+              className={`time-slot ${time === slot.value ? "selected" : ""}`}
+              onClick={() => onTime(slot.value)}
+              role="radio"
+              aria-checked={time === slot.value}
+            >
+              {slot.label}
+            </button>
+          ))}
+        </div>
+      )}
+      
       <small>
-        {isToday
-          ? "Times earlier than now aren’t available today. Pick a later slot, or choose another date."
-          : "Pick a slot that suits you. We’ll confirm the exact time when we get in touch."}
+        Pick a slot that suits you. We'll confirm the exact time when we get in touch.
       </small>
     </div>
   );
@@ -333,6 +374,8 @@ function BookPage({
     city?: string;
     province?: string;
     country?: string;
+    route?: string;
+    path?: string;
   }) => void;
   submitting?: boolean;
   error?: string | null;
@@ -347,39 +390,6 @@ function BookPage({
     availableDate: "",
     availableTime: "",
   });
-  const [location, setLocation] = useState<{ city: string; province: string; country: string } | null>(null);
-  const [locating, setLocating] = useState(false);
-
-  // Ask for the visitor's location once, so the session time can be interpreted
-  // in their own zone and converted for the admin.
-  useEffect(() => {
-    if (!("geolocation" in navigator)) return;
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          const { latitude, longitude } = pos.coords;
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=10`,
-            { headers: { Accept: "application/json" } },
-          );
-          const data = await res.json();
-          const addr = data?.address ?? {};
-          setLocation({
-            city: addr.city ?? addr.town ?? addr.village ?? addr.county ?? "",
-            province: addr.state ?? addr.region ?? "",
-            country: addr.country ?? "",
-          });
-        } catch {
-          // Location is optional — the form still works without it.
-        } finally {
-          setLocating(false);
-        }
-      },
-      () => setLocating(false),
-      { timeout: 8000, maximumAge: 300000 },
-    );
-  }, []);
 
   const updateQuick = (key: keyof typeof quick) => (value: string) =>
     setQuick((current) => ({ ...current, [key]: value }));
@@ -389,9 +399,9 @@ function BookPage({
     const derivedRoute = currentPath !== "Wealth planning" && currentPath !== "Share the full picture" ? "Detailed form" : "Short form";
     onQuickSubmit({
       ...quick,
-      city: location?.city ?? "",
-      province: location?.province ?? "",
-      country: location?.country ?? "",
+      city: "",
+      province: "",
+      country: "",
       route: derivedRoute,
       path: currentPath,
     });
@@ -477,21 +487,14 @@ function BookPage({
             <option>Advisor opportunities</option>
             <option>Speaking & partnerships</option>
           </SelectField>
-          <TextArea label="Anything you’d like us to know?" value={quick.note} onChange={updateQuick("note")} />
-          <p className="loc-note">
-            {locating
-              ? "Detecting your location so we can confirm the right time…"
-              : location?.city
-                ? `Location detected: ${[location.city, location.province, location.country].filter(Boolean).join(", ")}`
-                : "Location not shared — we’ll confirm your time zone when we get in touch."}
-          </p>
-          <AvailableTime
-            date={quick.availableDate}
-            time={quick.availableTime}
-            onDate={updateQuick("availableDate")}
-            onTime={updateQuick("availableTime")}
-            required
-          />
+          <TextArea label="Anything you'd like us to know?" value={quick.note} onChange={updateQuick("note")} />
+                    <TimeSlotPicker
+                      date={quick.availableDate}
+                      time={quick.availableTime}
+                      onDate={updateQuick("availableDate")}
+                      onTime={updateQuick("availableTime")}
+                      required
+                    />
           <label className="check-row">
             <input type="checkbox" required />
             <span>I agree that KSEFinServe may contact me about this session request. *</span>

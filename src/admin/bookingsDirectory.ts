@@ -216,71 +216,98 @@ export function useBookings(): BookingDirectory {
   }, [refresh])
 
   const submitBooking = useCallback(async (input: BookingInput) => {
-      // The reference is built from the current count so it stays readable.
-      const { count } = await supabase
-        .from('bookings')
-        .select('id', { count: 'exact', head: true })
-      const reference = buildReference(count ?? 0)
+        // The reference is built from the current count so it stays readable.
+        const { count } = await supabase
+          .from('bookings')
+          .select('id', { count: 'exact', head: true })
+        const reference = buildReference(count ?? 0)
 
-      const { error: err } = await supabase
-        .from('bookings')
-        .insert({
-          reference,
-          first_name: input.firstName.trim(),
-          last_name: input.lastName.trim(),
-          email: input.email.trim(),
-          phone: input.phone.trim(),
-          city: (input.city ?? '').trim(),
-          province: (input.province ?? '').trim(),
-          country: (input.country ?? '').trim(),
-          contact_method: input.contactMethod ?? 'Email',
-          source: (input.source ?? '').trim(),
-          route: input.route ?? input.path ?? 'Short form',
-          path: input.path ?? 'Wealth planning',
-          topic: (input.topic ?? '').trim(),
-          priorities: input.priorities ?? [],
-          outcome: (input.outcome ?? '').trim(),
-          context: (input.context ?? '').trim(),
-          question: (input.question ?? '').trim(),
-          available_date: (input.availableDate ?? '').trim(),
-          available_time: (input.availableTime ?? '').trim(),
-          consent_contact: !!input.consentContact,
-          consent_updates: !!input.consentUpdates,
-        })
-      if (err) return { error: err.message }
-      await refresh()
+        const { error: err } = await supabase
+          .from('bookings')
+          .insert({
+            reference,
+            first_name: input.firstName.trim(),
+            last_name: input.lastName.trim(),
+            email: input.email.trim(),
+            phone: input.phone.trim(),
+            city: (input.city ?? '').trim(),
+            province: (input.province ?? '').trim(),
+            country: (input.country ?? '').trim(),
+            contact_method: input.contactMethod ?? 'Email',
+            source: (input.source ?? '').trim(),
+            route: input.route ?? input.path ?? 'Short form',
+            path: input.path ?? 'Wealth planning',
+            topic: (input.topic ?? '').trim(),
+            priorities: input.priorities ?? [],
+            outcome: (input.outcome ?? '').trim(),
+            context: (input.context ?? '').trim(),
+            question: (input.question ?? '').trim(),
+            available_date: (input.availableDate ?? '').trim(),
+            available_time: (input.availableTime ?? '').trim(),
+            consent_contact: !!input.consentContact,
+            consent_updates: !!input.consentUpdates,
+          })
+        if (err) return { error: err.message }
+        await refresh()
 
-      // Send confirmation emails (non-blocking)
-      try {
-        const { sendBookingConfirmation } = await import('@/lib/email')
-        await sendBookingConfirmation({
-          userEmail: input.email.trim(),
-          userName: `${input.firstName.trim()} ${input.lastName.trim()}`.trim(),
-          userPhone: input.phone ?? 'Not provided',
-          bookingDate: input.availableDate ? new Date(input.availableDate).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'To be arranged',
-          bookingTime: input.availableTime || 'To be confirmed',
-          serviceType: input.path || input.topic || 'Wealth Strategy Session',
-          city: input.city,
-          province: input.province,
-          country: input.country,
-          path: input.path,
-          topic: input.topic,
-          priorities: input.priorities,
-          outcome: input.outcome,
-          context: input.context,
-          question: input.question,
-          consentContact: input.consentContact,
-          consentUpdates: input.consentUpdates,
-          contactMethod: input.contactMethod,
-          source: input.source,
-          reference,
-        })
-      } catch (err) {
-        console.error('Booking confirmation emails failed to send:', err)
-      }
+        // Create Google Calendar event (non-blocking)
+        if (input.availableDate && input.availableTime) {
+          try {
+            // availableTime is now an ISO string from the time slot picker
+            const startTime = input.availableTime
+            const start = new Date(startTime)
+            const end = new Date(start.getTime() + 60 * 60 * 1000) // 1 hour duration
+            const endTime = end.toISOString()
+          
+            const description = `KSEFinServe Session Booking\n\nReference: ${reference}\nClient: ${input.firstName.trim()} ${input.lastName.trim()}\nEmail: ${input.email.trim()}\nPhone: ${input.phone.trim()}\nPath: ${input.path}\nTopic: ${input.topic}\nPriorities: ${(input.priorities || []).join(', ')}\nOutcome: ${input.outcome}\nContext: ${input.context}\nQuestion: ${input.question}\nContact Method: ${input.contactMethod}\nSource: ${input.source}\nConsent Contact: ${input.consentContact}\nConsent Updates: ${input.consentUpdates}`
+          
+            await fetch(`/.netlify/functions/calendar`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                startTime,
+                endTime,
+                summary: `KSEFinServe Session - ${input.firstName.trim()} ${input.lastName.trim()}`,
+                description,
+                attendees: [input.email.trim()],
+              }),
+            })
+          } catch (calErr) {
+            console.error('Google Calendar booking failed:', calErr)
+          }
+        }
 
-      return { error: null, reference }
-    }, [refresh])
+        // Send confirmation emails (non-blocking)
+        try {
+          const { sendBookingConfirmation } = await import('@/lib/email')
+          await sendBookingConfirmation({
+            userEmail: input.email.trim(),
+            userName: `${input.firstName.trim()} ${input.lastName.trim()}`.trim(),
+            userPhone: input.phone ?? 'Not provided',
+            bookingDate: input.availableDate ? new Date(input.availableDate).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'To be arranged',
+            bookingTime: input.availableTime || 'To be confirmed',
+            serviceType: input.path || input.topic || 'Wealth Strategy Session',
+            city: input.city,
+            province: input.province,
+            country: input.country,
+            path: input.path,
+            topic: input.topic,
+            priorities: input.priorities,
+            outcome: input.outcome,
+            context: input.context,
+            question: input.question,
+            consentContact: input.consentContact,
+            consentUpdates: input.consentUpdates,
+            contactMethod: input.contactMethod,
+            source: input.source,
+            reference,
+          })
+        } catch (err) {
+          console.error('Booking confirmation emails failed to send:', err)
+        }
+
+        return { error: null, reference }
+      }, [refresh])
 
   const updateStatus = useCallback(async (id: string, status: Booking['status']) => {
     const { error: err } = await supabase

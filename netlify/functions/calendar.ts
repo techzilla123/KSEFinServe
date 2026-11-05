@@ -16,7 +16,9 @@ const GAP_MINUTES = 60; // 1-hour gap between meetings
 function getAuth() {
   const json = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   if (!json) throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON not set");
-  const credentials = JSON.parse(json);
+  // Trim whitespace/BOM that can break JSON.parse
+  const cleaned = json.trim().replace(/^\uFEFF/, "");
+  const credentials = JSON.parse(cleaned);
   return new google.auth.GoogleAuth({
     credentials,
     scopes: SCOPES,

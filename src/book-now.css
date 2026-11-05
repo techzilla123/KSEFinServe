@@ -897,6 +897,34 @@
   cursor: not-allowed;
 }
 
+.book-now-page .time-field-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 44px;
+}
+
+.book-now-page .time-field-wrapper .loading-slots,
+.book-now-page .time-field-wrapper .no-slots {
+  display: block;
+  min-height: 44px;
+  padding: 13px 16px;
+  border: 1px solid #d9d5cb;
+  border-radius: 6px;
+  background: #fffdfa;
+  color: #59666b;
+  font-family: "Mona Sans:Regular", sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.book-now-page .timezone-note {
+  color: #59666b;
+  font-size: 11px;
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
 .book-now-page .loading-slots {
   color: #59666b;
   font-size: 13px;

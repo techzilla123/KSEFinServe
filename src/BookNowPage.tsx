@@ -179,7 +179,9 @@ function TimeSlotPicker({
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [timezone, setTimezone] = useState("America/Chicago");
+  const [timezone, setTimezone] = useState(() => 
+    typeof window !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "America/Chicago"
+  );
 
   // Fetch available slots when date changes
   useEffect(() => {
@@ -216,45 +218,57 @@ function TimeSlotPicker({
 
   const isToday = date === new Date().toISOString().split("T")[0];
 
+  // Format timezone for display (e.g., "America/Chicago" → "CDT")
+  const getTimezoneLabel = (tz: string) => {
+    try {
+      return new Date().toLocaleTimeString("en-US", { timeZone: tz, timeZoneName: "short" }).split(" ").pop() || tz;
+    } catch {
+      return tz;
+    }
+  };
+
   return (
     <div className="field-group">
       <p className="label">Available time{required ? " *" : ""}</p>
-      <label className="field">
-        <span>Preferred date{required ? " *" : ""}</span>
-        <input
-          type="date"
-          required={required}
-          min={isToday ? new Date().toISOString().split("T")[0] : undefined}
-          value={date}
-          onChange={(event) => handleDate(event.target.value)}
-        />
-      </label>
-      <small>Time zone: CDT (America/Chicago)</small>
-      
-      {loading && <p className="loading-slots">Loading available times…</p>}
+      <div className="two-col">
+        <label className="field">
+          <span>Preferred date{required ? " *" : ""}</span>
+          <input
+            type="date"
+            required={required}
+            min={isToday ? new Date().toISOString().split("T")[0] : undefined}
+            value={date}
+            onChange={(event) => handleDate(event.target.value)}
+          />
+        </label>
+        <label className="field">
+          <span>Preferred time{required ? " *" : ""}</span>
+          <div className="time-field-wrapper">
+            {loading && <span className="loading-slots">Loading…</span>}
+            {!loading && slots.length === 0 && date && (
+              <span className="no-slots">No slots — pick another date</span>
+            )}
+            {!loading && slots.length > 0 && (
+              <div className="time-slot-grid" role="radiogroup" aria-label="Available time slots">
+                {slots.map((slot) => (
+                  <button
+                    key={slot.value}
+                    type="button"
+                    className={`time-slot ${time === slot.value ? "selected" : ""}`}
+                    onClick={() => onTime(slot.value)}
+                    role="radio"
+                    aria-checked={time === slot.value}
+                  >
+                    {slot.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <small className="timezone-note">Time zone: {getTimezoneLabel(timezone)}</small>
+          </div>
+        </label>
+      </div>
       {error && <p className="slot-error">{error}</p>}
-      
-      {!loading && slots.length === 0 && date && (
-        <p className="no-slots">No available slots for this date. Please choose another date.</p>
-      )}
-      
-      {!loading && slots.length > 0 && (
-        <div className="time-slot-grid" role="radiogroup" aria-label="Available time slots">
-          {slots.map((slot) => (
-            <button
-              key={slot.value}
-              type="button"
-              className={`time-slot ${time === slot.value ? "selected" : ""}`}
-              onClick={() => onTime(slot.value)}
-              role="radio"
-              aria-checked={time === slot.value}
-            >
-              {slot.label}
-            </button>
-          ))}
-        </div>
-      )}
-      
       <small>
         Pick a slot that suits you. We'll confirm the exact time when we get in touch.
       </small>

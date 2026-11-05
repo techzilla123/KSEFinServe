@@ -991,9 +991,8 @@ export async function sendBookingConfirmation(params) {
 
   const [user, admin] = await Promise.all([
     sendEmail({ to: params.userEmail, subject: "Booking Confirmed — KSEFinServe", html: userHtml, text: `Booking Confirmed - ${params.serviceType} on ${params.bookingDate} at ${params.bookingTime}. Reference: ${reference}` }),
-        sendEmail({ to: adminEmail, subject: `New Booking Received — KSEFinServe (${reference})`, html: adminHtml, text: `New booking from ${params.userName} (${params.userEmail}) - ${params.serviceType} on ${params.bookingDate} at ${params.bookingTime}. Reference: ${reference}` }),
+    sendEmail({ to: adminEmail, subject: `New Booking Received — KSEFinServe (${reference})`, html: adminHtml, text: `New booking from ${params.userName} (${params.userEmail}) - ${params.serviceType} on ${params.bookingDate} at ${params.bookingTime}. Reference: ${reference}` }),
   ]);
-  console.log('Booking emails sent - user:', user.ok, 'admin:', admin.ok);
   return { user, admin };
 }
 
@@ -1039,7 +1038,6 @@ export async function sendCareerConfirmation(params) {
     html,
     text: `Application Received for ${params.role}. Reference: ${params.reference}. We'll review within 5-7 business days.`,
   });
-  console.log('Career confirmation email sent:', result.ok, result.messageId);
   return result;
 }
 
@@ -1063,12 +1061,10 @@ export async function sendEventInterestConfirmation(params) {
     html,
     text: `Interest confirmed for ${params.eventTitle} on ${params.eventDate}. Reference: ${params.reference}. We'll keep you updated.`,
   });
-  console.log('Event interest confirmation email sent:', result.ok, result.messageId);
   return result;
-}
+  }
 
-
-export async function sendTaxReport(params) {
+  export async function sendTaxReport(params) {
   const html = taxReportTemplate(params);
   const result = await sendEmail({
     to: params.userEmail,
@@ -1076,7 +1072,6 @@ export async function sendTaxReport(params) {
     html,
     text: `Your tax clarity report for \${params.income} income in \${params.state}. Reference: \${params.reference}.`,
   });
-  console.log('Tax report email sent:', result.ok, result.messageId);
   return result;
 }
 
@@ -1088,7 +1083,6 @@ export async function sendCollegeSavingsReport(params) {
     html,
     text: `Your education savings plan for child age \${params.childAge}, starting at \${params.startAge}. Reference: \${params.reference}.`,
   });
-  console.log('College savings report email sent:', result.ok, result.messageId);
   return result;
 }
 
@@ -1100,7 +1094,6 @@ export async function sendDebtRepaymentReport(params) {
     html,
     text: `Your debt repayment blueprint using \${params.strategy} strategy. Debt-free in \${params.debtFreeMonths} months. Reference: \${params.reference}.`,
   });
-  console.log('Debt repayment report email sent:', result.ok, result.messageId);
   return result;
 }
 
@@ -1112,7 +1105,6 @@ export async function sendRetirementReport(params) {
     html,
     text: `Your retirement roadmap: \${params.yearsToRetirement} years to retirement, projected savings \${params.projectedSavings}. Reference: \${params.reference}.`,
   });
-  console.log('Retirement report email sent:', result.ok, result.messageId);
   return result;
 }
 
@@ -1124,7 +1116,6 @@ export async function sendCompoundInterestReport(params) {
     html,
     text: `Your compound interest growth report: \${params.years} years, total balance \${params.totalBalance}. Reference: \${params.reference}.`,
   });
-  console.log('Compound interest report email sent:', result.ok, result.messageId);
   return result;
 }
 

@@ -61,14 +61,21 @@ function getTimezoneOffsetHours(dateStr: string): number {
   const year = date.getUTCFullYear();
   // DST starts 2nd Sunday March at 2 AM local (8 AM UTC)
   // DST ends 1st Sunday November at 2 AM local (7 AM UTC)
-  const marchStart = new Date(Date.UTC(date.getUTCFullYear(), 2, 1, 6, 0, 0)); // March 1, 6 AM UTC
-  const marchSecondSunday = new Date(marchStart);
-  marchSecondSunday.setUTCDate(marchSecondSunday.getUTCDate() + (7 - marchSecondSunday.getUTCDay()) + 7);
+
+  // Helper: get first Sunday on or after a given date
+  const getFirstSunday = (month: number, day: number, hour: number): Date => {
+    const d = new Date(Date.UTC(year, month, day, hour, 0, 0));
+    const dayOfWeek = d.getUTCDay(); // 0 = Sunday
+    const daysToAdd = (7 - dayOfWeek) % 7;
+    d.setUTCDate(d.getUTCDate() + daysToAdd);
+    return d;
+  };
+
+  const marchSecondSunday = new Date(getFirstSunday(2, 1, 6)); // March 1, 6 AM UTC
+  marchSecondSunday.setUTCDate(marchSecondSunday.getUTCDate() + 7);
   marchSecondSunday.setUTCHours(8, 0, 0, 0); // 2 AM CDT = 8 AM UTC
 
-  const novemberStart = new Date(Date.UTC(date.getUTCFullYear(), 10, 1, 6, 0, 0)); // Nov 1, 6 AM UTC
-  const novemberFirstSunday = new Date(novemberStart);
-  novemberFirstSunday.setUTCDate(novemberFirstSunday.getUTCDate() + (7 - novemberFirstSunday.getUTCDay()));
+  const novemberFirstSunday = getFirstSunday(10, 1, 6); // Nov 1, 6 AM UTC
   novemberFirstSunday.setUTCHours(7, 0, 0, 0); // 2 AM CDT = 7 AM UTC (CDT is UTC-5)
 
   // In DST period: CDT (UTC-5), else CST (UTC-6)

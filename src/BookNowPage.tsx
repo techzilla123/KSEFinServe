@@ -182,165 +182,187 @@ function TimeSlotPicker({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [timezone, setTimezone] = useState(() => 
-      typeof window !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "America/Chicago"
-    );
+    typeof window !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "America/Chicago"
+  );
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [menuPosition, setMenuPosition] = useState<"down" | "up">("down");
 
-    // Get today's date in CDT timezone for min date validation
-    const getTodayInTimezone = (tz: string): string => {
-      try {
-        return new Date().toLocaleDateString("en-CA", { timeZone: tz }); // YYYY-MM-DD
-      } catch {
-        return new Date().toISOString().split("T")[0];
-      }
-    };
-
-    // Fetch available slots when date changes
-      useEffect(() => {
-        if (!date) {
-          setSlots([]);
-          return;
-        }
-        setLoading(true);
-        setError(null);
-        fetch(`/.netlify/functions/calendar?date=${date}`)
-          .then((res) => {
-            if (!res.ok) throw new Error("Failed to load availability");
-            return res.json();
-          })
-          .then((data) => {
-            // Convert slot times to user's local timezone for display
-            const userTz = typeof window !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "America/Chicago";
-            const convertedSlots = (data.slots || []).map((s: TimeSlot) => ({
-              ...s,
-              label: new Date(s.start).toLocaleTimeString("en-US", {
-                hour: "numeric",
-                minute: "2-digit",
-                hour12: true,
-                timeZone: userTz,
-              }),
-            }));
-            setSlots(convertedSlots);
-            setTimezone(data.timezone || "America/Chicago");
-            // If previously selected time is no longer available, clear it
-            if (time && !data.slots?.some((s: TimeSlot) => s.value === time)) {
-              onTime("");
-            }
-          })
-          .catch((err) => {
-            setError(err.message);
-            setSlots([]);
-          })
-          .finally(() => setLoading(false));
-      }, [date]);
-
-        const [isOpen, setIsOpen] = useState(false);
-
-        const handleDate = (value: string) => {
-    onDate(value);
-    onTime(""); // Clear time when date changes
+  // Get today's date in CDT timezone for min date validation
+  const getTodayInTimezone = (tz: string): string => {
+    try {
+      return new Date().toLocaleDateString("en-CA", { timeZone: tz }); // YYYY-MM-DD
+    } catch {
+      return new Date().toISOString().split("T")[0];
+    }
   };
 
-  const isToday = date === new Date().toISOString().split("T")[0];
+  // Fetch available slots when date changes
+  useEffect(() => {
+    if (!date) {
+      setSlots([]);
+      setIsOpen(false);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setIsOpen(false);
+    fetch(`/.netlify/functions/calendar?date=${date}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to load availability");
+        return res.json();
+      })
+      .then((data) => {
+        // Convert slot times to user's local timezone for display
+        const userTz = typeof window !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "America/Chicago";
+        const convertedSlots = (data.slots || []).map((s: TimeSlot) => ({
+          ...s,
+          label: new Date(s.start).toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+            timeZone: userTz,
+          }),
+        }));
+        setSlots(convertedSlots);
+        setTimezone(data.timezone || "America/Chicago");
+        // If previously selected time is no longer available, clear it
+        if (time && !data.slots?.some((s: TimeSlot) => s.value === time)) {
+          onTime("");
+        }
+      })
+      .catch((err) => {
+        setError(err.message);
+        setSlots([]);
+      })
+      .finally(() => setLoading(false));
+  }, [date]);
+
+  // Calculate menu position to avoid viewport clipping
+  useEffect(() => {
+    if (!isOpen || !triggerRef.current || !menuRef.current) return;
+    
+    const triggerRect = triggerRef.current.getBoundingClientRect();
+    const menuHeight = menuRef.current.offsetHeight;
+    const spaceBelow = window.innerHeight - triggerRect.bottom;
+    const spaceAbove = triggerRect.top;
+    
+    // Flip up if not enough space below and there's more space above
+    setMenuPosition(spaceBelow < menuHeight && spaceAbove > menuHeight ? "up" : "down");
+  }, [isOpen, slots.length]);
+
+  const handleDate = (value: string) => {
+    onDate(value);
+    onTime(""); // Clear time when date changes
+    setIsOpen(false);
+  };
 
   // Format timezone for display (e.g., "America/Chicago" → "CDT")
-    const getTimezoneLabel = (tz: string) => {
-      try {
-        return new Date().toLocaleTimeString("en-US", { timeZone: tz, timeZoneName: "short" }).split(" ").pop() || tz;
-      } catch {
-        return tz;
-      }
-    };
+  const getTimezoneLabel = (tz: string) => {
+    try {
+      return new Date().toLocaleTimeString("en-US", { timeZone: tz, timeZoneName: "short" }).split(" ").pop() || tz;
+    } catch {
+      return tz;
+    }
+  };
 
-    // User's actual timezone for display
-        const userTimezone = typeof window !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "America/Chicago";
-        const userTimezoneLabel = getTimezoneLabel(userTimezone);
+  // User's actual timezone for display
+  const userTimezone = typeof window !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "America/Chicago";
+  const userTimezoneLabel = getTimezoneLabel(userTimezone);
 
-        const selectedSlot = slots.find((s) => s.value === time);
+  const selectedSlot = slots.find((s) => s.value === time);
 
-        // Clock icon SVG
-        const clockIcon = (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12 6 12 12 16 14" />
-          </svg>
-        );
+  // Clock icon SVG
+  const clockIcon = (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  );
 
-        // Chevron down icon SVG
-        const chevronIcon = (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        );
+  // Chevron down icon SVG
+  const chevronIcon = (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  );
 
-        return (
-      <div className="field-group">
-        <p className="label">Available time{required ? " *" : ""}</p>
-        <div className="two-col">
-          <label className="field">
-            <span>Preferred date{required ? " *": ""}</span>
-            <input
-              type="date"
-              required={required}
-              min={getTodayInTimezone(CLIENT_TIMEZONE)}
-              value={date}
-              onChange={(event) => handleDate(event.target.value)}
-            />
-          </label>
+  return (
+    <div className="field-group">
+      <p className="label">Available time{required ? " *" : ""}</p>
+      <div className="two-col">
         <label className="field">
-                  <span>Preferred time{required ? " *": ""}</span>
-                  <div className="time-field-wrapper">
-                    {loading && <span className="loading-slots">Loading…</span>}
-                    {!loading && slots.length === 0 && date && (
-                      <span className="no-slots">No slots — pick another date</span>
-                    )}
-                    {!loading && slots.length > 0 && (
-                      <div className="time-dropdown">
-                        <button
-                          type="button"
-                          className={`time-dropdown-trigger ${time ? "has-value" : ""}`}
-                          onClick={() => setIsOpen(!isOpen)}
-                          aria-haspopup="listbox"
-                          aria-expanded={isOpen}
-                          aria-label="Select time"
-                        >
-                          <span className="time-dropdown-icon">{clockIcon}</span>
-                          <span className="time-dropdown-value">
-                            {time ? selectedSlot?.label || time : "Select a time"}
-                          </span>
-                          <span className="time-dropdown-chevron">{chevronIcon}</span>
-                        </button>
-                        {isOpen && (
-                          <div className="time-dropdown-menu" role="listbox" aria-label="Available time slots">
-                            {slots.map((slot) => (
-                              <button
-                                key={slot.value}
-                                type="button"
-                                className={`time-dropdown-option ${time === slot.value ? "selected" : ""}`}
-                                onClick={() => {
-                                  onTime(slot.value);
-                                  setIsOpen(false);
-                                }}
-                                role="option"
-                                aria-selected={time === slot.value}
-                              >
-                                {slot.label}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    <small className="timezone-note">Time zone: {userTimezoneLabel}</small>
+          <span>Preferred date{required ? " *": ""}</span>
+          <input
+            type="date"
+            required={required}
+            min={getTodayInTimezone("America/Chicago")}
+            value={date}
+            onChange={(event) => handleDate(event.target.value)}
+          />
+        </label>
+        <label className="field">
+          <span>Preferred time{required ? " *": ""}</span>
+          <div className="time-field-wrapper">
+            {loading && <span className="loading-slots">Loading…</span>}
+            {!loading && slots.length === 0 && date && (
+              <span className="no-slots">No slots — pick another date</span>
+            )}
+            {!loading && slots.length > 0 && (
+              <div className="time-dropdown">
+                <button
+                  ref={triggerRef}
+                  type="button"
+                  className={`time-dropdown-trigger ${time ? "has-value" : ""}`}
+                  onClick={() => setIsOpen(!isOpen)}
+                  aria-haspopup="listbox"
+                  aria-expanded={isOpen}
+                  aria-label="Select time"
+                >
+                  <span className="time-dropdown-icon">{clockIcon}</span>
+                  <span className="time-dropdown-value">
+                    {time ? selectedSlot?.label || time : "Select a time"}
+                  </span>
+                  <span className="time-dropdown-chevron">{chevronIcon}</span>
+                </button>
+                {isOpen && (
+                  <div
+                    ref={menuRef}
+                    className={`time-dropdown-menu ${menuPosition === "up" ? "menu-up" : ""}`}
+                    role="listbox"
+                    aria-label="Available time slots"
+                  >
+                    {slots.map((slot) => (
+                      <button
+                        key={slot.value}
+                        type="button"
+                        className={`time-dropdown-option ${time === slot.value ? "selected" : ""}`}
+                        onClick={() => {
+                          onTime(slot.value);
+                          setIsOpen(false);
+                        }}
+                        role="option"
+                        aria-selected={time === slot.value}
+                      >
+                        {slot.label}
+                      </button>
+                    ))}
                   </div>
-                </label>
+                )}
               </div>
-              {error && <p className="slot-error">{error}</p>}
-              <small>
-                Pick a slot that suits you. We'll confirm the exact time when we get in touch.
-              </small>
-            </div>
-          );
-        }
+            )}
+            <small className="timezone-note">Time zone: {userTimezoneLabel}</small>
+          </div>
+        </label>
+      </div>
+      {error && <p className="slot-error">{error}</p>}
+      <small>
+        Pick a slot that suits you. We'll confirm the exact time when we get in touch.
+      </small>
+    </div>
+  );
+}
 
 function Progress({ active }: { active: 1 | 2 | 3 }) {
   const labels = ["About you", "Your interests", "Review & consent"];

@@ -28,6 +28,15 @@ dist/config.js
 /.opencode-skills/
 learn_backup_*/
 
+# Service account keys and temp files (never commit)
+sa.json
+env_output.txt
+build_env*.js
+write_env.js
+key_*.txt
+real_key.txt
+extract_key.py
+
 # Build output. Netlify runs `npm run build` and publishes dist/ itself,
 # so committing it only risks leaking generated secrets.
 dist/

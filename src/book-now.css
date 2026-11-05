@@ -1010,10 +1010,6 @@
   transform: rotate(180deg);
 }
 
-.book-now-page .time-dropdown-menu.menu-up .time-dropdown-trigger[aria-expanded="true"] .time-dropdown-chevron {
-  transform: rotate(0deg);
-}
-
 @media (max-width: 480px) {
   .book-now-page .time-slot-grid {
     grid-template-columns: repeat(3, 1fr);

@@ -110,8 +110,10 @@ function generateSlotsForDate(dateStr: string): Array<{ start: Date; end: Date; 
   }
 
   // Get the timezone offset for this date in America/Chicago (handles DST)
-  const offsetHours = getTimezoneOffsetHours(dateStr);
-  const offsetStr = `${offsetHours >= 0 ? "+" : ""}${String(offsetHours).padStart(2, "0")}:00`;
+    const offsetHours = getTimezoneOffsetHours(dateStr);
+    const offsetSign = offsetHours >= 0 ? "+" : "-";
+    const offsetAbs = Math.abs(offsetHours);
+    const offsetStr = `${offsetSign}${String(offsetAbs).padStart(2, "0")}:00`;
 
   for (let hour = startHour; hour < endHour; hour += SLOT_DURATION_MINUTES / 60) {
     // Create date in the target timezone by constructing ISO string with explicit offset

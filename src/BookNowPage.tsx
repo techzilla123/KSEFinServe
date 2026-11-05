@@ -195,34 +195,47 @@ function TimeSlotPicker({
     };
 
     // Fetch available slots when date changes
-  useEffect(() => {
-    if (!date) {
-      setSlots([]);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    fetch(`/.netlify/functions/calendar?date=${date}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load availability");
-        return res.json();
-      })
-      .then((data) => {
-        setSlots(data.slots || []);
-        setTimezone(data.timezone || "America/Chicago");
-        // If previously selected time is no longer available, clear it
-        if (time && !data.slots?.some((s: TimeSlot) => s.value === time)) {
-          onTime("");
+      useEffect(() => {
+        if (!date) {
+          setSlots([]);
+          return;
         }
-      })
-      .catch((err) => {
-        setError(err.message);
-        setSlots([]);
-      })
-      .finally(() => setLoading(false));
-  }, [date]);
+        setLoading(true);
+        setError(null);
+        fetch(`/.netlify/functions/calendar?date=${date}`)
+          .then((res) => {
+            if (!res.ok) throw new Error("Failed to load availability");
+            return res.json();
+          })
+          .then((data) => {
+            // Convert slot times to user's local timezone for display
+            const userTz = typeof window !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "America/Chicago";
+            const convertedSlots = (data.slots || []).map((s: TimeSlot) => ({
+              ...s,
+              label: new Date(s.start).toLocaleTimeString("en-US", {
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true,
+                timeZone: userTz,
+              }),
+            }));
+            setSlots(convertedSlots);
+            setTimezone(data.timezone || "America/Chicago");
+            // If previously selected time is no longer available, clear it
+            if (time && !data.slots?.some((s: TimeSlot) => s.value === time)) {
+              onTime("");
+            }
+          })
+          .catch((err) => {
+            setError(err.message);
+            setSlots([]);
+          })
+          .finally(() => setLoading(false));
+      }, [date]);
 
-  const handleDate = (value: string) => {
+        const [isOpen, setIsOpen] = useState(false);
+
+        const handleDate = (value: string) => {
     onDate(value);
     onTime(""); // Clear time when date changes
   };
@@ -230,15 +243,36 @@ function TimeSlotPicker({
   const isToday = date === new Date().toISOString().split("T")[0];
 
   // Format timezone for display (e.g., "America/Chicago" → "CDT")
-  const getTimezoneLabel = (tz: string) => {
-    try {
-      return new Date().toLocaleTimeString("en-US", { timeZone: tz, timeZoneName: "short" }).split(" ").pop() || tz;
-    } catch {
-      return tz;
-    }
-  };
+    const getTimezoneLabel = (tz: string) => {
+      try {
+        return new Date().toLocaleTimeString("en-US", { timeZone: tz, timeZoneName: "short" }).split(" ").pop() || tz;
+      } catch {
+        return tz;
+      }
+    };
 
-  return (
+    // User's actual timezone for display
+        const userTimezone = typeof window !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "America/Chicago";
+        const userTimezoneLabel = getTimezoneLabel(userTimezone);
+
+        const selectedSlot = slots.find((s) => s.value === time);
+
+        // Clock icon SVG
+        const clockIcon = (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+        );
+
+        // Chevron down icon SVG
+        const chevronIcon = (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        );
+
+        return (
       <div className="field-group">
         <p className="label">Available time{required ? " *" : ""}</p>
         <div className="two-col">
@@ -253,39 +287,60 @@ function TimeSlotPicker({
             />
           </label>
         <label className="field">
-          <span>Preferred time{required ? " *" : ""}</span>
-          <div className="time-field-wrapper">
-            {loading && <span className="loading-slots">Loading…</span>}
-            {!loading && slots.length === 0 && date && (
-              <span className="no-slots">No slots — pick another date</span>
-            )}
-            {!loading && slots.length > 0 && (
-              <div className="time-slot-grid" role="radiogroup" aria-label="Available time slots">
-                {slots.map((slot) => (
-                  <button
-                    key={slot.value}
-                    type="button"
-                    className={`time-slot ${time === slot.value ? "selected" : ""}`}
-                    onClick={() => onTime(slot.value)}
-                    role="radio"
-                    aria-checked={time === slot.value}
-                  >
-                    {slot.label}
-                  </button>
-                ))}
+                  <span>Preferred time{required ? " *": ""}</span>
+                  <div className="time-field-wrapper">
+                    {loading && <span className="loading-slots">Loading…</span>}
+                    {!loading && slots.length === 0 && date && (
+                      <span className="no-slots">No slots — pick another date</span>
+                    )}
+                    {!loading && slots.length > 0 && (
+                      <div className="time-dropdown">
+                        <button
+                          type="button"
+                          className={`time-dropdown-trigger ${time ? "has-value" : ""}`}
+                          onClick={() => setIsOpen(!isOpen)}
+                          aria-haspopup="listbox"
+                          aria-expanded={isOpen}
+                          aria-label="Select time"
+                        >
+                          <span className="time-dropdown-icon">{clockIcon}</span>
+                          <span className="time-dropdown-value">
+                            {time ? selectedSlot?.label || time : "Select a time"}
+                          </span>
+                          <span className="time-dropdown-chevron">{chevronIcon}</span>
+                        </button>
+                        {isOpen && (
+                          <div className="time-dropdown-menu" role="listbox" aria-label="Available time slots">
+                            {slots.map((slot) => (
+                              <button
+                                key={slot.value}
+                                type="button"
+                                className={`time-dropdown-option ${time === slot.value ? "selected" : ""}`}
+                                onClick={() => {
+                                  onTime(slot.value);
+                                  setIsOpen(false);
+                                }}
+                                role="option"
+                                aria-selected={time === slot.value}
+                              >
+                                {slot.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    <small className="timezone-note">Time zone: {userTimezoneLabel}</small>
+                  </div>
+                </label>
               </div>
-            )}
-            <small className="timezone-note">Time zone: {getTimezoneLabel(timezone)}</small>
-          </div>
-        </label>
-      </div>
-      {error && <p className="slot-error">{error}</p>}
-      <small>
-        Pick a slot that suits you. We'll confirm the exact time when we get in touch.
-      </small>
-    </div>
-  );
-}
+              {error && <p className="slot-error">{error}</p>}
+              <small>
+                Pick a slot that suits you. We'll confirm the exact time when we get in touch.
+              </small>
+            </div>
+          );
+        }
 
 function Progress({ active }: { active: 1 | 2 | 3 }) {
   const labels = ["About you", "Your interests", "Review & consent"];
@@ -732,14 +787,14 @@ function InterestsPage({
           </SelectField>
         </div>
         <TextArea label="Relevant context" value={details.context} onChange={update("context")} placeholder="I’m balancing long-term savings with family responsibilities and would like to review my priorities." hint="Life changes, responsibilities or a general starting point — no balances or account details needed." />
-        <TextArea label="Questions you’d like to ask" value={details.question} onChange={update("question")} placeholder="How can I balance retirement saving with other family goals?" />
-        <AvailableTime
-          date={details.availableDate}
-          time={details.availableTime}
-          onDate={update("availableDate")}
-          onTime={update("availableTime")}
-          required
-        />
+        <TextArea label="Questions you'd like to ask" value={details.question} onChange={update("question")} placeholder="How can I balance retirement saving with other family goals?" />
+                <TimeSlotPicker
+                  date={details.availableDate}
+                  time={details.availableTime}
+                  onDate={update("availableDate")}
+                  onTime={update("availableTime")}
+                  required
+                />
         <div className="notice">
           <img src={`${A}/b803f.svg`} alt="" />
           <span>Keep it general. Do not share identification numbers, account numbers, passwords or financial documents.</span>

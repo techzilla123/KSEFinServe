@@ -876,7 +876,7 @@
   transition: all 0.15s ease;
 }
 
-.book-now-page .time-slot:hover:not(:disabled) {
+.book-now-page .time-slot:hover:not(:disabled):not(.selected) {
   border-color: #c9a963;
   background: #fdf8ee;
 }
@@ -895,6 +895,114 @@
 .book-now-page .time-slot:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.book-now-page .time-dropdown {
+  position: relative;
+  width: 100%;
+}
+
+.book-now-page .time-dropdown-trigger {
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 16px;
+  border: 1px solid #d9d5cb;
+  border-radius: 6px;
+  background: #fffdfa;
+  color: #081d2b;
+  font-family: "Mona Sans:Medium", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.15s ease;
+}
+
+.book-now-page .time-dropdown-trigger:hover:not(:disabled) {
+  border-color: #c9a963;
+  background: #fdf8ee;
+}
+
+.book-now-page .time-dropdown-trigger:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgb(201 169 99 / 40%);
+}
+
+.book-now-page .time-dropdown-trigger.has-value {
+  color: #081d2b;
+}
+
+.book-now-page .time-dropdown-icon {
+  color: #886526;
+  flex-shrink: 0;
+}
+
+.book-now-page .time-dropdown-value {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.book-now-page .time-dropdown-chevron {
+  color: #59666b;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.book-now-page .time-dropdown-trigger[aria-expanded="true"] .time-dropdown-chevron {
+  transform: rotate(180deg);
+}
+
+.book-now-page .time-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid #d9d5cb;
+  border-radius: 6px;
+  background: #fffdfa;
+  box-shadow: 0 8px 24px rgba(8, 29, 43, 0.12);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+
+.book-now-page .time-dropdown-option {
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  color: #081d2b;
+  font-family: "Mona Sans:Medium", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.book-now-page .time-dropdown-option:hover,
+.book-now-page .time-dropdown-option:focus {
+  background: #fdf8ee;
+  outline: none;
+}
+
+.book-now-page .time-dropdown-option.selected {
+  background: #eee3cb;
+  color: #081d2b;
+}
+
+@media (max-width: 480px) {
+  .book-now-page .time-slot-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .book-now-page .time-field-wrapper {
@@ -941,12 +1049,6 @@
   color: #59666b;
   font-size: 13px;
   padding: 8px 0;
-}
-
-@media (max-width: 480px) {
-  .book-now-page .time-slot-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
 }
 
 /* Grouping wrappers used only by the mobile layout. On desktop they are

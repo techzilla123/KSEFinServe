@@ -284,14 +284,45 @@ function TimeSlotPicker({
     setIsOpen(false);
   };
 
-  // Format timezone for display (e.g., "America/Chicago" → "CDT")
-  const getTimezoneLabel = (tz: string) => {
-    try {
-      return new Date().toLocaleTimeString("en-US", { timeZone: tz, timeZoneName: "short" }).split(" ").pop() || tz;
-    } catch {
-      return tz;
-    }
-  };
+  // Format timezone for display (e.g., "America/Chicago" → "CDT", "Africa/Lagos" → "WAT")
+    const getTimezoneLabel = (tz: string) => {
+      // Known timezone abbreviations for common zones
+      const tzMap: Record<string, string> = {
+        "Africa/Lagos": "WAT",
+        "Africa/Cairo": "EET",
+        "Africa/Johannesburg": "SAST",
+        "America/Chicago": "CDT", // Will be CST/CDT depending on DST
+        "America/New_York": "EDT", // Will be EST/EDT depending on DST
+        "America/Los_Angeles": "PDT", // Will be PST/PDT depending on DST
+        "Europe/London": "BST", // Will be GMT/BST depending on DST
+        "Europe/Paris": "CEST", // Will be CET/CEST depending on DST
+        "Asia/Dubai": "GST",
+        "Asia/Singapore": "SGT",
+        "Asia/Tokyo": "JST",
+        "Australia/Sydney": "AEDT", // Will be AEST/AEDT depending on DST
+        "Pacific/Auckland": "NZDT", // Will be NZST/NZDT depending on DST
+      };
+
+      // Try to get from map first
+      if (tzMap[tz]) {
+        // For US zones, try to get actual DST-aware abbreviation
+        if (tz.startsWith("America/")) {
+          try {
+            return new Date().toLocaleTimeString("en-US", { timeZone: tz, timeZoneName: "short" }).split(" ").pop() || tzMap[tz];
+          } catch {
+            return tzMap[tz];
+          }
+        }
+        return tzMap[tz];
+      }
+
+      // Fallback to browser's built-in
+      try {
+        return new Date().toLocaleTimeString("en-US", { timeZone: tz, timeZoneName: "short" }).split(" ").pop() || tz;
+      } catch {
+        return tz;
+      }
+    };
 
   // User's actual timezone for display
   const userTimezone = typeof window !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "America/Chicago";

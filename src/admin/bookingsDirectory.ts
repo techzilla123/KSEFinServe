@@ -251,31 +251,58 @@ export function useBookings(): BookingDirectory {
         await refresh()
 
         // Create Google Calendar event (non-blocking)
-        if (input.availableDate && input.availableTime) {
-          try {
-            // availableTime is now an ISO string from the time slot picker
-            const startTime = input.availableTime
-            const start = new Date(startTime)
-            const end = new Date(start.getTime() + 60 * 60 * 1000) // 1 hour duration
-            const endTime = end.toISOString()
-          
-            const description = `KSEFinServe Session Booking\n\nReference: ${reference}\nClient: ${input.firstName.trim()} ${input.lastName.trim()}\nEmail: ${input.email.trim()}\nPhone: ${input.phone.trim()}\nPath: ${input.path}\nTopic: ${input.topic}\nPriorities: ${(input.priorities || []).join(', ')}\nOutcome: ${input.outcome}\nContext: ${input.context}\nQuestion: ${input.question}\nContact Method: ${input.contactMethod}\nSource: ${input.source}\nConsent Contact: ${input.consentContact}\nConsent Updates: ${input.consentUpdates}`
-          
-            await fetch(`/.netlify/functions/calendar`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                startTime,
-                endTime,
-                summary: `KSEFinServe Session - ${input.firstName.trim()} ${input.lastName.trim()}`,
-                description,
-                attendees: [input.email.trim()],
-              }),
-            })
-          } catch (calErr) {
-            console.error('Google Calendar booking failed:', calErr)
-          }
-        }
+                if (input.availableDate && input.availableTime) {
+                  try {
+                    // availableTime is an ISO string in UTC (e.g., "2026-11-11T14:00:00.000Z" for 8 AM CDT)
+                    // Extract CDT components and build proper CDT datetime string for Google Calendar
+                    const utcTime = new Date(input.availableTime);
+                    const cdtParts = utcTime.toLocaleString("en-US", {
+                      timeZone: "America/Chicago",
+                      year: "numeric",
+                      month: "2-digit",
+                      day: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                      hour12: false,
+                    }).replace(",", "").split(" ");
+                    const [month, day, year] = cdtParts[0].split("/");
+                    const [hour, minute, second] = cdtParts[1].split(":");
+                    const startTime = `${year}-${month}-${day}T${hour}:${minute}:${second}`;
+            
+                    // Add 1 hour for end time
+                    const endDate = new Date(utcTime.getTime() + 60 * 60 * 1000);
+                    const endParts = endDate.toLocaleString("en-US", {
+                      timeZone: "America/Chicago",
+                      year: "numeric",
+                      month: "2-digit",
+                      day: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                      hour12: false,
+                    }).replace(",", "").split(" ");
+                    const [endMonth, endDay, endYear] = endParts[0].split("/");
+                    const [endHour, endMinute, endSecond] = endParts[1].split(":");
+                    const endTime = `${endYear}-${endMonth}-${endDay}T${endHour}:${endMinute}:${endSecond}`;
+            
+                    const description = `KSEFinServe Session Booking\n\nReference: ${reference}\nClient: ${input.firstName.trim()} ${input.lastName.trim()}\nEmail: ${input.email.trim()}\nPhone: ${input.phone.trim()}\nPath: ${input.path}\nTopic: ${input.topic}\nPriorities: ${(input.priorities || []).join(', ')}\nOutcome: ${input.outcome}\nContext: ${input.context}\nQuestion: ${input.question}\nContact Method: ${input.contactMethod}\nSource: ${input.source}\nConsent Contact: ${input.consentContact}\nConsent Updates: ${input.consentUpdates}`
+            
+                    await fetch(`/.netlify/functions/calendar`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        startTime,
+                        endTime,
+                        summary: `KSEFinServe Session - ${input.firstName.trim()} ${input.lastName.trim()}`,
+                        description,
+                        attendees: [input.email.trim()],
+                      }),
+                    })
+                  } catch (calErr) {
+                    console.error('Google Calendar booking failed:', calErr)
+                  }
+                }
 
         // Send confirmation emails (non-blocking)
         try {

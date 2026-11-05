@@ -980,9 +980,9 @@
   background: transparent;
   color: #081d2b;
   font-family: "Mona Sans:Medium", sans-serif;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
-  line-height: 1.4;
+  line-height: 1.5;
   text-align: left;
   cursor: pointer;
   transition: background 0.1s ease;

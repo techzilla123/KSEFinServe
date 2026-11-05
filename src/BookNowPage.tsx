@@ -5,6 +5,40 @@ const A = "/assets";
 
 const CLIENT_TIMEZONE = "America/Chicago"; // CDT timezone for booking
 
+// Format ISO date/time to human-readable (e.g., "Nov 11, 2026 at 8:00 AM CDT")
+function formatDateTime(dateStr: string, timeStr: string): string {
+  if (!dateStr && !timeStr) return "Not set";
+  if (!dateStr) return `Time ${timeStr}`;
+  if (!timeStr) return dateStr;
+  
+  try {
+    const date = new Date(`${dateStr}T${timeStr}`);
+    if (isNaN(date.getTime())) return `${dateStr} at ${timeStr}`;
+    
+    const day = date.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      timeZone: CLIENT_TIMEZONE,
+    });
+    const time = date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: CLIENT_TIMEZONE,
+    });
+    const tz = date.toLocaleTimeString("en-US", {
+      timeZone: CLIENT_TIMEZONE,
+      timeZoneName: "short",
+    }).split(" ").pop() || "";
+    
+    return `${day} at ${time} ${tz}`;
+  } catch {
+    return `${dateStr} at ${timeStr}`;
+  }
+}
+
 type Step = "book" | "about" | "interests" | "review" | "received";
 
 type Details = {
@@ -890,10 +924,8 @@ function ReviewPage({
           <ReviewDetail label="Relevant context">{details.context}</ReviewDetail>
           <ReviewDetail label="Your question">{details.question}</ReviewDetail>
           <ReviewDetail label="Available time">
-            {details.availableDate || details.availableTime
-              ? `${details.availableDate || "Date not set"}${details.availableTime ? ` at ${details.availableTime}` : ""}`
-              : "Not set"}
-          </ReviewDetail>
+                      {formatDateTime(details.availableDate, details.availableTime)}
+                    </ReviewDetail>
         </ReviewSection>
         <div className="permissions">
           <h3>Your permissions</h3>
@@ -950,10 +982,7 @@ function ReviewSection({
 
 function ReceivedPage({ details, reference, restart }: { details: Details; reference?: string | null; restart: () => void }) {
   const contactDetail = details.contact === "Phone" ? details.phone : details.email;
-  const when =
-    details.availableDate || details.availableTime
-      ? `${details.availableDate || "Date not set"}${details.availableTime ? ` at ${details.availableTime}` : ""}`
-      : "To be arranged";
+  const when = formatDateTime(details.availableDate, details.availableTime);
   return (
     <main className="received-page">
       <div className="confirmation">

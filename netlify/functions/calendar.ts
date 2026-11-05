@@ -243,16 +243,15 @@ export const handler: Handler = async (event: HandlerEvent, _context: HandlerCon
       }
       
       const eventRes = await calendar.events.insert({
-        calendarId,
-        requestBody: {
-          summary: summary || "KSEFinServe Session",
-          description: description || "",
-          start: { dateTime: startTime, timeZone: CLIENT_TIMEZONE },
-          end: { dateTime: endTime, timeZone: CLIENT_TIMEZONE },
-          attendees: attendees?.map((email: string) => ({ email })) || [],
-          reminders: { useDefault: true },
-        },
-      });
+              calendarId,
+              requestBody: {
+                summary: summary || "KSEFinServe Session",
+                description: description || "",
+                start: { dateTime: startTime, timeZone: CLIENT_TIMEZONE },
+                end: { dateTime: endTime, timeZone: CLIENT_TIMEZONE },
+                reminders: { useDefault: true },
+              },
+            });
       
       return {
         statusCode: 200,

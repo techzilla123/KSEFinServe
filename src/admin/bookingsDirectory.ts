@@ -299,16 +299,15 @@ export function useBookings(): BookingDirectory {
                     const description = `KSEFinServe Session Booking\n\nReference: ${reference}\nClient: ${input.firstName.trim()} ${input.lastName.trim()}\nEmail: ${input.email.trim()}\nPhone: ${input.phone.trim()}\nPath: ${input.path}\nTopic: ${input.topic}\nPriorities: ${(input.priorities || []).join(', ')}\nOutcome: ${input.outcome}\nContext: ${input.context}\nQuestion: ${input.question}\nContact Method: ${input.contactMethod}\nSource: ${input.source}\nConsent Contact: ${input.consentContact}\nConsent Updates: ${input.consentUpdates}`
             
                     await fetch(`/.netlify/functions/calendar`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        startTime,
-                        endTime,
-                        summary: `KSEFinServe Session - ${input.firstName.trim()} ${input.lastName.trim()}`,
-                        description,
-                        attendees: [input.email.trim()],
-                      }),
-                    })
+                                          method: 'POST',
+                                          headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({
+                                            startTime,
+                                            endTime,
+                                            summary: `KSEFinServe Session - ${input.firstName.trim()} ${input.lastName.trim()}`,
+                                            description,
+                                          }),
+                                        })
                   } catch (calErr) {
                     console.error('Google Calendar booking failed:', calErr)
                   }

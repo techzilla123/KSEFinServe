@@ -963,7 +963,7 @@
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  max-height: 280px;
+  max-height: 200px;
   overflow-y: auto;
   border: 1px solid #d9d5cb;
   border-radius: 6px;
@@ -975,14 +975,14 @@
 }
 
 .book-now-page .time-dropdown-option {
-  padding: 12px 16px;
+  padding: 10px 14px;
   border: none;
   background: transparent;
   color: #081d2b;
   font-family: "Mona Sans:Medium", sans-serif;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
-  line-height: 1.5;
+  line-height: 1.4;
   text-align: left;
   cursor: pointer;
   transition: background 0.1s ease;
@@ -997,13 +997,6 @@
 .book-now-page .time-dropdown-option.selected {
   background: #eee3cb;
   color: #081d2b;
-}
-
-.book-now-page .time-dropdown-menu.menu-up {
-  top: auto;
-  bottom: calc(100% + 4px);
-  border-radius: 6px;
-  box-shadow: 0 -8px 24px rgba(8, 29, 43, 0.12);
 }
 
 .book-now-page .time-dropdown-trigger[aria-expanded="true"] .time-dropdown-chevron {

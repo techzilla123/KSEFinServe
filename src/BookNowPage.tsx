@@ -37,7 +37,7 @@ const initialDetails: Details = {
   phone: "",
   city: "",
   province: "",
-  country: "Canada",
+  country: "United States",
   contact: "Email",
   source: "LinkedIn",
   outcome: "",
@@ -187,7 +187,6 @@ function TimeSlotPicker({
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const [menuPosition, setMenuPosition] = useState<"down" | "up">("down");
 
   // Get today's date in CDT timezone for min date validation
   const getTodayInTimezone = (tz: string): string => {
@@ -238,19 +237,6 @@ function TimeSlotPicker({
       })
       .finally(() => setLoading(false));
   }, [date]);
-
-  // Calculate menu position to avoid viewport clipping
-  useEffect(() => {
-    if (!isOpen || !triggerRef.current || !menuRef.current) return;
-    
-    const triggerRect = triggerRef.current.getBoundingClientRect();
-    const menuHeight = menuRef.current.offsetHeight;
-    const spaceBelow = window.innerHeight - triggerRect.bottom;
-    const spaceAbove = triggerRect.top;
-    
-    // Flip up if not enough space below and there's more space above
-    setMenuPosition(spaceBelow < menuHeight && spaceAbove > menuHeight ? "up" : "down");
-  }, [isOpen, slots.length]);
 
   const handleDate = (value: string) => {
     onDate(value);
@@ -329,7 +315,7 @@ function TimeSlotPicker({
                 {isOpen && (
                   <div
                     ref={menuRef}
-                    className={`time-dropdown-menu ${menuPosition === "up" ? "menu-up" : ""}`}
+                    className="time-dropdown-menu"
                     role="listbox"
                     aria-label="Available time slots"
                   >
@@ -665,24 +651,31 @@ function AboutPage({
           <p>Your location helps us understand your enquiry. No street address needed.</p>
         </div>
         <div className="two-col">
-          <Input label="City · Optional" value={details.city} onChange={update("city")} placeholder="Toronto" />
-          <Input label="Province / state / region · Optional" value={details.province} onChange={update("province")} placeholder="Ontario" />
-        </div>
-        <SelectField label="Country" value={details.country} onChange={update("country")} required>
-          <option>Canada</option>
-          <option>United States</option>
-          <option>United Kingdom</option>
-        </SelectField>
+                  <Input label="City · Optional" value={details.city} onChange={update("city")} placeholder="New York" />
+                  <Input label="Province / state / region · Optional" value={details.province} onChange={update("province")} placeholder="New York" />
+                </div>
+                <SelectField label="Country" value={details.country} onChange={update("country")} required>
+                  <option>United States</option>
+                  <option>Canada</option>
+                  <option>United Kingdom</option>
+                </SelectField>
         <div className="two-col">
           <SelectField label="Preferred contact method" value={details.contact} onChange={update("contact")} required>
             <option>Email</option>
             <option>Phone</option>
           </SelectField>
           <SelectField label="How did you hear about KSE? · Optional" value={details.source} onChange={update("source")}>
-            <option>LinkedIn</option>
-            <option>Referral</option>
-            <option>Search</option>
-          </SelectField>
+                      <option>LinkedIn</option>
+                      <option>Referral</option>
+                      <option>Search</option>
+                      <option>Social Media (Instagram, Twitter, Facebook)</option>
+                      <option>Email Newsletter</option>
+                      <option>Event / Webinar</option>
+                      <option>Podcast</option>
+                      <option>Article / Blog Post</option>
+                      <option>Word of Mouth</option>
+                      <option>Other</option>
+                    </SelectField>
         </div>
         <p className="footnote">
           We’ll use these details to follow up on your request. You’ll review your
@@ -728,11 +721,11 @@ function InterestsPage({
     setDetails({ ...details, priorities: next });
   };
   const choosePath = (next: string) => {
-    setPath(next);
-    setDetails({ ...details, path: next });
-  };
-  const update = (key: keyof Details) => (value: string) =>
-    setDetails({ ...details, [key]: value });
+      setPath(next);
+      setDetails({ ...details, path: next });
+    };
+    const update = (key: keyof Details) => (value: string) =>
+        setDetails((prev: Details) => ({ ...prev, [key]: value }));
   const choices = [
     "Retirement planning",
     "Growing my wealth",

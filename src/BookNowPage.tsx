@@ -228,14 +228,14 @@ function TimeSlotPicker({
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  // Get today's date in CDT timezone for min date validation
-  const getTodayInTimezone = (tz: string): string => {
-    try {
-      return new Date().toLocaleDateString("en-CA", { timeZone: tz }); // YYYY-MM-DD
-    } catch {
-      return new Date().toISOString().split("T")[0];
-    }
-  };
+  // Get today's date in USER'S timezone for min date validation
+    const getTodayInTimezone = (tz: string): string => {
+      try {
+        return new Date().toLocaleDateString("en-CA", { timeZone: tz }); // YYYY-MM-DD
+      } catch {
+        return new Date().toISOString().split("T")[0];
+      }
+    };
 
   // Fetch available slots when date changes
   useEffect(() => {
@@ -323,7 +323,7 @@ function TimeSlotPicker({
           <input
             type="date"
             required={required}
-            min={getTodayInTimezone("America/Chicago")}
+            min={getTodayInTimezone(userTimezone)}
             value={date}
             onChange={(event) => handleDate(event.target.value)}
           />

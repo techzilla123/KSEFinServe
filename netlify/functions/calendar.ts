@@ -1,5 +1,6 @@
 import type { Handler, HandlerEvent, HandlerContext } from "@netlify/functions";
 import { google, calendar_v3 } from "googleapis";
+import { createClient } from "@supabase/supabase-js";
 
 // ===== CONFIG =====
 // Calendar service for KSEFinServe bookings - timezone: America/Chicago (CST/CDT)
@@ -13,6 +14,14 @@ const BUSINESS_HOURS = {
 };
 const SLOT_DURATION_MINUTES = 60;
 const GAP_MINUTES = 0; // no gap - only exact busy periods blocked
+
+// ===== SUPABASE CLIENT =====
+function getSupabase() {
+  const url = process.env.VITE_SUPABASE_URL;
+  const key = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key);
+}
 
 // ===== GOOGLE AUTH =====
 function getAuth() {
@@ -133,7 +142,10 @@ async function getBusySlots(calendar: calendar_v3.Calendar, calendarId: string, 
   const dayStart = parseDateInZone(dateStr, CLIENT_TIMEZONE);
   const dayEnd = new Date(dayStart);
   dayEnd.setHours(23, 59, 59, 999);
-  
+
+  // 1. Google Calendar freebusy
+  let allBusy: Array<{ start: Date; end: Date }> = [];
+
   const res = await calendar.freebusy.query({
     requestBody: {
       timeMin: dayStart.toISOString(),
@@ -142,12 +154,45 @@ async function getBusySlots(calendar: calendar_v3.Calendar, calendarId: string, 
       items: [{ id: calendarId }],
     },
   });
-  
+
   const busy = res.data.calendars?.[calendarId]?.busy ?? [];
-  return busy.map((b) => ({
+  allBusy = busy.map((b) => ({
     start: new Date(b.start!),
     end: new Date(b.end!),
   }));
+
+  // 2. Supabase local bookings (fallback for bookings not synced to Google Calendar)
+  const supabase = getSupabase();
+  if (supabase) {
+    try {
+      const { data: bookings } = await supabase
+        .from("bookings")
+        .select("available_date, available_time")
+        .eq("available_date", dateStr)
+        .neq("status", "Cancelled");
+
+      if (bookings && bookings.length > 0) {
+        for (const booking of bookings) {
+          if (booking.available_time) {
+            // booking.available_time is ISO string in UTC
+            const start = new Date(booking.available_time);
+            const end = new Date(start.getTime() + 60 * 60 * 1000); // 1-hour slot
+            // Check if this local booking time is not already covered by Google Calendar busy
+            const alreadyCovered = allBusy.some((b) =>
+              b.start.getTime() === start.getTime() && b.end.getTime() === end.getTime()
+            );
+            if (!alreadyCovered) {
+              allBusy.push({ start, end });
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Supabase busy slots fetch failed:", e);
+    }
+  }
+
+  return allBusy;
 }
 
 function isSlotAvailable(

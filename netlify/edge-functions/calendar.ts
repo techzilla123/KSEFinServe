@@ -10,6 +10,7 @@ const BUSINESS_HOURS = {
   sunday: { start: 14, end: 18 }, // 2 PM - 6 PM
 };
 const SLOT_DURATION_MINUTES = 60;
+const GAP_MINUTES = 60; // 1-hour gap between meetings
 
 function formatTimeInZone(date: Date, zone: string): string {
   return date.toLocaleTimeString("en-US", {
@@ -93,6 +94,85 @@ function generateSlotsForDate(dateStr: string): Array<{ start: Date; end: Date; 
   return slots;
 }
 
+async function getBusySlots(dateStr: string): Promise<Array<{ start: Date; end: Date }>> {
+  const serviceAccountJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  if (!serviceAccountJson) return [];
+
+  try {
+    const cleaned = serviceAccountJson.trim().replace(/^\uFEFF/, "");
+    const credentials = JSON.parse(cleaned);
+
+    if (credentials.private_key && credentials.private_key.includes("\\n") && !credentials.private_key.includes("\n")) {
+      credentials.private_key = credentials.private_key.replace(/\\n/g, "\n");
+    }
+
+    const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+        assertion: await createJwt(credentials),
+      }),
+    });
+
+    const tokenData = await tokenResponse.json();
+    const accessToken = tokenData.access_token;
+    if (!accessToken) return [];
+
+    const calendarId = process.env.GOOGLE_CALENDAR_ID || "primary";
+
+    const dayStart = new Date(`${dateStr}T00:00:00`);
+    const dayEnd = new Date(dayStart);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    const freebusyResponse = await fetch(
+      "https://www.googleapis.com/calendar/v3/freebusy",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          timeMin: dayStart.toISOString(),
+          timeMax: dayEnd.toISOString(),
+          timeZone: CLIENT_TIMEZONE,
+          items: [{ id: calendarId }],
+        }),
+      },
+    );
+
+    if (!freebusyResponse.ok) return [];
+
+    const freebusyData = await freebusyResponse.json();
+    const busy = freebusyData.calendars?.[calendarId]?.busy ?? [];
+    return busy.map((b: any) => ({
+      start: new Date(b.start),
+      end: new Date(b.end),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function isSlotAvailable(
+  slotStart: Date,
+  slotEnd: Date,
+  busySlots: Array<{ start: Date; end: Date }>
+): boolean {
+  for (const busy of busySlots) {
+    const gapStart = new Date(busy.start);
+    gapStart.setMinutes(gapStart.getMinutes() - GAP_MINUTES);
+    const gapEnd = new Date(busy.end);
+    gapEnd.setMinutes(gapEnd.getMinutes() + GAP_MINUTES);
+
+    if (slotStart < gapEnd && slotEnd > gapStart) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export default async (request: Request, context: Context): Promise<Response> => {
   const url = new URL(request.url);
   const path = url.pathname;
@@ -128,12 +208,16 @@ export default async (request: Request, context: Context): Promise<Response> => 
     }
 
     const allSlots = generateSlotsForDate(date);
+    const busySlots = await getBusySlots(date);
+    const availableSlots = allSlots.filter((slot) =>
+      isSlotAvailable(slot.start, slot.end, busySlots)
+    );
 
     return new Response(
       JSON.stringify({
         date,
         timezone: CLIENT_TIMEZONE,
-        slots: allSlots.map((s) => ({
+        slots: availableSlots.map((s) => ({
           label: s.label,
           value: s.value,
           start: s.start.toISOString(),

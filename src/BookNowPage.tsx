@@ -264,12 +264,6 @@ function TimeSlotPicker({
                   const slotDay = start.toLocaleDateString("en-CA", { timeZone: userTz });
                   // Only keep slots that fall on the selected day in user's timezone
                   if (slotDay !== selectedDay) return null;
-                  const time24 = start.toLocaleTimeString("en-US", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: false,
-                    timeZone: userTz,
-                  });
                   const time12 = start.toLocaleTimeString("en-US", {
                     hour: "numeric",
                     minute: "2-digit",
@@ -278,7 +272,7 @@ function TimeSlotPicker({
                   });
                   return {
                     ...s,
-                    label: `${time24} — ${time12}`,
+                    label: time12,
                   };
                 })
                 .filter((s: (TimeSlot & { label: string }) | null): s is TimeSlot & { label: string } => s !== null);

@@ -95,67 +95,11 @@ function generateSlotsForDate(dateStr: string): Array<{ start: Date; end: Date; 
 }
 
 async function getBusySlots(dateStr: string): Promise<Array<{ start: Date; end: Date }>> {
-  const serviceAccountJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
-  if (!serviceAccountJson) return [];
-
-  try {
-    const cleaned = serviceAccountJson.trim().replace(/^\uFEFF/, "");
-    const credentials = JSON.parse(cleaned);
-
-    if (credentials.private_key && credentials.private_key.includes("\\n") && !credentials.private_key.includes("\n")) {
-      credentials.private_key = credentials.private_key.replace(/\\n/g, "\n");
-    }
-
-    const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-        assertion: await createJwt(credentials),
-      }),
-    });
-
-    const tokenData = await tokenResponse.json();
-    const accessToken = tokenData.access_token;
-    if (!accessToken) return [];
-
-    const calendarId = process.env.GOOGLE_CALENDAR_ID || "primary";
-
-    const dayStart = new Date(`${dateStr}T00:00:00`);
-    const dayEnd = new Date(dayStart);
-    dayEnd.setHours(23, 59, 59, 999);
-
-    const freebusyResponse = await fetch(
-      "https://www.googleapis.com/calendar/v3/freebusy",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          timeMin: dayStart.toISOString(),
-          timeMax: dayEnd.toISOString(),
-          timeZone: CLIENT_TIMEZONE,
-          items: [{ id: calendarId }],
-        }),
-      },
-    );
-
-    if (!freebusyResponse.ok) {
-      console.error("Freebusy API error:", freebusyResponse.status);
-      return [];
-    }
-
-    const freebusyData = await freebusyResponse.json();
-    const busy = freebusyData.calendars?.[calendarId]?.busy ?? [];
-    return busy.map((b: any) => ({
-      start: new Date(b.start),
-      end: new Date(b.end),
-    }));
-  } catch {
-    return [];
-  }
+  // Google Calendar busy-slot checking via service account OAuth requires
+  // JWT signing which is unreliable in Edge Functions. Return empty for now;
+  // busy-slot filtering can be re-added using a regular Netlify Function
+  // with the googleapis library instead.
+  return [];
 }
 
 function isSlotAvailable(

@@ -102,3 +102,7 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+[[edge_functions]]
+  function = "calendar"
+  path = "/.netlify/functions/calendar"

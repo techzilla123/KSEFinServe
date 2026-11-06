@@ -89,27 +89,29 @@ export function useCareers(): CareerDirectory {
   const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const { data, error: err } = await supabase
-        .from('career_applications')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(500)
-      if (err) {
-        setError(err.message)
+      setLoading(true)
+      setError(null)
+      try {
+        const cacheBust = Date.now()
+        const { data, error: err } = await supabase
+          .from('career_applications')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(500)
+          .neq('id', `cache-bust-${cacheBust}`)
+        if (err) {
+          setError(err.message)
+          setApplications([])
+        } else {
+          setApplications((data ?? []).map((r) => toCareer(r as Record<string, any>)))
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Could not load career applications.')
         setApplications([])
-      } else {
-        setApplications((data ?? []).map((r) => toCareer(r as Record<string, any>)))
+      } finally {
+        setLoading(false)
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not load career applications.')
-      setApplications([])
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+    }, [])
 
   useEffect(() => {
     void refresh()

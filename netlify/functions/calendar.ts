@@ -11,8 +11,8 @@ const BUSINESS_HOURS = {
   end: 21,   // 9 PM
   sunday: { start: 14, end: 18 }, // 2 PM - 6 PM
 };
-const SLOT_DURATION_MINUTES = 60; // 1-hour slots
-const GAP_MINUTES = 60; // 1-hour gap between meetings
+const SLOT_DURATION_MINUTES = 60;
+const GAP_MINUTES = 30; // 30-min gap between meetings
 
 // ===== GOOGLE AUTH =====
 function getAuth() {

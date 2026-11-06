@@ -255,20 +255,27 @@ function TimeSlotPicker({
       .then((data) => {
                     // Convert slot times to user's local timezone for display
                     const userTz = typeof window !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "America/Chicago";
+                    const selectedDate = new Date(date + "T00:00:00");
+                    const selectedDay = selectedDate.toLocaleDateString("en-CA", { timeZone: userTz }); // YYYY-MM-DD in user TZ
 
-                    const convertedSlots = (data.slots || []).map((s: TimeSlot) => {
-                      const start = new Date(s.start);
-                      const time12 = start.toLocaleTimeString("en-US", {
-                        hour: "numeric",
-                        minute: "2-digit",
-                        hour12: true,
-                        timeZone: userTz,
-                      });
-                      return {
-                        ...s,
-                        label: time12,
-                      };
-                    });
+                    const convertedSlots = (data.slots || [])
+                      .map((s: TimeSlot) => {
+                        const start = new Date(s.start);
+                        const slotDay = start.toLocaleDateString("en-CA", { timeZone: userTz });
+                        // Only keep slots that fall on the selected day in user's timezone
+                        if (slotDay !== selectedDay) return null;
+                        const time12 = start.toLocaleTimeString("en-US", {
+                          hour: "numeric",
+                          minute: "2-digit",
+                          hour12: true,
+                          timeZone: userTz,
+                        });
+                        return {
+                          ...s,
+                          label: time12,
+                        };
+                      })
+                      .filter((s: (TimeSlot & { label: string }) | null): s is TimeSlot & { label: string } => s !== null);
 
                     setSlots(convertedSlots);
                     setTimezone(data.timezone || "America/Chicago");

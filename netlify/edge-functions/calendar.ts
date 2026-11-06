@@ -142,7 +142,10 @@ async function getBusySlots(dateStr: string): Promise<Array<{ start: Date; end: 
       },
     );
 
-    if (!freebusyResponse.ok) return [];
+    if (!freebusyResponse.ok) {
+      console.error("Freebusy API error:", freebusyResponse.status);
+      return [];
+    }
 
     const freebusyData = await freebusyResponse.json();
     const busy = freebusyData.calendars?.[calendarId]?.busy ?? [];

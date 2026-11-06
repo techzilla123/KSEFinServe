@@ -253,24 +253,43 @@ function TimeSlotPicker({
         return res.json();
       })
       .then((data) => {
-        // Convert slot times to user's local timezone for display
-        const userTz = typeof window !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "America/Chicago";
-        const convertedSlots = (data.slots || []).map((s: TimeSlot) => ({
-          ...s,
-          label: new Date(s.start).toLocaleTimeString("en-US", {
-            hour: "numeric",
-            minute: "2-digit",
-            hour12: true,
-            timeZone: userTz,
-          }),
-        }));
-        setSlots(convertedSlots);
-        setTimezone(data.timezone || "America/Chicago");
-        // If previously selected time is no longer available, clear it
-        if (time && !data.slots?.some((s: TimeSlot) => s.value === time)) {
-          onTime("");
-        }
-      })
+              // Convert slot times to user's local timezone for display
+              const userTz = typeof window !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "America/Chicago";
+              const selectedDate = new Date(date + "T00:00:00");
+              const selectedDay = selectedDate.toLocaleDateString("en-CA", { timeZone: userTz }); // YYYY-MM-DD in user TZ
+
+              const convertedSlots = (data.slots || [])
+                .map((s: TimeSlot) => {
+                  const start = new Date(s.start);
+                  const slotDay = start.toLocaleDateString("en-CA", { timeZone: userTz });
+                  // Only keep slots that fall on the selected day in user's timezone
+                  if (slotDay !== selectedDay) return null;
+                  const time24 = start.toLocaleTimeString("en-US", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: false,
+                    timeZone: userTz,
+                  });
+                  const time12 = start.toLocaleTimeString("en-US", {
+                    hour: "numeric",
+                    minute: "2-digit",
+                    hour12: true,
+                    timeZone: userTz,
+                  });
+                  return {
+                    ...s,
+                    label: `${time24} — ${time12}`,
+                  };
+                })
+                .filter((s: (TimeSlot & { label: string }) | null): s is TimeSlot & { label: string } => s !== null);
+
+              setSlots(convertedSlots);
+              setTimezone(data.timezone || "America/Chicago");
+              // If previously selected time is no longer available, clear it
+              if (time && !data.slots?.some((s: TimeSlot) => s.value === time)) {
+                onTime("");
+              }
+            })
       .catch((err) => {
         setError(err.message);
         setSlots([]);

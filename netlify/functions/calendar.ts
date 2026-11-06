@@ -109,17 +109,12 @@ function generateSlotsForDate(dateStr: string): Array<{ start: Date; end: Date; 
     endHour = BUSINESS_HOURS.sunday.end;
   }
 
-  // Get the timezone offset for this date in America/Chicago (handles DST)
-    const offsetHours = getTimezoneOffsetHours(dateStr);
-    const offsetSign = offsetHours >= 0 ? "+" : "-";
-    const offsetAbs = Math.abs(offsetHours);
-    const offsetStr = `${offsetSign}${String(offsetAbs).padStart(2, "0")}:00`;
-
   for (let hour = startHour; hour < endHour; hour += SLOT_DURATION_MINUTES / 60) {
-    // Create date in the target timezone by constructing ISO string with explicit offset
-    const start = new Date(`${dateStr}T${String(hour).padStart(2, "0")}:00:00${offsetStr}`);
+    // Create date in the target timezone using toLocaleString to get the proper UTC time
+    // This creates a Date that represents `hour:00` in America/Chicago
+    const start = new Date(new Date(`${dateStr}T${String(hour).padStart(2, "0")}:00:00`).toLocaleString("en-US", { timeZone: CLIENT_TIMEZONE }));
     const endHourVal = hour + SLOT_DURATION_MINUTES / 60;
-    const end = new Date(`${dateStr}T${String(endHourVal).padStart(2, "0")}:00:00${offsetStr}`);
+    const end = new Date(new Date(`${dateStr}T${String(endHourVal).padStart(2, "0")}:00:00`).toLocaleString("en-US", { timeZone: CLIENT_TIMEZONE }));
 
     if (isWithinBusinessHours(start)) {
       slots.push({

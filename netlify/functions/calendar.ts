@@ -12,7 +12,7 @@ const BUSINESS_HOURS = {
   sunday: { start: 14, end: 18 }, // 2 PM - 6 PM
 };
 const SLOT_DURATION_MINUTES = 60;
-const GAP_MINUTES = 30; // 30-min gap between meetings
+const GAP_MINUTES = 0; // no gap - only exact busy periods blocked
 
 // ===== GOOGLE AUTH =====
 function getAuth() {

@@ -59,6 +59,45 @@ function formatDateTime(dateStr: string, timeStr: string): string {
   }
 }
 
+// Format ISO date/time to human-readable in CDT (America/Chicago) timezone for admin emails/dashboard
+function formatDateTimeCDT(dateStr: string, timeStr: string): string {
+  if (!dateStr && !timeStr) return "Not set";
+  if (!dateStr) return `Time ${timeStr}`;
+  if (!timeStr) return dateStr;
+
+  try {
+    let date: Date;
+    if (timeStr.includes('T') || timeStr.includes('Z') || timeStr.includes('.')) {
+      date = new Date(timeStr);
+    } else {
+      date = new Date(`${dateStr}T${timeStr}`);
+    }
+    if (isNaN(date.getTime())) return `${dateStr} at ${timeStr}`;
+
+    const day = date.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      timeZone: "America/Chicago",
+    });
+    const time = date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "America/Chicago",
+    });
+    const tz = date.toLocaleTimeString("en-US", {
+      timeZone: "America/Chicago",
+      timeZoneName: "short",
+    }).split(" ").pop() || "";
+
+    return `${day} at ${time} ${tz}`;
+  } catch {
+    return `${dateStr} at ${timeStr}`;
+  }
+}
+
 function css(styles) {
   return Object.entries(styles)
     .map(([k, v]) => k.replace(/([A-Z])/g, "-$1").toLowerCase() + ": " + v)
@@ -986,9 +1025,13 @@ export async function sendBookingConfirmation(params) {
   const adminEmail = params.adminEmail ?? "admin@ksefinserve.com";
   const reference = params.reference ?? `SES-${Date.now().toString(36).toUpperCase()}`;
 
-  // Format date/time for display in user's local timezone
+  // Format date/time for display in USER'S LOCAL timezone (for user email)
   const formattedDateTime = formatDateTime(params.bookingDate, params.bookingTime);
   const [formattedDate, formattedTime] = formattedDateTime.split(" at ");
+
+  // Format date/time for CDT (admin email/dashboard)
+  const formattedDateTimeCDT = formatDateTimeCDT(params.bookingDate, params.bookingTime);
+  const [formattedDateCDT, formattedTimeCDT] = formattedDateTimeCDT.split(" at ");
 
   // Build Google Calendar URL for user
   const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(params.serviceType + ' Session')}&dates=${encodeURIComponent(params.bookingDate + ' ' + params.bookingTime)}/&details=${encodeURIComponent('Your KSEFinServe session with Kayode Samson Elepe, RR. Reference: ' + reference)}`;
@@ -1009,8 +1052,8 @@ export async function sendBookingConfirmation(params) {
     userName: params.userName,
     userEmail: params.userEmail,
     userPhone: params.userPhone ?? "",
-    bookingDate: formattedDate,
-    bookingTime: formattedTime,
+    bookingDate: formattedDateCDT,
+    bookingTime: formattedTimeCDT,
     serviceType: params.serviceType,
     reference,
     priorities: params.priorities,
@@ -1031,7 +1074,7 @@ export async function sendBookingConfirmation(params) {
 
   const [user, admin] = await Promise.all([
     sendEmail({ to: params.userEmail, subject: "Booking Confirmed — KSEFinServe", html: userHtml, text: `Booking Confirmed - ${params.serviceType} on ${formattedDate} at ${formattedTime}. Reference: ${reference}` }),
-    sendEmail({ to: adminEmail, subject: `New Booking Received — KSEFinServe (${reference})`, html: adminHtml, text: `New booking from ${params.userName} (${params.userEmail}) - ${params.serviceType} on ${formattedDate} at ${formattedTime}. Reference: ${reference}` }),
+    sendEmail({ to: adminEmail, subject: `New Booking Received — KSEFinServe (${reference})`, html: adminHtml, text: `New booking from ${params.userName} (${params.userEmail}) - ${params.serviceType} on ${formattedDateCDT} at ${formattedTimeCDT}. Reference: ${reference}` }),
   ]);
   return { user, admin };
 }

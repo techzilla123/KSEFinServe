@@ -2,6 +2,7 @@ import type { Handler, HandlerEvent, HandlerContext } from "@netlify/functions";
 import { google, calendar_v3 } from "googleapis";
 
 // ===== CONFIG =====
+// Calendar service for KSEFinServe bookings - timezone: America/Chicago (CST/CDT)
 const SCOPES = ["https://www.googleapis.com/auth/calendar"];
 const CLIENT_TIMEZONE = "America/Chicago"; // CDT = America/Chicago
 const BUSINESS_HOURS = {

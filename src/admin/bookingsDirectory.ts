@@ -199,29 +199,27 @@ export function useBookings(): BookingDirectory {
   const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const cacheBust = Date.now()
-        const { data, error: err } = await supabase
-          .from('bookings')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(500)
-          .neq('id', `cache-bust-${cacheBust}`)
-        if (err) {
-          setError(err.message)
+        setLoading(true)
+        setError(null)
+        try {
+          const { data, error: err } = await supabase
+            .from('bookings')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(500)
+          if (err) {
+            setError(err.message)
+            setBookings([])
+          } else {
+            setBookings((data ?? []).map((r) => toBooking(r as Record<string, any>)))
+          }
+        } catch (e) {
+          setError(e instanceof Error ? e.message : 'Could not load bookings.')
           setBookings([])
-        } else {
-          setBookings((data ?? []).map((r) => toBooking(r as Record<string, any>)))
+        } finally {
+          setLoading(false)
         }
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Could not load bookings.')
-        setBookings([])
-      } finally {
-        setLoading(false)
-      }
-    }, [])
+      }, [])
 
   useEffect(() => {
     void refresh()

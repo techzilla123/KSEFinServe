@@ -92,13 +92,11 @@ export function useCareers(): CareerDirectory {
       setLoading(true)
       setError(null)
       try {
-        const cacheBust = Date.now()
         const { data, error: err } = await supabase
           .from('career_applications')
           .select('*')
           .order('created_at', { ascending: false })
           .limit(500)
-          .neq('id', `cache-bust-${cacheBust}`)
         if (err) {
           setError(err.message)
           setApplications([])

@@ -344,10 +344,18 @@ function TimeSlotPicker({
     };
 
   // User's actual timezone for display
-  const userTimezone = typeof window !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "America/Chicago";
-  const userTimezoneLabel = getTimezoneLabel(userTimezone);
+    const userTimezone = typeof window !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "America/Chicago";
+    const [userTimezoneLabel, setUserTimezoneLabel] = useState(() => getTimezoneLabel(userTimezone));
 
-  const selectedSlot = slots.find((s) => s.value === time);
+    // Update timezone label every minute to show current time
+    useEffect(() => {
+      const updateLabel = () => setUserTimezoneLabel(getTimezoneLabel(userTimezone));
+      updateLabel();
+      const interval = setInterval(updateLabel, 60000);
+      return () => clearInterval(interval);
+    }, [userTimezone]);
+
+    const selectedSlot = slots.find((s) => s.value === time);
 
   // Clock icon SVG
   const clockIcon = (

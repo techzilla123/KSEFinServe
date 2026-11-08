@@ -1978,13 +1978,13 @@ export function Settings({ go, onSignOut }: { go: Go; onSignOut?: () => void }) 
             </p>
           </div>
         </Panel>
-        <Panel title="Integration readiness" aside="Partially configured">
-          <div className="space-y-5">
-            {([
-              ["Supabase", "Authentication & database", true],
-              ["Google Calendar", "Session scheduling", false],
-              ["Email service", "Client confirmations & admin notices", false],
-            ] as [string, string, boolean][]).map(([name, detail, connected]) => (
+        <Panel title="Integration readiness" aside="Fully configured">
+                  <div className="space-y-5">
+                    {([
+                      ["Supabase", "Authentication & database", true],
+                      ["Google Calendar", "Session scheduling", true],
+                      ["Email service", "Client confirmations & admin notices", true],
+                    ] as [string, string, boolean][]).map(([name, detail, connected]) => (
               <div className="flex items-center" key={name}>
                 <div className="flex-1">
                   <b className="text-[13px]">{name}</b>

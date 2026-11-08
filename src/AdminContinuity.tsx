@@ -10,7 +10,7 @@ import {
   type Role,
 } from "./admin/adminDirectory"
 import { supabase } from "./admin/supabaseClient"
-import { useBookings, sessionDuration, usTimeLabel, type Booking } from "./admin/bookingsDirectory"
+import { useBookings, sessionDuration, usTimeLabel, userLocalTimeLabel, type Booking } from "./admin/bookingsDirectory"
 import { useEvents, eventWhen, uploadToCloudinary, type KseEvent } from "./admin/eventsDirectory"
 import { useNotifications, type Notification } from "./admin/notifications"
 
@@ -1499,12 +1499,12 @@ export function BookingDetail({ go, bookingId }: { go: Go; bookingId?: string | 
         </div>
         <aside className="space-y-6">
           <Panel title="Session schedule">
-            <Status>{booking.status}{booking.status === "Upcoming" ? " · Proposed" : ""}</Status>
-            <h3 className="my-5 text-[23px] font-semibold">{when}</h3>
-            <p className="text-[18px]">{booking.availableTime || "Time to be arranged"}</p>
-            <p className="mt-3 text-[11px] text-[#66757d]">
-              Converted to United States Central Time · CDT
-            </p>
+                      <Status>{booking.status}{booking.status === "Upcoming" ? " · Proposed" : ""}</Status>
+                      <h3 className="my-5 text-[23px] font-semibold">{when}</h3>
+                      <p className="text-[18px]">{userLocalTimeLabel(booking.availableTime, booking.country)}</p>
+                      <p className="mt-3 text-[11px] text-[#66757d]">
+                        Converted to United States Central Time · CDT
+                      </p>
             <hr className="my-5 border-[#dddcd5]" />
             <Pair label="Assigned adviser" value={booking.adviser} />
             <div className="mt-4">

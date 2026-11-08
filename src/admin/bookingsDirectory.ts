@@ -180,6 +180,61 @@ export function usTimeLabel(date: string, time: string): string {
   return `${day} · ${clock} ${abbr} (${shortDate})`
 }
 
+/** Convert stored UTC ISO time to user's local time for display.
+ *  Infers timezone from country if available, otherwise shows UTC. */
+export function userLocalTimeLabel(isoTime: string, country?: string): string {
+  if (!isoTime) return 'Time to be arranged'
+  
+  let parsed: Date
+  if (isoTime.includes('T') || isoTime.includes('Z') || (isoTime.includes('.') && isoTime.includes(':'))) {
+    parsed = new Date(isoTime)
+  } else {
+    // Not an ISO string, return as-is
+    return isoTime
+  }
+  
+  if (Number.isNaN(parsed.getTime())) return isoTime
+
+  // Infer timezone from country
+  const countryTimezones: Record<string, string> = {
+    'Nigeria': 'Africa/Lagos',       // WAT
+    'United States': 'America/Chicago', // CDT/CST
+    'United Kingdom': 'Europe/London',  // BST/GMT
+    'Canada': 'America/Toronto',       // EDT/EST
+    'Ghana': 'Africa/Accra',           // GMT
+    'South Africa': 'Africa/Johannesburg', // SAST
+    'Kenya': 'Africa/Nairobi',         // EAT
+    'United Arab Emirates': 'Asia/Dubai',   // GST
+    'Singapore': 'Asia/Singapore',     // SGT
+    'Australia': 'Australia/Sydney',   // AEDT/AEST
+  }
+  
+  const tz = countryTimezones[country || ''] || 'UTC'
+  
+  const day = parsed.toLocaleDateString('en-US', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: tz,
+  })
+  
+  const clock = parsed.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: tz,
+  })
+  
+  // Get timezone abbreviation
+  const abbr = parsed.toLocaleTimeString('en-US', {
+    timeZone: tz,
+    timeZoneName: 'short',
+  }).split(' ').pop() || tz
+
+  return `${day} · ${clock} ${abbr}`
+}
+
 /** Turn a database row into the shape the admin UI uses. */
 function toBooking(row: Record<string, any>): Booking {
   const status = (row.status as string) ?? 'Upcoming'

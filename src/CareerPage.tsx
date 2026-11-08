@@ -312,10 +312,10 @@ function ApplicationForm() {
               <div className="field-grid">
                 <Field label="Full name *"><input required name="name" autoComplete="name" placeholder="Your full name" value={details.name} onChange={setDetail("name")} /></Field>
                 <Field label="Email address *"><input required name="email" type="email" autoComplete="email" placeholder="you@example.com" value={details.email} onChange={setDetail("email")} /></Field>
-                <Field label="WhatsApp number *"><input required name="phone" type="tel" autoComplete="tel" placeholder="+234 800 000 0000" value={details.phone} onChange={setDetail("phone")} /><small>Include your country code.</small></Field>
+                <Field label="Phone number *"><input required name="phone" type="tel" autoComplete="tel" placeholder="+234 800 000 0000" value={details.phone} onChange={setDetail("phone")} /><small>Include your country code.</small></Field>
                 <Field label="Location *"><input required name="location" autoComplete="address-level2" placeholder="City, state / province, country" value={details.location} onChange={setDetail("location")} /></Field>
               </div>
-              <div className="choice-block"><b>Preferred contact method</b><div>{["WhatsApp", "Email"].map(x => <button type="button" className={contact === x ? "chip selected" : "chip"} onClick={() => setContact(x)} key={x}>{x}</button>)}</div></div>
+              <div className="choice-block"><b>Preferred contact method</b><div>{["Phone", "Email"].map(x => <button type="button" className={contact === x ? "chip selected" : "chip"} onClick={() => setContact(x)} key={x}>{x}</button>)}</div></div>
               <hr /><button className="submit" type="submit">Next</button>
             </> : <div key="step-2">
               <div className="field-grid">

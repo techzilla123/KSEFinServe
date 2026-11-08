@@ -1200,9 +1200,9 @@ export default function App() {
               <Art src={artwork.underline} />
             </div>
             <div className="work-paths flex flex-wrap justify-center gap-6">
-              <Link href="#services">Explore Wealth Strategies</Link>
-              <BookingLink variant="text">Become an Advisor</BookingLink>
-            </div>
+                          <Link href="#services">Explore Wealth Strategies</Link>
+                          <Link href="/career" className="button button-text">Become an Advisor</Link>
+                        </div>
           </div>
         </section>
 
@@ -1358,10 +1358,10 @@ export default function App() {
                   <Heading level={3}>{item.title}</Heading>
                   <p>{item.text}</p>
                   <span className="button service-card-cta">
-                    {item.title === "Wealth Strategy"
-                      ? "Book a Strategy Session"
-                      : "Explore the opportunity"}
-                  </span>
+                                      {item.title === "Wealth Strategy"
+                                        ? "Book a Strategy Session"
+                                        : "Explore the opportunity"}
+                                    </span>
                 </a>
               ))}
             </div>

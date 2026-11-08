@@ -1771,16 +1771,22 @@ a {
     }
 
     .service-card-cta {
-      display: block;
-      width: fit-content;
-      margin: 0 auto;
-      padding: 8px 14px;
-      border-radius: 999px;
-      font-family: "Mona Sans:SemiBold", sans-serif;
-      font-size: 9px;
-      font-weight: 600;
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      padding: 12.5px 16px 13.5px;
+      width: 195px;
+      height: 46px;
+      background: #0D2B42;
+      border-radius: 8px;
+      font-family: "Mona Sans:Medium", sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 20px;
       text-align: center;
-      white-space: nowrap;
+      color: #FFFFFF;
+      text-decoration: none;
     }
 
     .service-card-cta.service-button-light {

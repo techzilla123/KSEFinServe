@@ -696,7 +696,7 @@ function AboutPage({
   back,
 }: {
   details: Details;
-  setDetails: (details: Details) => void;
+  setDetails: React.Dispatch<React.SetStateAction<Details>>;
   next: () => void;
   back: () => void;
 }) {
@@ -791,7 +791,7 @@ function InterestsPage({
   back,
 }: {
   details: Details;
-  setDetails: (details: Details) => void;
+  setDetails: React.Dispatch<React.SetStateAction<Details>>;
   next: () => void;
   back: () => void;
 }) {
@@ -923,7 +923,7 @@ function ReviewPage({
   error,
 }: {
   details: Details;
-  setDetails: (details: Details) => void;
+  setDetails: React.Dispatch<React.SetStateAction<Details>>;
   back: () => void;
   submit: () => void;
   edit: (step: Step) => void;

@@ -214,7 +214,7 @@ function CareerFaqs() {
 
 function ApplicationForm() {
   const [step, setStep] = useState(1);
-  const [contact, setContact] = useState("WhatsApp");
+  const [contact, setContact] = useState("Phone");
   const [interests, setInterests] = useState<string[]>([]);
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);

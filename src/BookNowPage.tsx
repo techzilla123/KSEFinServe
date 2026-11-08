@@ -44,6 +44,42 @@ function formatDateTime(dateStr: string, timeStr: string): string {
   }
 }
 
+// Format timezone for display (e.g., "WAT")
+function getTimezoneLabel(tz: string): string {
+  // Known timezone abbreviations for common zones
+  const tzMap: Record<string, string> = {
+    "Africa/Lagos": "WAT",
+    "Africa/Cairo": "EET",
+    "Africa/Johannesburg": "SAST",
+    "America/Chicago": "CDT",
+    "America/New_York": "EDT",
+    "America/Los_Angeles": "PDT",
+    "Europe/London": "BST",
+    "Europe/Paris": "CEST",
+    "Asia/Dubai": "GST",
+    "Asia/Singapore": "SGT",
+    "Asia/Tokyo": "JST",
+    "Australia/Sydney": "AEDT",
+    "Pacific/Auckland": "NZDT",
+  };
+
+  // Try to get from map first
+  let abbreviation = tz;
+  if (tzMap[tz]) {
+    abbreviation = tzMap[tz];
+  } else {
+    // Fallback to browser's built-in
+    try {
+      abbreviation = new Date().toLocaleTimeString("en-US", { timeZone: tz, timeZoneName: "short" }).split(" ").pop() || tz;
+    } catch {
+      abbreviation = tz;
+    }
+  }
+
+  // Return just the abbreviation (e.g., "WAT") without current time
+  return abbreviation;
+}
+
 type Step = "book" | "about" | "interests" | "review" | "received";
 
 type Details = {
@@ -329,11 +365,11 @@ function TimeSlotPicker({
     }
 
     // Return just the abbreviation (e.g., "WAT") without current time
-    return abbreviation;
-  }
+      return abbreviation;
+    }
 
-  // Format timezone for display in dropdown (e.g., "WAT (9:12 AM)" with live time)
-  function getTimezoneLabelForDropdown(tz: string): string {
+    // Format timezone for display in dropdown (e.g., "WAT (9:12 AM)" with live time)
+    function getTimezoneLabelForDropdown(tz: string): string {
       // Known timezone abbreviations for common zones
       const tzMap: Record<string, string> = {
         "Africa/Lagos": "WAT",
@@ -376,9 +412,9 @@ function TimeSlotPicker({
       } catch {
         return abbreviation;
       }
-    };
+    }
 
-          // User's actual timezone for display
+    // User's actual timezone for display
                       const userTimezone = typeof window !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "America/Chicago";
                       const [userTimezoneLabel, setUserTimezoneLabel] = useState(() => getTimezoneLabelForDropdown(userTimezone));
 

@@ -94,6 +94,16 @@ function EventModal({ event, onClose }: { event: KseEvent; onClose: () => void }
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
 
+  // Save and restore scroll position
+  useEffect(() => {
+    const scrollY = window.scrollY
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = ""
+      window.scrollTo(0, scrollY)
+    }
+  }, [])
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose()

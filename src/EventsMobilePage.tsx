@@ -69,6 +69,16 @@ function MobileEventModal({ event, onClose }: { event: KseEvent; onClose: () => 
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
+  // Save and restore scroll position
+  useEffect(() => {
+    const scrollY = window.scrollY
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = ""
+      window.scrollTo(0, scrollY)
+    }
+  }, [])
+
   const submit = async () => {
     if (busy) return;
     setError(null);

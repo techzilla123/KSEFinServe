@@ -63,12 +63,21 @@ function EventImage({ event, className }: { event: KseEvent | null; className?: 
 /** Full detail modal — everything the admin saved for one event. */
 function EventModal({ event, onClose }: { event: KseEvent; onClose: () => void }) {
   useEffect(() => {
+    const scrollY = window.scrollY
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = ""
+      window.scrollTo(0, scrollY)
+    }
+  }, [])
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+      if (e.key === "Escape") onClose()
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [onClose])
 
   return (
     <div className="modal-layer" role="dialog" aria-modal="true" aria-labelledby="event-modal-title">

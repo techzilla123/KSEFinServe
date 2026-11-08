@@ -35,9 +35,8 @@ function formatDateTime(dateStr: string, timeStr: string): string {
       minute: "2-digit",
       hour12: true,
     });
-    const tz = date.toLocaleTimeString("en-US", {
-      timeZoneName: "short",
-    }).split(" ").pop() || "";
+    // Use our custom timezone label function for proper abbreviations (e.g., WAT instead of GMT+1)
+    const tz = getTimezoneLabel(Intl.DateTimeFormat().resolvedOptions().timeZone);
 
     return `${day} at ${time} ${tz}`;
   } catch {

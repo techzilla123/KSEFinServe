@@ -23,6 +23,52 @@ const BRAND = {
   },
 };
 
+// Format timezone for display (e.g., "WAT (9:12 AM)")
+function getTimezoneLabel(tz: string): string {
+  // Known timezone abbreviations for common zones
+  const tzMap: Record<string, string> = {
+    "Africa/Lagos": "WAT",
+    "Africa/Cairo": "EET",
+    "Africa/Johannesburg": "SAST",
+    "America/Chicago": "CDT",
+    "America/New_York": "EDT",
+    "America/Los_Angeles": "PDT",
+    "Europe/London": "BST",
+    "Europe/Paris": "CEST",
+    "Asia/Dubai": "GST",
+    "Asia/Singapore": "SGT",
+    "Asia/Tokyo": "JST",
+    "Australia/Sydney": "AEDT",
+    "Pacific/Auckland": "NZDT",
+  };
+
+  // Try to get from map first
+  let abbreviation = tz;
+  if (tzMap[tz]) {
+    abbreviation = tzMap[tz];
+  } else {
+    // Fallback to browser's built-in
+    try {
+      abbreviation = new Date().toLocaleTimeString("en-US", { timeZone: tz, timeZoneName: "short" }).split(" ").pop() || tz;
+    } catch {
+      abbreviation = tz;
+    }
+  }
+
+  // Get current time in the timezone
+  try {
+    const timeString = new Date().toLocaleTimeString("en-US", {
+      timeZone: tz,
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+    return `${abbreviation} (${timeString})`;
+  } catch {
+    return abbreviation;
+  }
+}
+
 // Format ISO date/time to human-readable in USER'S LOCAL TIMEZONE (e.g., "Nov 11, 2026 at 8:00 AM WAT")
 function formatDateTime(dateStr: string, timeStr: string): string {
   if (!dateStr && !timeStr) return "Not set";
@@ -49,9 +95,8 @@ function formatDateTime(dateStr: string, timeStr: string): string {
       minute: "2-digit",
       hour12: true,
     });
-    const tz = date.toLocaleTimeString("en-US", {
-      timeZoneName: "short",
-    }).split(" ").pop() || "";
+    // Use our custom timezone label function for proper abbreviations (e.g., WAT instead of GMT+1)
+    const tz = getTimezoneLabel(Intl.DateTimeFormat().resolvedOptions().timeZone);
 
     return `${day} at ${time} ${tz}`;
   } catch {

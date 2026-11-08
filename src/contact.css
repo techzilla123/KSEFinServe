@@ -47,7 +47,7 @@
 .office-contact { display: flex; width: 280px; flex-direction: column; align-items: flex-start; gap: 16px; }
 .office-heading { display: flex; align-items: center; gap: 10px; }
 .address { display: flex; flex-direction: column; gap: 6px; }
-.address p { margin: 0; font-family: "Mona Sans:Medium", sans-serif; font-size: 16px; font-variation-settings: "wdth" 100; font-weight: 500; color: #ffffff; }
+.address p { margin: 0; font-family: "Mona Sans:Medium", sans-serif; font-size: 16px; font-variation-settings: "wdth" 100; font-weight: 500; color: #dbab47; }
 .address span { color: #a7b2b9; font-size: 13px; font-variation-settings: "wdth" 100; }
 .location-preview { display: flex; width: 100%; flex-direction: column; gap: 10px; }
 .map-preview { position: relative; display: block; width: 280px; height: 156px; overflow: hidden; border-radius: 12px; background: #eae9e1; }

@@ -296,8 +296,8 @@ function TimeSlotPicker({
     setIsOpen(false);
   };
 
-  // Format timezone for display (e.g., "WAT")
-      const getTimezoneLabel = (tz: string) => {
+  // Format timezone for display in dropdown (e.g., "WAT (9:12 AM)" with live time)
+    const getTimezoneLabelForDropdown = (tz: string) => {
       // Known timezone abbreviations for common zones
       const tzMap: Record<string, string> = {
         "Africa/Lagos": "WAT",
@@ -328,7 +328,7 @@ function TimeSlotPicker({
         }
       }
 
-      // Get current time in the timezone
+      // Get current time in the timezone for dropdown display
       try {
         const timeString = new Date().toLocaleTimeString("en-US", {
           timeZone: tz,
@@ -336,17 +336,25 @@ function TimeSlotPicker({
           minute: "2-digit",
           hour12: true,
         });
+        return `${abbreviation} (${timeString})`;
+      } catch {
         return abbreviation;
-              } catch {
-                return abbreviation;
-              }
-            };
+      }
+    };
 
           // User's actual timezone for display
-            const userTimezone = typeof window !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "America/Chicago";
-            const [userTimezoneLabel] = useState(() => getTimezoneLabel(userTimezone));
+                      const userTimezone = typeof window !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "America/Chicago";
+                      const [userTimezoneLabel, setUserTimezoneLabel] = useState(() => getTimezoneLabelForDropdown(userTimezone));
 
-    const selectedSlot = slots.find((s) => s.value === time);
+                        // Update timezone label every minute to show current time
+                        useEffect(() => {
+                          const updateLabel = () => setUserTimezoneLabel(getTimezoneLabelForDropdown(userTimezone));
+                          updateLabel();
+                          const interval = setInterval(updateLabel, 60000);
+                          return () => clearInterval(interval);
+                        }, [userTimezone]);
+
+                        const selectedSlot = slots.find((s) => s.value === time);
 
   // Clock icon SVG
   const clockIcon = (

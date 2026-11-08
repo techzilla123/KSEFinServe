@@ -1178,31 +1178,32 @@ export default function BookNowPage() {
   };
 
   /** Send the completed enquiry to Supabase. */
-  const send = async (data: Details) => {
-    setSubmitting(true);
-    setSubmitError(null);
-    const payload: BookingInput = {
-      firstName: data.firstName,
-      lastName: data.lastName,
-      email: data.email,
-      phone: data.phone,
-      city: data.city,
-      province: data.province,
-      country: data.country,
-      contactMethod: data.contact,
-      source: data.source,
-      route: data.route,
-      path: data.path,
-      topic: data.topic,
-      priorities: data.priorities,
-      outcome: data.outcome,
-      context: data.context,
-      question: data.question,
-      availableDate: data.availableDate,
-      availableTime: data.availableTime,
-      consentContact: data.consentContact,
-      consentUpdates: data.consentUpdates,
-    };
+    const send = async (data: Details) => {
+      setSubmitting(true);
+      setSubmitError(null);
+      const payload: BookingInput = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        city: data.city,
+        province: data.province,
+        country: data.country,
+        contactMethod: data.contact,
+        source: data.source,
+        route: data.route,
+        path: data.path,
+        topic: data.topic,
+        priorities: data.priorities,
+        outcome: data.outcome,
+        context: data.context,
+        question: data.question,
+        availableDate: data.availableDate,
+        availableTime: data.availableTime,
+        consentContact: data.consentContact,
+        consentUpdates: data.consentUpdates,
+        userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      };
     const result = await submitBooking(payload);
     setSubmitting(false);
     if (result.error) {

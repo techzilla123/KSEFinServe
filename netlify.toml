@@ -11,6 +11,11 @@
 [functions.admin-directory]
   external_node_modules = ["@supabase/supabase-js"]
 
+# Scheduled reminder function - runs every 6 hours
+[functions.send-reminders]
+  schedule = "0 */6 * * *"
+  external_node_modules = ["@supabase/supabase-js", "nodemailer"]
+
 # Omit specific environment variable values from secrets scanning
 # These are expected to be in the build output as they're used in the application
 [secrets]

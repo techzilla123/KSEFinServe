@@ -59,6 +59,7 @@ export interface BookingInput {
   availableTime?: string
   consentContact?: boolean
   consentUpdates?: boolean
+  userTimezone?: string
 }
 
 /** Build a human-readable reference like SES-2026-001-AB3. */
@@ -321,30 +322,31 @@ export function useBookings(): BookingDirectory {
         const reference = buildReference(count ?? 0)
 
         const { error: err } = await supabase
-          .from('bookings')
-          .insert({
-            reference,
-            first_name: input.firstName.trim(),
-            last_name: input.lastName.trim(),
-            email: input.email.trim(),
-            phone: input.phone.trim(),
-            city: (input.city ?? '').trim(),
-            province: (input.province ?? '').trim(),
-            country: (input.country ?? '').trim(),
-            contact_method: input.contactMethod ?? 'Email',
-            source: (input.source ?? '').trim(),
-            route: input.route ?? input.path ?? 'Short form',
-            path: input.path ?? 'Wealth planning',
-            topic: (input.topic ?? '').trim(),
-            priorities: input.priorities ?? [],
-            outcome: (input.outcome ?? '').trim(),
-            context: (input.context ?? '').trim(),
-            question: (input.question ?? '').trim(),
-            available_date: (input.availableDate ?? '').trim(),
-            available_time: (input.availableTime ?? '').trim(),
-            consent_contact: !!input.consentContact,
-            consent_updates: !!input.consentUpdates,
-          })
+                  .from('bookings')
+                  .insert({
+                    reference,
+                    first_name: input.firstName.trim(),
+                    last_name: input.lastName.trim(),
+                    email: input.email.trim(),
+                    phone: input.phone.trim(),
+                    city: (input.city ?? '').trim(),
+                    province: (input.province ?? '').trim(),
+                    country: (input.country ?? '').trim(),
+                    contact_method: input.contactMethod ?? 'Email',
+                    source: (input.source ?? '').trim(),
+                    route: input.route ?? input.path ?? 'Short form',
+                    path: input.path ?? 'Wealth planning',
+                    topic: (input.topic ?? '').trim(),
+                    priorities: input.priorities ?? [],
+                    outcome: (input.outcome ?? '').trim(),
+                    context: (input.context ?? '').trim(),
+                    question: (input.question ?? '').trim(),
+                    available_date: (input.availableDate ?? '').trim(),
+                    available_time: (input.availableTime ?? '').trim(),
+                    consent_contact: !!input.consentContact,
+                    consent_updates: !!input.consentUpdates,
+                    user_timezone: input.userTimezone ?? (typeof window !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC'),
+                  })
         if (err) return { error: err.message }
         await refresh()
 

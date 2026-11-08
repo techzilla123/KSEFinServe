@@ -135,7 +135,23 @@ function zoneAbbreviation(instant: Date): string {
 export function usTimeLabel(date: string, time: string): string {
   if (!date && !time) return 'To be arranged'
   if (!date) return `Time ${time}`
-  const parsed = new Date(`${date}T${time || '00:00'}`)
+  
+  let parsed: Date
+  
+  // Handle ISO datetime strings that may already contain full date+time (2026-12-03T22:00:00.000Z)
+  // Also handle cases where time might contain the full ISO string including date
+  if (time.includes('T') || time.includes('Z') || (time.includes('.') && time.includes(':'))) {
+    // time is already an ISO datetime string (may include full date)
+    parsed = new Date(time)
+  } else {
+    // time is time-only, combine with dateStr
+    parsed = new Date(`${date}T${time || '00:00'}`)
+  }
+  
+  // If parsing failed, try parsing the date field alone
+  if (Number.isNaN(parsed.getTime())) {
+    parsed = new Date(date)
+  }
   if (Number.isNaN(parsed.getTime())) return `${date}${time ? ` · ${time}` : ''}`
 
   const day = parsed.toLocaleDateString('en-US', {

@@ -491,7 +491,7 @@ function TaxForm({
   onIncomeChange: (income: number) => void;
 }) {
   const [state, setState] = useState("California");
-  const [year, setYear] = useState("2025");
+  const [year, setYear] = useState(() => new Date().getFullYear().toString());
   const [income, setIncome] = useState("$80,000");
   const [extras, setExtras] = useState<{ label: string; amount: string }[]>([]);
 

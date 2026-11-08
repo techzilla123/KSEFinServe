@@ -1042,16 +1042,15 @@ function ReceivedPage({ details, reference, restart }: { details: Details; refer
             YOUR REQUEST HAS BEEN RECEIVED
           </p>
           <h1>
-            Thank you, {details.firstName || "there"}.
-            <span>A good beginning.</span>
-          </h1>
+                      Thank you, {details.firstName || "there"}.
+                    </h1>
           <p className="lead">KSEFinServe will contact you to arrange your session. We look forward to hearing more about what matters to you.</p>
           <div className="summary">
             <p className="eyebrow">YOUR ENQUIRY</p>
             <h3>{details.topic || details.path || "Wealth planning"}</h3>
             <p>{details.route || "Share the full picture"} · Preferred contact: {details.contact}<br />{contactDetail}</p>
             <hr />
-            <small>Record reference: {reference ?? "—"}<br />Preferred time: {when}<br />No appointment is booked yet. We’ll agree on a suitable time when we get in touch.</small>
+            <small>Record reference: {reference ?? "—"}<br />Preferred time: {when}<br />Your session has been confirmed, please check your email for appointment details and ensure to add to your calendar</small>
           </div>
           <div className="confirmation-actions">
             <button className="primary" type="button" onClick={restart}>Return to KSEFinServe</button>

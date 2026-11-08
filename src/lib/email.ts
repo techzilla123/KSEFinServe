@@ -23,7 +23,7 @@ const BRAND = {
   },
 };
 
-// Format timezone for display (e.g., "WAT (9:12 AM)")
+// Format timezone for display (e.g., "WAT")
 function getTimezoneLabel(tz: string): string {
   // Known timezone abbreviations for common zones
   const tzMap: Record<string, string> = {
@@ -55,18 +55,8 @@ function getTimezoneLabel(tz: string): string {
     }
   }
 
-  // Get current time in the timezone
-  try {
-    const timeString = new Date().toLocaleTimeString("en-US", {
-      timeZone: tz,
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-    return `${abbreviation} (${timeString})`;
-  } catch {
-    return abbreviation;
-  }
+  // Return just the abbreviation (e.g., "WAT") without current time
+  return abbreviation;
 }
 
 // Format ISO date/time to human-readable in USER'S LOCAL TIMEZONE (e.g., "Nov 11, 2026 at 8:00 AM WAT")

@@ -75,8 +75,18 @@ function buildReference(index: number): string {
 function formatSessionTime(date: string, time: string): string {
   if (!date && !time) return 'To be arranged'
   if (!date) return `Time ${time}`
-  const parsed = new Date(`${date}T${time || '00:00'}`)
+  
+  let parsed: Date
+  // Handle both ISO strings (2026-12-03T22:00:00.000Z) and time-only strings (22:00)
+  if (time.includes('T') || time.includes('Z') || time.includes('.')) {
+    // time is already an ISO datetime string
+    parsed = new Date(time)
+  } else {
+    // time is time-only, combine with dateStr
+    parsed = new Date(`${date}T${time}`)
+  }
   if (Number.isNaN(parsed.getTime())) return `${date}${time ? ` · ${time}` : ''}`
+  
   const day = parsed.toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'short',
@@ -384,5 +394,5 @@ export function sessionTimeLabel(booking: Booking): string {
 export function sessionDuration(booking: Booking): string {
   if (booking.status === 'Completed') return 'Completed session'
   if (booking.status === 'Cancelled') return 'Cancelled'
-  return 'Proposed · 30 minutes'
+  return 'Proposed · 1 hour'
 }

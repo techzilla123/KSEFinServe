@@ -297,43 +297,49 @@ function TimeSlotPicker({
     setIsOpen(false);
   };
 
-  // Format timezone for display (e.g., "America/Chicago" → "CDT", "Africa/Lagos" → "WAT")
+  // Format timezone for display (e.g., "WAT (9:12 AM)")
     const getTimezoneLabel = (tz: string) => {
       // Known timezone abbreviations for common zones
       const tzMap: Record<string, string> = {
         "Africa/Lagos": "WAT",
         "Africa/Cairo": "EET",
         "Africa/Johannesburg": "SAST",
-        "America/Chicago": "CDT", // Will be CST/CDT depending on DST
-        "America/New_York": "EDT", // Will be EST/EDT depending on DST
-        "America/Los_Angeles": "PDT", // Will be PST/PDT depending on DST
-        "Europe/London": "BST", // Will be GMT/BST depending on DST
-        "Europe/Paris": "CEST", // Will be CET/CEST depending on DST
+        "America/Chicago": "CDT",
+        "America/New_York": "EDT",
+        "America/Los_Angeles": "PDT",
+        "Europe/London": "BST",
+        "Europe/Paris": "CEST",
         "Asia/Dubai": "GST",
         "Asia/Singapore": "SGT",
         "Asia/Tokyo": "JST",
-        "Australia/Sydney": "AEDT", // Will be AEST/AEDT depending on DST
-        "Pacific/Auckland": "NZDT", // Will be NZST/NZDT depending on DST
+        "Australia/Sydney": "AEDT",
+        "Pacific/Auckland": "NZDT",
       };
 
       // Try to get from map first
+      let abbreviation = tz;
       if (tzMap[tz]) {
-        // For US zones, try to get actual DST-aware abbreviation
-        if (tz.startsWith("America/")) {
-          try {
-            return new Date().toLocaleTimeString("en-US", { timeZone: tz, timeZoneName: "short" }).split(" ").pop() || tzMap[tz];
-          } catch {
-            return tzMap[tz];
-          }
+        abbreviation = tzMap[tz];
+      } else {
+        // Fallback to browser's built-in
+        try {
+          abbreviation = new Date().toLocaleTimeString("en-US", { timeZone: tz, timeZoneName: "short" }).split(" ").pop() || tz;
+        } catch {
+          abbreviation = tz;
         }
-        return tzMap[tz];
       }
 
-      // Fallback to browser's built-in
+      // Get current time in the timezone
       try {
-        return new Date().toLocaleTimeString("en-US", { timeZone: tz, timeZoneName: "short" }).split(" ").pop() || tz;
+        const timeString = new Date().toLocaleTimeString("en-US", {
+          timeZone: tz,
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        });
+        return `${abbreviation} (${timeString})`;
       } catch {
-        return tz;
+        return abbreviation;
       }
     };
 

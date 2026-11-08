@@ -1043,6 +1043,7 @@ function ReceivedPage({ details, reference, restart }: { details: Details; refer
           </p>
           <h1>
                       Thank you, {details.firstName || "there"}.
+                      <span>A good beginning.</span>
                     </h1>
           <p className="lead">KSEFinServe will contact you to arrange your session. We look forward to hearing more about what matters to you.</p>
           <div className="summary">

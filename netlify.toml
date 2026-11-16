@@ -16,6 +16,10 @@
   schedule = "0 */6 * * *"
   external_node_modules = ["@supabase/supabase-js", "nodemailer"]
 
+# Send report function - generates PDF reports with charts
+[functions.send-report]
+  external_node_modules = ["@supabase/supabase-js", "nodemailer", "pdf-lib", "chartjs-node-canvas", "chart.js", "canvas"]
+
 # Omit specific environment variable values from secrets scanning
 # These are expected to be in the build output as they're used in the application
 [secrets]

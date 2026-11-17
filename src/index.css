@@ -457,6 +457,16 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .service-card p { font-size: 16px; line-height: 1.5; color: var(--muted); margin: 8px 0 25px; }
 .service-card .button { margin-top: auto; }
 
+/* Service card CTAs ("Ways I Can Help") - same dark-blue treatment as the
+   header's "Book a Session" button (.header-book). */
+.service-card-cta {
+  margin-top: auto;
+  background: #0d2b42;
+  border-color: #0d2b42;
+  color: #ffffff;
+}
+.service-card-cta:hover { background: #14405f; border-color: #14405f; }
+
 .why-section { padding: 30px 0 clamp(90px, 6vw, 120px); }
 .why-inner { max-width: 1240px; }
 .why-intro { grid-template-columns: 1fr 1fr; gap: 28%; align-items: start; }

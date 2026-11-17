@@ -1358,10 +1358,10 @@ export default function App() {
                   <Heading level={3}>{item.title}</Heading>
                   <p>{item.text}</p>
                   <span className="button service-card-cta">
-                                      {item.title === "Wealth Strategy"
-                                        ? "Book a Strategy Session"
-                                        : "Explore the opportunity"}
-                                    </span>
+                    {item.title === "Wealth Strategy"
+                      ? "Book a Strategy Session"
+                      : "Explore the opportunity"}
+                  </span>
                 </a>
               ))}
             </div>

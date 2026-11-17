@@ -7,6 +7,50 @@ import { readFileSync, existsSync } from "node:fs"
 import siteConfiguration from "./.figma/make/site.json"
 
 // Vite config — https://vitejs.dev/config/
+
+// ===== DEV-ONLY stand-in for the Netlify calendar function =====
+// Mirrors netlify/functions/calendar.ts slot generation (America/Chicago
+// business hours) so the booking slot picker behaves the same under
+// `npm run dev` as it does on Netlify. Never runs in a production build.
+function devSlotsForDate(dateStr: string) {
+  const ZONE = "America/Chicago";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const dayName = (d: Date) => d.toLocaleDateString("en-US", { weekday: "long", timeZone: ZONE });
+
+  const year = new Date(`${dateStr}T12:00:00`).getUTCFullYear();
+  const firstSundayOnOrAfter = (month: number, day: number, hour: number) => {
+    const d = new Date(Date.UTC(year, month, day, hour, 0, 0));
+    d.setUTCDate(d.getUTCDate() + ((7 - d.getUTCDay()) % 7));
+    return d;
+  };
+  const marchSecondSunday = firstSundayOnOrAfter(2, 1, 6);
+  marchSecondSunday.setUTCDate(marchSecondSunday.getUTCDate() + 7);
+  marchSecondSunday.setUTCHours(8, 0, 0, 0);
+  const novemberFirstSunday = firstSundayOnOrAfter(10, 1, 6);
+  novemberFirstSunday.setUTCHours(7, 0, 0, 0);
+
+  const noon = new Date(`${dateStr}T12:00:00`);
+  const offsetHours = noon >= marchSecondSunday && noon < novemberFirstSunday ? -5 : -6;
+  const offStr = `${offsetHours >= 0 ? "+" : "-"}${pad(Math.abs(offsetHours))}:00`;
+
+  const day = dayName(new Date(`${dateStr}T00:00:00`));
+  const startHour = day === "Sunday" ? 14 : 8;
+  const endHour = day === "Sunday" ? 18 : 21;
+
+  const slots: Array<{ label: string; value: string; start: string; end: string }> = [];
+  for (let h = startHour; h < endHour; h += 1) {
+    const start = new Date(`${dateStr}T${pad(h)}:00:00${offStr}`);
+    const end = new Date(`${dateStr}T${pad(h + 1)}:00:00${offStr}`);
+    slots.push({
+      label: start.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: ZONE }),
+      value: start.toISOString(),
+      start: start.toISOString(),
+      end: end.toISOString(),
+    });
+  }
+  return slots;
+}
+
 export default defineConfig(({ mode }) => {
   // .figma/make/deploy-preview passes `--mode development` for cached-preview builds.
   const emitSourcemaps = mode === "development"
@@ -27,6 +71,7 @@ export default defineConfig(({ mode }) => {
           "event-insight": path.resolve(__dirname, "./event-insight.html"),
           "book-now": path.resolve(__dirname, "./book-now.html"),
           calculator: path.resolve(__dirname, "./calculator.html"),
+          insurance: path.resolve(__dirname, "./insurance.html"),
           admin: path.resolve(__dirname, "./admin.html"),
         },
       },
@@ -109,6 +154,34 @@ export default defineConfig(({ mode }) => {
             }
             next()
           })
+        },
+      },
+      {
+        name: "insurance-page-middleware",
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            if (req.url?.split("?")[0] === "/insurance") {
+              req.url = "/insurance.html"
+            }
+            next()
+          })
+        },
+      },
+      {
+        name: "dev-calendar-availability",
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            const url = new URL(req.url ?? "/", "http://localhost");
+            if (url.pathname !== "/.netlify/functions/calendar") return next();
+            res.setHeader("Content-Type", "application/json");
+            res.setHeader("Access-Control-Allow-Origin", "*");
+            res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+            res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+            if (req.method === "OPTIONS") { res.statusCode = 200; res.end(""); return; }
+            const date = url.searchParams.get("date");
+            if (!date) { res.statusCode = 400; res.end(JSON.stringify({ error: "date parameter required" })); return; }
+            res.end(JSON.stringify({ date, timezone: "America/Chicago", slots: devSlotsForDate(date) }));
+          });
         },
       },
       {

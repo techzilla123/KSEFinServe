@@ -1,12 +1,10 @@
 /* Netlify Function: send financial tool report with PDF attachment.
-   Generates a PDF report based on the tool type and user inputs,
-   then emails it to the user via Namecheap hosting SMTP.
-   Includes beautiful charts and graphs for each calculator. */
+   Generates a designed PDF report (vector charts drawn with pdf-lib, no
+   native dependencies) and emails it via Namecheap hosting SMTP. */
 
 import type { Request } from '@netlify/functions'
 import nodemailer from 'nodemailer'
 import { PDFDocument, rgb, StandardFonts, PDFPage } from 'pdf-lib'
-import { ChartJSNodeCanvas } from 'chartjs-node-canvas'
 
 const SMTP_HOST = process.env.SMTP_HOST!
 const SMTP_PORT = Number(process.env.SMTP_PORT!)
@@ -70,7 +68,7 @@ async function ensureTransporterReady() {
   }
 }
 
-// Colors
+// ---------- Brand ----------
 const NAVY = '#081d2b'
 const GOLD = '#c9a963'
 const CREAM = '#f0ede6'
@@ -84,6 +82,23 @@ const CHART_ORANGE = '#f59e0b'
 const CHART_RED = '#ef4444'
 const CHART_GOLD = '#c9a963'
 const CHART_GRAY = '#9ca3af'
+const CHART_PURPLE = '#8b5cf6'
+
+const NAVY_RGB = rgb(0.031, 0.114, 0.169)
+const GOLD_RGB = rgb(0.788, 0.663, 0.388)
+const CREAM_RGB = rgb(0.941, 0.929, 0.902)
+const TEXT_RGB = rgb(0.16, 0.19, 0.23)
+const MUTED_RGB = rgb(0.42, 0.45, 0.5)
+const GRID_RGB = rgb(0.9, 0.91, 0.93)
+const WHITE_RGB = rgb(1, 1, 1)
+
+function hexRgb(hex: string) {
+  const h = hex.replace('#', '')
+  const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h
+  const n = parseInt(full, 16)
+  if (!Number.isFinite(n)) return MUTED_RGB
+  return rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255)
+}
 
 function money(value: number, currency: 'USD' | 'CAD', decimals = 0): string {
   const sign = value < 0 ? '-' : ''
@@ -101,269 +116,369 @@ function parseMoneyStr(str: string): number {
   return Number.isFinite(val) ? val : 0
 }
 
-// Chart generation
-const chartWidth = 600
-const chartHeight = 350
-const chartCallback = (chartJS: any) => {
-  chartJS.defaults.font.family = 'Helvetica'
-  chartJS.defaults.font.size = 12
-  chartJS.defaults.color = '#374151'
+const fmt = (n: number) => '$' + Math.round(n).toLocaleString('en-US')
+
+/** Ensure a percentage string carries exactly one trailing %. */
+function pctStr(value: string | undefined, fallback: string): string {
+  const s = String(value ?? '').trim()
+  if (!s) return fallback
+  return s.endsWith('%') ? s : s + '%'
 }
 
-let canvasInstance: ChartJSNodeCanvas | null = null
-let canvasInitFailed = false
+/** Round a value up to a "nice" axis maximum (1 / 2 / 2.5 / 5 / 10 x 10^n). */
+function niceCeil(v: number): number {
+  if (!Number.isFinite(v) || v <= 0) return 1
+  const pow = Math.pow(10, Math.floor(Math.log10(v)))
+  const n = v / pow
+  const nice = n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10
+  return nice * pow
+}
 
-function getChartCanvas(): ChartJSNodeCanvas | null {
-  if (canvasInitFailed) return null
-  if (canvasInstance) return canvasInstance
-  try {
-    canvasInstance = new ChartJSNodeCanvas({
-      width: chartWidth,
-      height: chartHeight,
-      backgroundColour: 'white',
-      chartCallback,
-    })
-    return canvasInstance
-  } catch (err) {
-    console.error('Chart canvas init failed:', err)
-    canvasInitFailed = true
-    return null
+function axisLabel(v: number): string {
+  if (Math.abs(v) >= 1000) return '$' + Math.round(v / 1000) + 'k'
+  return '$' + Math.round(v)
+}
+
+/**
+ * pdf-lib's drawSvgPath uses SVG coordinates (y grows downward) and applies its
+ * own flip, so convert our page-space (y up) path to SVG space before drawing.
+ */
+function drawPath(page: PDFPage, parts: string[], color: any, opacity?: number) {
+  const svg = parts.map(p => {
+    if (p === 'Z') return 'Z'
+    const sp = p.split(' ')
+    return sp[0] + ' ' + sp[1] + ' ' + (PAGE_H - Number(sp[2])).toFixed(2)
+  }).join(' ')
+  page.drawSvgPath(svg, { x: 0, y: PAGE_H, color, opacity })
+}
+
+// ---------- Page / layout helpers ----------
+const PAGE_W = 612
+const PAGE_H = 792
+const MARGIN = 48
+const CONTENT_W = PAGE_W - MARGIN * 2
+
+function ensureSpace(pdfDoc: PDFDocument, page: PDFPage, font: any, y: number, needed: number): { page: PDFPage; y: number } {
+  if (y - needed < 70) {
+    const p = pdfDoc.addPage([PAGE_W, PAGE_H])
+    drawFooterStrip(p, font)
+    return { page: p, y: PAGE_H - 70 }
   }
+  return { page, y }
 }
 
-async function generatePieChart(
-  labels: string[],
-  data: number[],
-  colors: string[],
-  title: string
-): Promise<Buffer | null> {
-  try {
-    const config = {
-      type: 'doughnut' as const,
-      data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0 }] },
-      options: {
-        responsive: false,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'right' as const, labels: { font: { size: 12 }, padding: 16, usePointStyle: true, pointStyle: 'circle' } },
-          title: { display: true, text: title, font: { size: 16, weight: 'bold' as const, family: 'Helvetica' }, color: NAVY, padding: { bottom: 20 } },
-          tooltip: { backgroundColor: NAVY, titleFont: { size: 13 }, bodyFont: { size: 12 }, padding: 12 },
-        },
-        cutout: '60%',
-      },
+function drawHeader(page: PDFPage, font: any, fontBold: any, title: string, reference: string) {
+  // Navy header band
+  page.drawRectangle({ x: 0, y: PAGE_H - 86, width: PAGE_W, height: 86, color: NAVY_RGB })
+  // Gold accent strip
+  page.drawRectangle({ x: 0, y: PAGE_H - 90, width: PAGE_W, height: 4, color: GOLD_RGB })
+  page.drawText('KSEFinServe', { x: MARGIN, y: PAGE_H - 46, size: 24, font: fontBold, color: WHITE_RGB })
+  page.drawText('Clarity  \u00b7  Growth  \u00b7  Impact', { x: MARGIN, y: PAGE_H - 66, size: 10, font, color: GOLD_RGB })
+  // Reference badge on the right
+  const refText = 'REF ' + reference
+  const refW = font.widthOfTextAtSize(refText, 9)
+  page.drawText(refText, { x: PAGE_W - MARGIN - refW, y: PAGE_H - 46, size: 9, font, color: WHITE_RGB })
+
+  // Title block
+  page.drawText(title, { x: MARGIN, y: PAGE_H - 126, size: 21, font: fontBold, color: NAVY_RGB })
+  page.drawLine({ start: { x: MARGIN, y: PAGE_H - 136 }, end: { x: MARGIN + 96, y: PAGE_H - 136 }, thickness: 3, color: GOLD_RGB })
+  return PAGE_H - 160
+}
+
+function drawFooterStrip(page: PDFPage, font: any) {
+  page.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: 26, color: NAVY_RGB })
+  page.drawText('Generated by KSEFinServe  |  Clarity \u00b7 Growth \u00b7 Impact', {
+    x: MARGIN, y: 9, size: 8, font, color: WHITE_RGB,
+  })
+}
+
+function sectionHeader(page: PDFPage, fontBold: any, text: string, x: number, y: number): number {
+  page.drawText(text, { x, y, size: 14, font: fontBold, color: NAVY_RGB })
+  page.drawLine({ start: { x, y: y - 6 }, end: { x: x + 68, y: y - 6 }, thickness: 2.5, color: GOLD_RGB })
+  return y - 24
+}
+
+function kvRow(page: PDFPage, font: any, fontBold: any, label: string, value: string, x: number, y: number): number {
+  page.drawText(label, { x, y, size: 10.5, font: fontBold, color: TEXT_RGB })
+  page.drawText(value, { x: x + 250, y, size: 10.5, font, color: MUTED_RGB })
+  return y - 17
+}
+
+/** Two-column key/value grid. Returns new y. */
+function kvGrid(page: PDFPage, font: any, fontBold: any, items: Array<[string, string]>, x: number, y: number, columns = 2, valueOffset = 150): number {
+  const colW = CONTENT_W / columns
+  const rowH = 17
+  const rows = Math.ceil(items.length / columns)
+  items.forEach((it, i) => {
+    const col = i % columns
+    const row = Math.floor(i / columns)
+    const cx = x + col * colW
+    const cy = y - row * rowH
+    page.drawText(it[0], { x: cx, y: cy, size: 10.5, font: fontBold, color: TEXT_RGB })
+    page.drawText(it[1], { x: cx + valueOffset, y: cy, size: 10.5, font, color: MUTED_RGB })
+  })
+  return y - rows * rowH - 6
+}
+
+function noteRow(page: PDFPage, font: any, text: string, x: number, y: number): number {
+  page.drawText('\u2022  ' + text, { x: x + 8, y, size: 9.5, font, color: MUTED_RGB })
+  return y - 14
+}
+
+/** Highlighted key-figure box. Returns new y (just below the box). */
+function keyBox(page: PDFPage, font: any, fontBold: any, items: Array<{ label: string; value: string }>, x: number, y: number, columns = 2): number {
+  const boxW = CONTENT_W
+  const colW = boxW / columns
+  const padX = 16
+  const padTop = 16
+  const padBottom = 20
+  const rowH = 34
+  const rows = Math.ceil(items.length / columns)
+  const boxH = padTop + rows * rowH + padBottom
+  const bottom = y - boxH
+
+  page.drawRectangle({ x, y: bottom, width: boxW, height: boxH, color: CREAM_RGB })
+  page.drawRectangle({ x, y: bottom, width: 3, height: boxH, color: GOLD_RGB })
+
+  items.forEach((item, i) => {
+    const col = i % columns
+    const row = Math.floor(i / columns)
+    const cx = x + padX + col * colW
+    const rowTop = y - padTop - row * rowH
+    page.drawText(item.label.toUpperCase(), { x: cx, y: rowTop - 11, size: 7.5, font: fontBold, color: GOLD_RGB })
+    page.drawText(item.value, { x: cx, y: rowTop - 28, size: 12, font: fontBold, color: NAVY_RGB })
+  })
+
+  return bottom - 12
+}
+
+// ---------- Vector charts ----------
+
+interface Slice { label: string; value: number; color: string }
+
+/** Doughnut chart with legend. Returns new y (bottom of chart). */
+function drawDoughnut(page: PDFPage, font: any, fontBold: any, title: string, slices: Slice[], x: number, y: number, w: number): number {
+  const total = slices.reduce((s, it) => s + Math.max(0, it.value), 0)
+  const top = y - 22
+  page.drawText(title, { x, y: top, size: 12, font: fontBold, color: NAVY_RGB })
+
+  const rOuter = 74
+  const rInner = 42
+  const cx = x + 100
+  const cy = top - 120
+
+  if (total > 0) {
+    let angle = -Math.PI / 2
+    for (const s of slices) {
+      const sweep = (Math.max(0, s.value) / total) * Math.PI * 2
+      if (sweep > 0) {
+        const steps = Math.max(3, Math.ceil(Math.abs(sweep) / (Math.PI / 90)))
+        const parts: string[] = []
+        for (let i = 0; i <= steps; i++) {
+          const a = angle + (sweep * i) / steps
+          parts.push((i === 0 ? 'M ' : 'L ') + (cx + rOuter * Math.cos(a)).toFixed(2) + ' ' + (cy + rOuter * Math.sin(a)).toFixed(2))
+        }
+        for (let i = steps; i >= 0; i--) {
+          const a = angle + (sweep * i) / steps
+          parts.push('L ' + (cx + rInner * Math.cos(a)).toFixed(2) + ' ' + (cy + rInner * Math.sin(a)).toFixed(2))
+        }
+        parts.push('Z')
+        drawPath(page, parts, hexRgb(s.color))
+      }
+      angle += sweep
     }
-    const canvas = getChartCanvas()
-    if (!canvas) return null
-    return await canvas.renderToBuffer(config)
-  } catch (err) {
-    console.error('Chart render failed (pie):', err)
-    return null
   }
+
+  // Center total
+  page.drawText(fmt(total), { x: cx - fontBold.widthOfTextAtSize(fmt(total), 15) / 2, y: cy - 2, size: 15, font: fontBold, color: NAVY_RGB })
+  page.drawText('Total', { x: cx - font.widthOfTextAtSize('Total', 8) / 2, y: cy - 15, size: 8, font, color: MUTED_RGB })
+
+  // Legend
+  let lx = x + 205
+  let ly = cy + 34
+  for (const s of slices) {
+    page.drawRectangle({ x: lx, y: ly - 8, width: 10, height: 10, color: hexRgb(s.color) })
+    page.drawText(s.label, { x: lx + 16, y: ly - 8, size: 9.5, font, color: TEXT_RGB })
+    page.drawText(fmt(s.value), { x: lx + 16, y: ly - 19, size: 9, font: fontBold, color: NAVY_RGB })
+    ly -= 34
+  }
+
+  return cy - rOuter - 26
 }
 
-async function generateBarChart(
-  labels: string[],
-  data: number[],
-  colors: string[],
-  title: string,
-  yLabel: string = ''
-): Promise<Buffer | null> {
-  try {
-    const config = {
-      type: 'bar' as const,
-      data: { labels, datasets: [{ data, backgroundColor: colors, borderRadius: 8, borderSkipped: false }] },
-      options: {
-        responsive: false,
-        maintainAspectRatio: false,
-        indexAxis: 'y' as const,
-        plugins: {
-          legend: { display: false },
-          title: { display: true, text: title, font: { size: 16, weight: 'bold' as const, family: 'Helvetica' }, color: NAVY, padding: { bottom: 20 } },
-          tooltip: { backgroundColor: NAVY, titleFont: { size: 13 }, bodyFont: { size: 12 }, padding: 12, callbacks: { label: (ctx: any) => ' $' + ctx.raw.toLocaleString() } },
-        },
-        scales: {
-          x: { grid: { display: false }, ticks: { font: { size: 11 } } },
-          y: { grid: { color: '#f3f4f6' }, ticks: { font: { size: 11 } }, title: { display: true, text: yLabel, font: { size: 11 }, color: '#6b7280' } },
-        },
-      },
+/** Horizontal bar chart. Returns new y. */
+function drawHBars(page: PDFPage, font: any, fontBold: any, title: string, items: Slice[], x: number, y: number, w: number, valueLabel = ''): number {
+  let cy = y - 22
+  page.drawText(title, { x, y: cy, size: 12, font: fontBold, color: NAVY_RGB })
+  if (valueLabel) {
+    const vw = font.widthOfTextAtSize(valueLabel, 8)
+    page.drawText(valueLabel, { x: x + w - vw, y: cy, size: 8, font, color: MUTED_RGB })
+  }
+  cy -= 16
+
+  const labelW = 150
+  const valueW = 78
+  const barMaxW = w - labelW - valueW - 12
+  const maxVal = Math.max(...items.map(i => Math.abs(i.value)), 1)
+
+  for (const it of items) {
+    const barH = 20
+    const barW = Math.max(2, (Math.abs(it.value) / maxVal) * barMaxW)
+    const by = cy - barH
+    page.drawText(it.label, { x, y: by + 5, size: 9.5, font, color: TEXT_RGB })
+    // track
+    page.drawRectangle({ x: x + labelW, y: by, width: barMaxW, height: barH, color: GRID_RGB })
+    // bar
+    page.drawRectangle({ x: x + labelW, y: by, width: barW, height: barH, color: hexRgb(it.color) })
+    const label = fmt(it.value)
+    const lw = fontBold.widthOfTextAtSize(label, 9.5)
+    if (x + labelW + barW + 8 + lw > x + w) {
+      page.drawText(label, { x: x + labelW + barW - lw - 8, y: by + 5, size: 9.5, font: fontBold, color: WHITE_RGB })
+    } else {
+      page.drawText(label, { x: x + labelW + barW + 8, y: by + 5, size: 9.5, font: fontBold, color: NAVY_RGB })
     }
-    const canvas = getChartCanvas()
-    if (!canvas) return null
-    return await canvas.renderToBuffer(config)
-  } catch (err) {
-    console.error('Chart render failed (bar):', err)
-    return null
+    cy -= barH + 12
   }
+  return cy - 6
 }
 
-async function generateLineChart(
-  labels: string[],
-  datasets: Array<{ label: string; data: number[]; color: string }>,
-  title: string,
-  yLabel: string = ''
-): Promise<Buffer | null> {
-  try {
-    const config = {
-      type: 'line' as const,
-      data: {
-        labels,
-        datasets: datasets.map(d => ({
-          label: d.label,
-          data: d.data,
-          borderColor: d.color,
-          backgroundColor: d.color + '20',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 4,
-          pointHoverRadius: 6,
-          borderWidth: 3,
-        })),
-      },
-      options: {
-        responsive: false,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'top' as const, labels: { font: { size: 12 }, padding: 16, usePointStyle: true } },
-          title: { display: true, text: title, font: { size: 16, weight: 'bold' as const, family: 'Helvetica' }, color: NAVY, padding: { bottom: 20 } },
-          tooltip: { backgroundColor: NAVY, titleFont: { size: 13 }, bodyFont: { size: 12 }, padding: 12, callbacks: { label: (ctx: any) => ctx.dataset.label + ': $' + ctx.raw.toLocaleString() } },
-        },
-        scales: {
-          x: { grid: { color: '#f3f4f6' }, ticks: { font: { size: 11 } } },
-          y: { grid: { color: '#f3f4f6' }, ticks: { font: { size: 11 }, callback: (val: number) => '$' + val.toLocaleString() }, title: { display: true, text: yLabel, font: { size: 11 }, color: '#6b7280' } },
-        },
-        interaction: { intersect: false, mode: 'index' as const },
-      },
+/** Line chart with gridlines + legend. Returns new y. */
+function drawLineChart(page: PDFPage, font: any, fontBold: any, title: string, xLabels: string[], series: Array<{ label: string; color: string; values: number[] }>, x: number, y: number, w: number, h = 150): number {
+  let cy = y - 22
+  page.drawText(title, { x, y: cy, size: 12, font: fontBold, color: NAVY_RGB })
+  cy -= 14
+
+  const plotX = x + 46
+  const plotY = cy - h
+  const plotW = w - 46 - 10
+  const plotH = h - 34
+
+  const all = series.flatMap(s => s.values)
+  const rawMax = Math.max(...all, 1)
+  const maxV = niceCeil(rawMax)
+  const minV = 0
+  const span = maxV - minV || 1
+
+  // gridlines + y labels
+  for (let i = 0; i <= 4; i++) {
+    const gy = plotY + (plotH * i) / 4
+    page.drawLine({ start: { x: plotX, y: gy }, end: { x: plotX + plotW, y: gy }, thickness: 0.6, color: GRID_RGB })
+    const val = minV + (span * i) / 4
+    const lbl = axisLabel(val)
+    page.drawText(lbl, { x: plotX - 6 - font.widthOfTextAtSize(lbl, 7.5), y: gy - 2.5, size: 7.5, font, color: MUTED_RGB })
+  }
+  // axes
+  page.drawLine({ start: { x: plotX, y: plotY }, end: { x: plotX, y: plotY + plotH }, thickness: 1, color: MUTED_RGB })
+  page.drawLine({ start: { x: plotX, y: plotY }, end: { x: plotX + plotW, y: plotY }, thickness: 1, color: MUTED_RGB })
+
+  // x labels (thin out if many)
+  const step = Math.max(1, Math.ceil(xLabels.length / 8))
+  xLabels.forEach((lbl, i) => {
+    if (i % step !== 0 && i !== xLabels.length - 1) return
+    const lx = plotX + (plotW * i) / Math.max(1, xLabels.length - 1)
+    page.drawText(lbl, { x: lx - font.widthOfTextAtSize(lbl, 7) / 2, y: plotY - 12, size: 7, font, color: MUTED_RGB })
+  })
+
+  // series
+  for (const s of series) {
+    const pts = s.values.map((v, i) => ({
+      x: plotX + (plotW * i) / Math.max(1, s.values.length - 1),
+      y: plotY + ((v - minV) / span) * plotH,
+    }))
+    if (pts.length > 1) {
+      const area = pts.map((p, i) => (i === 0 ? 'M ' : 'L ') + p.x.toFixed(2) + ' ' + p.y.toFixed(2))
+      area.push('L ' + pts[pts.length - 1].x.toFixed(2) + ' ' + plotY.toFixed(2))
+      area.push('L ' + pts[0].x.toFixed(2) + ' ' + plotY.toFixed(2))
+      area.push('Z')
+      drawPath(page, area, hexRgb(s.color), 0.12)
+      for (let i = 1; i < pts.length; i++) {
+        page.drawLine({ start: pts[i - 1], end: pts[i], thickness: 2, color: hexRgb(s.color) })
+      }
     }
-    const canvas = getChartCanvas()
-    if (!canvas) return null
-    return await canvas.renderToBuffer(config)
-  } catch (err) {
-    console.error('Chart render failed (line):', err)
-    return null
   }
-}
 
-// PDF helpers
-const NAVY_RGB = rgb(0.031, 0.114, 0.169)
-const GOLD_RGB = rgb(0.788, 0.663, 0.388)
-const CREAM_RGB = rgb(0.941, 0.929, 0.902)
-
-async function addChartToPDF(pdfDoc: PDFDocument, chartBuffer: Buffer | null, x: number, y: number, width: number = 300) {
-  if (!chartBuffer) return 0
-  try {
-    const pngImage = await pdfDoc.embedPng(chartBuffer)
-    const aspectRatio = pngImage.height / pngImage.width
-    const height = width * aspectRatio
-    pdfDoc.getPages()[0].drawImage(pngImage, { x, y: y - height, width, height })
-    return height
-  } catch (err) {
-    console.error('Chart embed failed:', err)
-    return 0
+  // legend
+  let lxc = x
+  const legendY = plotY - 26
+  for (const s of series) {
+    page.drawRectangle({ x: lxc, y: legendY, width: 10, height: 3, color: hexRgb(s.color) })
+    page.drawText(s.label, { x: lxc + 14, y: legendY - 3, size: 8.5, font, color: TEXT_RGB })
+    lxc += 14 + font.widthOfTextAtSize(s.label, 8.5) + 18
   }
+
+  return plotY - 34
 }
 
-async function drawSectionHeader(page: PDFPage, fontBold: any, text: string, x: number, y: number, color = NAVY_RGB) {
-  page.drawText(text, { x, y, size: 16, font: fontBold, color })
-  page.drawLine({ start: { x, y: y - 4 }, end: { x: x + 80, y: y - 4 }, thickness: 3, color: GOLD_RGB })
-  return y - 20
-}
+// ---------- Report generators ----------
 
-async function drawKeyValue(page: PDFPage, font: any, fontBold: any, label: string, value: string, x: number, y: number) {
-  page.drawText(label + ':', { x, y, size: 11, font: fontBold, color: rgb(0.2, 0.2, 0.2) })
-  page.drawText(value, { x: x + 220, y, size: 11, font, color: rgb(0.3, 0.3, 0.3) })
-  return y - 20
-}
-
-async function drawNote(page: PDFPage, font: any, text: string, x: number, y: number) {
-  page.drawText('\u2022 ' + text, { x: x + 10, y, size: 9, font, color: rgb(0.4, 0.4, 0.4) })
-  return y - 13
-}
-
-// Main PDF generators with charts
-async function generateTaxReportPDF(data: ReportPayload['data'], currency: 'USD' | 'CAD', reference: string): Promise<Uint8Array> {
+export async function generateTaxReportPDF(data: ReportPayload['data'], currency: 'USD' | 'CAD', reference: string): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create()
-  const page = pdfDoc.addPage([612, 792])
+  const page0 = pdfDoc.addPage([PAGE_W, PAGE_H])
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+  drawFooterStrip(page0, font)
 
-  let y = 750
-  const leftMargin = 50
+  let y = drawHeader(page0, font, fontBold, 'Tax Clarity Report', reference)
 
-  page.drawText('KSEFinServe', { x: leftMargin, y, size: 28, font: fontBold, color: NAVY_RGB })
-  y -= 30
-  page.drawText('Tax Clarity Report', { x: leftMargin, y, size: 20, font: fontBold, color: GOLD_RGB })
-  y -= 20
-  page.drawText('Reference: ' + reference, { x: leftMargin, y, size: 10, font, color: rgb(0.4, 0.4, 0.4) })
-  y -= 30
-
-  y = await drawSectionHeader(page, fontBold, 'Your Inputs', leftMargin, y)
+  y = sectionHeader(page0, fontBold, 'Your Inputs', MARGIN, y)
   const income = parseMoneyStr(data.income as string) || 80000
   const state = data.state as string || 'California'
   const taxYear = data.taxYear as string || '2025'
-  y = await drawKeyValue(page, font, fontBold, 'Annual Employment Income', money(income, currency), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'State', state, leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Tax Year', taxYear, leftMargin, y)
-  y -= 10
+  y = kvRow(page0, font, fontBold, 'Annual Employment Income', money(income, currency), MARGIN, y)
+  y = kvRow(page0, font, fontBold, 'State', state, MARGIN, y)
+  y = kvRow(page0, font, fontBold, 'Tax Year', taxYear, MARGIN, y)
+  y -= 6
 
-  y = await drawSectionHeader(page, fontBold, 'Estimated Tax Breakdown', leftMargin, y)
   const federalTax = parseMoneyStr(data.federalTax as string) || 0
   const stateTax = parseMoneyStr(data.stateTax as string) || 0
   const ficaTax = parseMoneyStr(data.ficaTax as string) || 0
   const totalTax = parseMoneyStr(data.totalTax as string) || 0
   const afterTaxIncome = parseMoneyStr(data.afterTaxIncome as string) || 0
 
-  y = await drawKeyValue(page, font, fontBold, 'Federal Income Tax', money(federalTax, currency), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'State Income Tax', money(stateTax, currency), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'FICA (Social Security + Medicare)', money(ficaTax, currency), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Total Estimated Tax', money(totalTax, currency), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'After-Tax Income', money(afterTaxIncome, currency), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Average Tax Rate', String(data.avgRate || ''), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Assumed Marginal Rate', String(data.marginalRate || ''), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Income You Keep', String(data.keepPct || ''), leftMargin, y)
-  y -= 15
+  y = sectionHeader(page0, fontBold, 'Estimated Tax Breakdown', MARGIN, y)
+  y = keyBox(page0, font, fontBold, [
+    { label: 'Federal Income Tax', value: money(federalTax, currency) },
+    { label: 'State Income Tax', value: money(stateTax, currency) },
+    { label: 'FICA (Social Security + Medicare)', value: money(ficaTax, currency) },
+    { label: 'Total Estimated Tax', value: money(totalTax, currency) },
+    { label: 'After-Tax Income', value: money(afterTaxIncome, currency) },
+    { label: 'Average Tax Rate', value: String(data.avgRate || '') },
+  ], MARGIN, y, 2)
+  y -= 8
 
-  if (totalTax > 0) {
-    const pieBuffer = await generatePieChart(
-      ['Federal Tax', 'State Tax', 'FICA', 'After-Tax Income'],
-      [federalTax, stateTax, ficaTax, afterTaxIncome],
-      [CHART_BLUE, CHART_ORANGE, CHART_RED, CHART_GREEN],
-      'Tax Allocation'
-    )
-    y = await addChartToPDF(pdfDoc, pieBuffer, 320, y + 10, 250)
-  }
+  const spaced = ensureSpace(pdfDoc, page0, font, y, 220)
+  const page = spaced.page
+  if (page !== page0) y = spaced.y
+  y = drawDoughnut(page, font, fontBold, 'Tax Allocation', [
+    { label: 'Federal Tax', value: federalTax, color: CHART_BLUE },
+    { label: 'State Tax', value: stateTax, color: CHART_ORANGE },
+    { label: 'FICA', value: ficaTax, color: CHART_RED },
+    { label: 'After-Tax Income', value: afterTaxIncome, color: CHART_GREEN },
+  ], MARGIN, y, CONTENT_W)
+  y -= 26
 
-  y = await drawSectionHeader(page, fontBold, 'Important Notes', leftMargin, y)
-  const notes = [
-    'This is an illustrative estimate based on simplified 2025 tax brackets for single filers.',
+  y = sectionHeader(page, fontBold, 'Important Notes', MARGIN, y)
+  for (const note of [
+    'Illustrative estimate based on simplified 2025 tax brackets for single filers.',
     'Excludes CPP/QPP, EI, payroll contributions, credits, and individual circumstances.',
     'Not personalized tax advice - consult a qualified tax professional for filing decisions.',
     'Tax brackets apply progressively; your marginal rate applies only to your next dollar of income.',
-  ]
-  for (const note of notes) {
-    y = await drawNote(page, font, note, leftMargin, y)
+  ]) {
+    y = noteRow(page, font, note, MARGIN, y)
   }
-  y -= 10
-  page.drawText('Generated by KSEFinServe | Clarity \u00b7 Growth \u00b7 Impact', { x: leftMargin, y, size: 8, font, color: rgb(0.5, 0.5, 0.5) })
+
   return pdfDoc.save()
 }
 
-async function generateCollegeReportPDF(data: ReportPayload['data'], currency: 'USD' | 'CAD', reference: string): Promise<Uint8Array> {
+export async function generateCollegeReportPDF(data: ReportPayload['data'], currency: 'USD' | 'CAD', reference: string): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create()
-  const page = pdfDoc.addPage([612, 792])
+  const page0 = pdfDoc.addPage([PAGE_W, PAGE_H])
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+  drawFooterStrip(page0, font)
 
-  let y = 750
-  const leftMargin = 50
+  let y = drawHeader(page0, font, fontBold, 'Education Savings Plan', reference)
 
-  page.drawText('KSEFinServe', { x: leftMargin, y, size: 28, font: fontBold, color: NAVY_RGB })
-  y -= 30
-  page.drawText('Education Savings Plan', { x: leftMargin, y, size: 20, font: fontBold, color: GOLD_RGB })
-  y -= 20
-  page.drawText('Reference: ' + reference, { x: leftMargin, y, size: 10, font, color: rgb(0.4, 0.4, 0.4) })
-  y -= 30
-
-  y = await drawSectionHeader(page, fontBold, 'Your Inputs', leftMargin, y)
   const childAge = data.childAge as string || '6'
   const startAge = data.startAge as string || '18'
   const yearsToCollege = Number(data.yearsToCollege as string) || 12
@@ -374,172 +489,149 @@ async function generateCollegeReportPDF(data: ReportPayload['data'], currency: '
   const scenario = data.scenario as string || 'Moderate'
   const annualReturn = data.annualReturn as string || '5'
 
-  y = await drawKeyValue(page, font, fontBold, "Child's Current Age", childAge + ' years', leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Education Start Age', startAge + ' years', leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Years Until College', yearsToCollege + ' years', leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Country', country, leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'State/Province', state, leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Already Saved', money(alreadySaved, currency), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Monthly Contribution', money(monthlyContribution, currency), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Investment Scenario', scenario, leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Assumed Annual Return', annualReturn + '%', leftMargin, y)
-  y -= 10
+  y = sectionHeader(page0, fontBold, 'Your Inputs', MARGIN, y)
+  y = kvGrid(page0, font, fontBold, [
+    ["Child's Current Age", childAge + ' years'],
+    ['Education Start Age', startAge + ' years'],
+    ['Years Until College', yearsToCollege + ' years'],
+    ['Country', country],
+    ['State/Province', state],
+    ['Already Saved', money(alreadySaved, currency)],
+    ['Monthly Contribution', money(monthlyContribution, currency)],
+    ['Investment Scenario', scenario],
+    ['Assumed Annual Return', pctStr(annualReturn, '5%')],
+  ], MARGIN, y)
 
-  y = await drawSectionHeader(page, fontBold, 'Projections', leftMargin, y)
   const projectedSavings = parseMoneyStr(data.projectedSavings as string) || 0
   const fundingGoal = parseMoneyStr(data.fundingGoal as string) || 0
   const fundingGap = parseMoneyStr(data.fundingGap as string) || 0
   const contributionToCloseGap = parseMoneyStr(data.contributionToCloseGap as string) || 0
   const percentFunded = data.percentFunded as string || ''
 
-  y = await drawKeyValue(page, font, fontBold, 'Projected Savings at Age ' + startAge, money(projectedSavings, currency), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Education Funding Goal (4 years)', money(fundingGoal, currency), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Estimated Funding Gap', money(fundingGap, currency), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Contribution to Close Gap', money(contributionToCloseGap, currency) + '/mo', leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Percentage of Goal Funded', percentFunded, leftMargin, y)
-  y -= 15
+  y = sectionHeader(page0, fontBold, 'Projections', MARGIN, y)
+  y = keyBox(page0, font, fontBold, [
+    { label: 'Projected Savings at Age ' + startAge, value: money(projectedSavings, currency) },
+    { label: 'Funding Goal (4 years)', value: money(fundingGoal, currency) },
+    { label: 'Estimated Funding Gap', value: money(fundingGap, currency) },
+    { label: 'Contribution to Close Gap', value: money(contributionToCloseGap, currency) + '/mo' },
+    { label: 'Percentage of Goal Funded', value: percentFunded },
+  ], MARGIN, y, 2)
+  y -= 8
 
-  if (fundingGoal > 0) {
-    const barBuffer = await generateBarChart(
-      ['Projected Savings', 'Funding Goal'],
-      [projectedSavings, fundingGoal],
-      [CHART_GREEN, CHART_BLUE],
-      'Savings vs. Education Goal',
-      'Amount ($)'
-    )
-    y = await addChartToPDF(pdfDoc, barBuffer, 320, y + 10, 250)
-  }
+  const spaced = ensureSpace(pdfDoc, page0, font, y, 200)
+  const page = spaced.page
+  if (page !== page0) y = spaced.y
+  y = drawHBars(page, font, fontBold, 'Savings vs. Education Goal', [
+    { label: 'Projected Savings', value: projectedSavings, color: CHART_GREEN },
+    { label: 'Funding Goal', value: fundingGoal, color: CHART_BLUE },
+  ], MARGIN, y, CONTENT_W, 'Amount')
+  y -= 26
 
-  y = await drawSectionHeader(page, fontBold, 'Key Assumptions', leftMargin, y)
-  const notes = [
+  y = sectionHeader(page, fontBold, 'Key Assumptions', MARGIN, y)
+  for (const note of [
     '4 years of education at $18,000/year (today\'s dollars), rising 3% annually.',
     'Contributions made monthly at period-end; returns compound monthly.',
     'Covers 100% of costs; no grants or other funding included.',
     'Household income $100k-$150k assumed for context.',
     (country === 'Canada' ? 'Canadian' : 'US') + ' scenario in ' + currency + '.',
-  ]
-  for (const note of notes) {
-    y = await drawNote(page, font, note, leftMargin, y)
+  ]) {
+    y = noteRow(page, font, note, MARGIN, y)
   }
-  y -= 10
-  page.drawText('Generated by KSEFinServe | Clarity \u00b7 Growth \u00b7 Impact', { x: leftMargin, y, size: 8, font, color: rgb(0.5, 0.5, 0.5) })
+
   return pdfDoc.save()
 }
 
-async function generateDebtReportPDF(data: ReportPayload['data'], currency: 'USD' | 'CAD', reference: string): Promise<Uint8Array> {
+export async function generateDebtReportPDF(data: ReportPayload['data'], currency: 'USD' | 'CAD', reference: string): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create()
-  const page = pdfDoc.addPage([612, 792])
+  const page0 = pdfDoc.addPage([PAGE_W, PAGE_H])
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+  drawFooterStrip(page0, font)
 
-  let y = 750
-  const leftMargin = 50
+  let y = drawHeader(page0, font, fontBold, 'Payoff Blueprint', reference)
 
-  page.drawText('KSEFinServe', { x: leftMargin, y, size: 28, font: fontBold, color: NAVY_RGB })
-  y -= 30
-  page.drawText('Payoff Blueprint', { x: leftMargin, y, size: 20, font: fontBold, color: GOLD_RGB })
-  y -= 20
-  page.drawText('Reference: ' + reference, { x: leftMargin, y, size: 10, font, color: rgb(0.4, 0.4, 0.4) })
-  y -= 30
-
-  y = await drawSectionHeader(page, fontBold, 'Your Inputs', leftMargin, y)
   const strategy = data.strategy as string || 'Avalanche'
   const extraPayment = parseMoneyStr(data.extraPayment as string) || 0
-  y = await drawKeyValue(page, font, fontBold, 'Selected Strategy', strategy, leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Extra Monthly Payment', money(extraPayment, currency), leftMargin, y)
-  y -= 10
+  const otherStrategy = data.otherStrategy as string || 'Snowball'
 
-  y = await drawSectionHeader(page, fontBold, 'Your Debts', leftMargin, y)
   const debts = data.debts as Array<{ title: string; balance: string; apr: string; payment: string }> || [
     { title: 'Credit card', balance: '$8,000', apr: '19.99', payment: '$240' },
     { title: 'Personal loan', balance: '$4,000', apr: '6.99', payment: '$120' },
   ]
-  for (const debt of debts) {
-    const balance = parseMoneyStr(debt.balance)
-    const apr = Number(debt.apr) || 0
-    const payment = parseMoneyStr(debt.payment)
-    page.drawText(debt.title, { x: leftMargin, y, size: 11, font: fontBold, color: rgb(0.2, 0.2, 0.2) })
-    page.drawText(money(balance, currency), { x: leftMargin + 150, y, size: 11, font, color: rgb(0.3, 0.3, 0.3) })
-    page.drawText(debt.apr + '%', { x: leftMargin + 250, y, size: 11, font, color: rgb(0.3, 0.3, 0.3) })
-    page.drawText(money(payment, currency), { x: leftMargin + 350, y, size: 11, font, color: rgb(0.3, 0.3, 0.3) })
-    y -= 18
-  }
-  y -= 10
 
-  y = await drawSectionHeader(page, fontBold, 'Strategy Comparison', leftMargin, y)
+  y = sectionHeader(page0, fontBold, 'Your Debts', MARGIN, y)
+  // table header
+  page0.drawRectangle({ x: MARGIN, y: y - 16, width: CONTENT_W, height: 18, color: NAVY_RGB })
+  page0.drawText('Debt', { x: MARGIN + 10, y: y - 11, size: 9, font: fontBold, color: WHITE_RGB })
+  page0.drawText('Balance', { x: MARGIN + 210, y: y - 11, size: 9, font: fontBold, color: WHITE_RGB })
+  page0.drawText('APR', { x: MARGIN + 320, y: y - 11, size: 9, font: fontBold, color: WHITE_RGB })
+  page0.drawText('Min Payment', { x: MARGIN + 400, y: y - 11, size: 9, font: fontBold, color: WHITE_RGB })
+  y -= 34
+  for (const d of debts) {
+    page0.drawText(d.title, { x: MARGIN + 10, y, size: 10, font, color: TEXT_RGB })
+    page0.drawText(money(parseMoneyStr(d.balance), currency), { x: MARGIN + 210, y, size: 10, font, color: TEXT_RGB })
+    page0.drawText(d.apr + '%', { x: MARGIN + 320, y, size: 10, font, color: TEXT_RGB })
+    page0.drawText(money(parseMoneyStr(d.payment), currency), { x: MARGIN + 400, y, size: 10, font, color: TEXT_RGB })
+    y -= 17
+  }
+  y -= 8
+
   const debtFreeMonths = Number(data.debtFreeMonths as string) || 0
   const totalInterest = parseMoneyStr(data.totalInterest as string) || 0
-  const otherStrategy = data.otherStrategy as string || 'Snowball'
   const otherStrategyMonths = Number(data.otherStrategyMonths as string) || 0
   const otherStrategyInterest = parseMoneyStr(data.otherStrategyInterest as string) || 0
   const interestSavings = parseMoneyStr(data.interestSavings as string) || 0
   const timeSaved = Number(data.timeSaved as string) || 0
   const totalMonthlyPayment = parseMoneyStr(data.totalMonthlyPayment as string) || 0
 
-  y = await drawKeyValue(page, font, fontBold, 'Total Monthly Payment', money(totalMonthlyPayment, currency), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Debt-Free Timeline (Selected)', debtFreeMonths + ' months', leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Total Interest (Selected)', money(totalInterest, currency), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Other Strategy', otherStrategy, leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Other Strategy Timeline', otherStrategyMonths + ' months', leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Other Strategy Interest', money(otherStrategyInterest, currency), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Interest Savings with Selected', money(interestSavings, currency), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Time Saved with Selected', timeSaved + ' months', leftMargin, y)
-  y -= 15
+  y = sectionHeader(page0, fontBold, 'Strategy Comparison', MARGIN, y)
+  y = keyBox(page0, font, fontBold, [
+    { label: 'Selected Strategy', value: strategy },
+    { label: 'Total Monthly Payment', value: money(totalMonthlyPayment, currency) },
+    { label: strategy + ' Timeline', value: debtFreeMonths + ' months' },
+    { label: strategy + ' Total Interest', value: money(totalInterest, currency) },
+    { label: otherStrategy + ' Timeline', value: otherStrategyMonths + ' months' },
+    { label: otherStrategy + ' Total Interest', value: money(otherStrategyInterest, currency) },
+    { label: 'Interest Saved', value: money(interestSavings, currency) },
+    { label: 'Time Saved', value: timeSaved + ' months' },
+  ], MARGIN, y, 2)
+  y -= 8
 
-  if (debtFreeMonths > 0 && otherStrategyMonths > 0) {
-    const barBuffer = await generateBarChart(
-      [strategy, otherStrategy],
-      [debtFreeMonths, otherStrategyMonths],
-      [CHART_GREEN, CHART_BLUE],
-      'Months to Debt Freedom',
-      'Months'
-    )
-    y = await addChartToPDF(pdfDoc, barBuffer, 320, y + 10, 250)
-  }
+  const spaced = ensureSpace(pdfDoc, page0, font, y, 240)
+  const page = spaced.page
+  if (page !== page0) y = spaced.y
+  y = drawHBars(page, font, fontBold, 'Months to Debt Freedom', [
+    { label: strategy, value: debtFreeMonths, color: CHART_GREEN },
+    { label: otherStrategy, value: otherStrategyMonths, color: CHART_BLUE },
+  ], MARGIN, y, CONTENT_W, 'Months')
+  y -= 18
+  y = drawHBars(page, font, fontBold, 'Total Interest Paid', [
+    { label: strategy, value: totalInterest, color: CHART_GREEN },
+    { label: otherStrategy, value: otherStrategyInterest, color: CHART_RED },
+  ], MARGIN, y, CONTENT_W, 'Interest')
+  y -= 24
 
-  if (totalInterest > 0 && otherStrategyInterest > 0) {
-    const barBuffer2 = await generateBarChart(
-      [strategy, otherStrategy],
-      [totalInterest, otherStrategyInterest],
-      [CHART_GREEN, CHART_RED],
-      'Total Interest Paid',
-      'Interest ($)'
-    )
-    y = await addChartToPDF(pdfDoc, barBuffer2, 320, y + 10, 250)
-  }
-
-  y = await drawSectionHeader(page, fontBold, 'Important Notes', leftMargin, y)
-  const notes = [
+  y = sectionHeader(page, fontBold, 'Important Notes', MARGIN, y)
+  for (const note of [
     'Illustrative, not personalized advice. Fixed APRs assumed; interest added monthly.',
     'Fixed minimums and fixed extra payment roll over as debts are cleared.',
     'Actual payoff may vary with rate changes, fees, or additional borrowing.',
-    'Consider consulting a financial advisor for a comprehensive debt plan.',
-  ]
-  for (const note of notes) {
-    y = await drawNote(page, font, note, leftMargin, y)
+  ]) {
+    y = noteRow(page, font, note, MARGIN, y)
   }
-  y -= 10
-  page.drawText('Generated by KSEFinServe | Clarity \u00b7 Growth \u00b7 Impact', { x: leftMargin, y, size: 8, font, color: rgb(0.5, 0.5, 0.5) })
+
   return pdfDoc.save()
 }
 
-async function generateRetirementReportPDF(data: ReportPayload['data'], currency: 'USD' | 'CAD', reference: string): Promise<Uint8Array> {
+export async function generateRetirementReportPDF(data: ReportPayload['data'], currency: 'USD' | 'CAD', reference: string): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create()
-  const page = pdfDoc.addPage([612, 792])
+  const page0 = pdfDoc.addPage([PAGE_W, PAGE_H])
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+  drawFooterStrip(page0, font)
 
-  let y = 750
-  const leftMargin = 50
+  let y = drawHeader(page0, font, fontBold, 'Retirement Roadmap', reference)
 
-  page.drawText('KSEFinServe', { x: leftMargin, y, size: 28, font: fontBold, color: NAVY_RGB })
-  y -= 30
-  page.drawText('Retirement Roadmap', { x: leftMargin, y, size: 20, font: fontBold, color: GOLD_RGB })
-  y -= 20
-  page.drawText('Reference: ' + reference, { x: leftMargin, y, size: 10, font, color: rgb(0.4, 0.4, 0.4) })
-  y -= 30
-
-  y = await drawSectionHeader(page, fontBold, 'Your Inputs', leftMargin, y)
   const ageToday = data.ageToday as string || '40'
   const retireAge = data.retireAge as string || '65'
   const yearsToRetirement = Number(data.yearsToRetirement as string) || 25
@@ -547,84 +639,81 @@ async function generateRetirementReportPDF(data: ReportPayload['data'], currency
   const scenario = data.scenario as string || 'Moderate'
   const growthReturn = data.growthReturn as string || '5'
 
-  y = await drawKeyValue(page, font, fontBold, 'Age Today', ageToday + ' years', leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Retirement Age', retireAge + ' years', leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Years to Retirement', yearsToRetirement + ' years', leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Monthly Contribution', money(monthlyContribution, currency), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Investment Scenario', scenario, leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Assumed Growth Return', growthReturn + '%', leftMargin, y)
-  y -= 10
+  y = sectionHeader(page0, fontBold, 'Your Inputs', MARGIN, y)
+  y = kvGrid(page0, font, fontBold, [
+    ['Age Today', ageToday + ' years'],
+    ['Retirement Age', retireAge + ' years'],
+    ['Years to Retirement', yearsToRetirement + ' years'],
+    ['Monthly Contribution', money(monthlyContribution, currency)],
+    ['Investment Scenario', scenario],
+    ['Assumed Growth Return', pctStr(growthReturn, '5%')],
+  ], MARGIN, y)
 
-  y = await drawSectionHeader(page, fontBold, 'Projections', leftMargin, y)
   const projectedSavings = parseMoneyStr(data.projectedSavings as string) || 0
   const estimatedAnnualIncome = parseMoneyStr(data.estimatedAnnualIncome as string) || 0
   const annualIncomeGoal = parseMoneyStr(data.annualIncomeGoal as string) || 0
   const fundingGap = parseMoneyStr(data.fundingGap as string) || 0
 
-  y = await drawKeyValue(page, font, fontBold, 'Projected Savings at Age ' + retireAge, money(projectedSavings, currency), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Estimated Annual Income (4% draw + CPP/OAS)', money(estimatedAnnualIncome, currency), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Annual Income Goal', money(annualIncomeGoal, currency), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Annual Funding Gap', money(fundingGap, currency), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Assumed Inflation', '2%', leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Retirement Return Assumption', '3%', leftMargin, y)
-  y -= 15
+  y = sectionHeader(page0, fontBold, 'Projections', MARGIN, y)
+  y = keyBox(page0, font, fontBold, [
+    { label: 'Projected Savings at Age ' + retireAge, value: money(projectedSavings, currency) },
+    { label: 'Estimated Annual Income', value: money(estimatedAnnualIncome, currency) },
+    { label: 'Annual Income Goal', value: money(annualIncomeGoal, currency) },
+    { label: 'Annual Funding Gap', value: money(fundingGap, currency) },
+  ], MARGIN, y, 2)
+  y -= 8
 
-  if (yearsToRetirement > 0 && projectedSavings > 0) {
-    const yearlyLabels = Array.from({ length: yearsToRetirement + 1 }, (_, i) => (parseInt(ageToday) + i).toString())
-    const yearlyData = Array.from({ length: yearsToRetirement + 1 }, (_, i) => Math.round(projectedSavings * Math.pow(1 + parseFloat(growthReturn) / 100, - (yearsToRetirement - i)) * (i / yearsToRetirement)))
-    const lineBuffer = await generateLineChart(
-      yearlyLabels,
-      [{ label: 'Projected Savings', data: yearlyData, color: CHART_BLUE }],
-      'Retirement Savings Growth',
-      'Savings ($)'
-    )
-    y = await addChartToPDF(pdfDoc, lineBuffer, 320, y + 10, 250)
+  // Growth curve
+  const rate = parseFloat(growthReturn) / 100
+  const n = Math.min(Math.max(yearsToRetirement, 1), 40)
+  const values: number[] = []
+  for (let i = 0; i <= n; i++) {
+    const t = i
+    const fv = 120000 * Math.pow(1 + rate, t) + monthlyContribution * 12 * ((Math.pow(1 + rate, t) - 1) / (rate || 1))
+    values.push(Math.round(fv))
   }
-
-  if (estimatedAnnualIncome > 0 && annualIncomeGoal > 0) {
-    const barBuffer = await generateBarChart(
-      ['Estimated Income', 'Income Goal'],
-      [estimatedAnnualIncome, annualIncomeGoal],
-      [CHART_GREEN, CHART_BLUE],
-      'Retirement Income vs. Goal',
-      'Annual Income ($)'
-    )
-    y = await addChartToPDF(pdfDoc, barBuffer, 320, y + 10, 250)
+  // Anchor the curve so its final point matches the headline projection.
+  if (values[n] > 0 && projectedSavings > 0) {
+    const k = projectedSavings / values[n]
+    for (let i = 0; i <= n; i++) values[i] = Math.round(values[i] * k)
   }
+  const xLabels = values.map((_, i) => String(parseInt(ageToday) + i))
 
-  y = await drawSectionHeader(page, fontBold, 'Key Assumptions', leftMargin, y)
-  const assumptionNotes = [
+  const spaced = ensureSpace(pdfDoc, page0, font, y, 230)
+  const page = spaced.page
+  if (page !== page0) y = spaced.y
+  y = drawLineChart(page, font, fontBold, 'Retirement Savings Growth', xLabels,
+    [{ label: 'Projected Savings', color: CHART_BLUE, values }], MARGIN, y, CONTENT_W, 160)
+  y -= 20
+  y = drawHBars(page, font, fontBold, 'Retirement Income vs. Goal', [
+    { label: 'Estimated Income', value: estimatedAnnualIncome, color: CHART_GREEN },
+    { label: 'Income Goal', value: annualIncomeGoal, color: CHART_BLUE },
+  ], MARGIN, y, CONTENT_W, 'Annual Income')
+  y -= 24
+
+  y = sectionHeader(page, fontBold, 'Key Assumptions', MARGIN, y)
+  for (const note of [
     'Starting assets: RRSP $80,000 \u00b7 TFSA $30,000 \u00b7 Other $10,000.',
     'CPP/OAS: $1,500/month at age 65 (approx. $18,000/year).',
-    'Plan through age 95 \u00b7 Inflation 2% \u00b7 Growth return ' + growthReturn + '%.',
+    'Plan through age 95 \u00b7 Inflation 2% \u00b7 Growth return ' + pctStr(growthReturn, '5%') + '.',
     'Retirement draw: 4% initial annual withdrawal, rising 2% yearly.',
     'All amounts in future nominal ' + currency + '.',
-  ]
-  for (const note of assumptionNotes) {
-    y = await drawNote(page, font, note, leftMargin, y)
+  ]) {
+    y = noteRow(page, font, note, MARGIN, y)
   }
-  y -= 10
-  page.drawText('Generated by KSEFinServe | Clarity \u00b7 Growth \u00b7 Impact', { x: leftMargin, y, size: 8, font, color: rgb(0.5, 0.5, 0.5) })
+
   return pdfDoc.save()
 }
 
-async function generateCompoundReportPDF(data: ReportPayload['data'], currency: 'USD' | 'CAD', reference: string): Promise<Uint8Array> {
+export async function generateCompoundReportPDF(data: ReportPayload['data'], currency: 'USD' | 'CAD', reference: string): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create()
-  const page = pdfDoc.addPage([612, 792])
+  const page0 = pdfDoc.addPage([PAGE_W, PAGE_H])
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+  drawFooterStrip(page0, font)
 
-  let y = 750
-  const leftMargin = 50
+  let y = drawHeader(page0, font, fontBold, 'Growth Report', reference)
 
-  page.drawText('KSEFinServe', { x: leftMargin, y, size: 28, font: fontBold, color: NAVY_RGB })
-  y -= 30
-  page.drawText('Growth Report', { x: leftMargin, y, size: 20, font: fontBold, color: GOLD_RGB })
-  y -= 20
-  page.drawText('Reference: ' + reference, { x: leftMargin, y, size: 10, font, color: rgb(0.4, 0.4, 0.4) })
-  y -= 30
-
-  y = await drawSectionHeader(page, fontBold, 'Your Inputs', leftMargin, y)
   const initialDeposit = parseMoneyStr(data.initialDeposit as string) || 10000
   const years = Number(data.years as string) || 10
   const annualRate = data.annualRate as string || '4'
@@ -632,15 +721,16 @@ async function generateCompoundReportPDF(data: ReportPayload['data'], currency: 
   const contribution = parseMoneyStr(data.contribution as string) || 100
   const contributionFreq = data.contributionFreq as string || 'Monthly'
 
-  y = await drawKeyValue(page, font, fontBold, 'Initial Deposit', money(initialDeposit, currency), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Years of Growth', years + ' years', leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Estimated Annual Rate', annualRate + '%', leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Compounding Frequency', compoundFreq, leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Recurring Contribution', money(contribution, currency), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Contribution Frequency', contributionFreq, leftMargin, y)
-  y -= 10
+  y = sectionHeader(page0, fontBold, 'Your Inputs', MARGIN, y)
+  y = kvGrid(page0, font, fontBold, [
+    ['Initial Deposit', money(initialDeposit, currency)],
+    ['Years of Growth', years + ' years'],
+    ['Estimated Annual Rate', pctStr(annualRate, '4%')],
+    ['Compounding Frequency', compoundFreq],
+    ['Recurring Contribution', money(contribution, currency)],
+    ['Contribution Frequency', contributionFreq],
+  ], MARGIN, y)
 
-  y = await drawSectionHeader(page, fontBold, 'Projections', leftMargin, y)
   const totalBalance = parseMoneyStr(data.totalBalance as string) || 0
   const totalDeposits = parseMoneyStr(data.totalDeposits as string) || 0
   const interestEarned = parseMoneyStr(data.interestEarned as string) || 0
@@ -648,72 +738,77 @@ async function generateCompoundReportPDF(data: ReportPayload['data'], currency: 
   const withoutContributions = parseMoneyStr(data.withoutContributions as string) || 0
   const apy = data.apy as string || ''
 
-  y = await drawKeyValue(page, font, fontBold, 'Total Balance After ' + years + ' Years', money(totalBalance, currency, 2), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Total Deposits', money(totalDeposits, currency), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Interest Earned', money(interestEarned, currency, 2), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Interest as % of Ending Balance', interestPct, leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Without Contributions (Same Rate)', money(withoutContributions, currency, 2), leftMargin, y)
-  y = await drawKeyValue(page, font, fontBold, 'Effective Annual Yield (APY)', apy, leftMargin, y)
-  y -= 15
+  y = sectionHeader(page0, fontBold, 'Projections', MARGIN, y)
+  y = keyBox(page0, font, fontBold, [
+    { label: 'Total Balance After ' + years + ' Years', value: money(totalBalance, currency, 2) },
+    { label: 'Total Deposits', value: money(totalDeposits, currency) },
+    { label: 'Interest Earned', value: money(interestEarned, currency, 2) },
+    { label: 'Interest as % of Balance', value: interestPct },
+    { label: 'Without Contributions', value: money(withoutContributions, currency, 2) },
+    { label: 'Effective Annual Yield (APY)', value: apy },
+  ], MARGIN, y, 2)
+  y -= 8
 
-  if (totalDeposits > 0 && interestEarned > 0) {
-    const pieBuffer = await generatePieChart(
-      ['Total Deposits', 'Interest Earned'],
-      [totalDeposits, interestEarned],
-      [CHART_BLUE, CHART_GOLD],
-      'What Built Your Wealth'
-    )
-    y = await addChartToPDF(pdfDoc, pieBuffer, 320, y + 10, 250)
+  const spaced = ensureSpace(pdfDoc, page0, font, y, 220)
+  const page = spaced.page
+  if (page !== page0) y = spaced.y
+  y = drawDoughnut(page, font, fontBold, 'What Built Your Wealth', [
+    { label: 'Total Deposits', value: totalDeposits, color: CHART_BLUE },
+    { label: 'Interest Earned', value: interestEarned, color: CHART_GOLD },
+  ], MARGIN, y, CONTENT_W)
+  y -= 22
+
+  const rate = parseFloat(annualRate) / 100
+  const freq = compoundFreq.toLowerCase().includes('daily') ? 365 : compoundFreq.toLowerCase().includes('monthly') ? 12 : 1
+  const periodicRate = rate / freq
+  const withVals: number[] = []
+  const withoutVals: number[] = []
+  for (let i = 0; i <= years; i++) {
+    const periods = i * freq
+    const factor = Math.pow(1 + periodicRate, periods)
+    withVals.push(Math.round(initialDeposit * factor + (contribution * (factor - 1)) / (periodicRate || 1)))
+    withoutVals.push(Math.round(initialDeposit * factor))
+  }
+  // Anchor both curves to the headline figures.
+  if (withVals[years] > 0 && totalBalance > 0) {
+    const k = totalBalance / withVals[years]
+    for (let i = 0; i <= years; i++) withVals[i] = Math.round(withVals[i] * k)
+  }
+  if (withoutVals[years] > 0 && withoutContributions > 0) {
+    const k = withoutContributions / withoutVals[years]
+    for (let i = 0; i <= years; i++) withoutVals[i] = Math.round(withoutVals[i] * k)
   }
 
-  if (years > 0 && totalBalance > 0) {
-    const yearlyLabels = Array.from({ length: years + 1 }, (_, i) => i.toString())
-    const rate = parseFloat(annualRate) / 100
-    const freq = compoundFreq.toLowerCase().includes('daily') ? 365 : compoundFreq.toLowerCase().includes('monthly') ? 12 : 1
-    const periodicRate = rate / freq
-    const periodsPerYear = freq
-    const yearlyData = Array.from({ length: years + 1 }, (_, i) => {
-      const periods = i * periodsPerYear
-      return initialDeposit * Math.pow(1 + periodicRate, periods) +
-        (contribution * (Math.pow(1 + periodicRate, periods) - 1) / periodicRate)
-    })
-    const lineBuffer = await generateLineChart(
-      yearlyLabels,
-      [
-        { label: 'With Contributions', data: yearlyData, color: CHART_BLUE },
-        { label: 'Without Contributions', data: yearlyData.map((v, i) => initialDeposit * Math.pow(1 + periodicRate, i * periodsPerYear)), color: CHART_GRAY }
-      ],
-      'Compound Growth Over Time',
-      'Balance ($)'
-    )
-    y = await addChartToPDF(pdfDoc, lineBuffer, 320, y + 10, 250)
-  }
+  const spaced2 = ensureSpace(pdfDoc, page, font, y, 220)
+  const page2 = spaced2.page
+  if (page2 !== page) y = spaced2.y
+  y = drawLineChart(page2, font, fontBold, 'Compound Growth Over Time',
+    withVals.map((_, i) => 'Y' + i),
+    [
+      { label: 'With Contributions', color: CHART_BLUE, values: withVals },
+      { label: 'Without Contributions', color: CHART_GRAY, values: withoutVals },
+    ], MARGIN, y, CONTENT_W, 160)
+  y -= 20
+  y = drawHBars(page2, font, fontBold, 'Impact of Regular Contributions', [
+    { label: 'With Contributions', value: totalBalance, color: CHART_GREEN },
+    { label: 'Without Contributions', value: withoutContributions, color: CHART_GRAY },
+  ], MARGIN, y, CONTENT_W, 'Final Balance')
+  y -= 24
 
-  if (totalBalance > 0 && withoutContributions > 0) {
-    const barBuffer = await generateBarChart(
-      ['With Contributions', 'Without Contributions'],
-      [totalBalance, withoutContributions],
-      [CHART_GREEN, CHART_GRAY],
-      'Impact of Regular Contributions',
-      'Final Balance ($)'
-    )
-    y = await addChartToPDF(pdfDoc, barBuffer, 320, y + 10, 250)
-  }
-
-  y = await drawSectionHeader(page, fontBold, 'Key Assumptions', leftMargin, y)
-  const notes = [
+  y = sectionHeader(page2, fontBold, 'Key Assumptions', MARGIN, y)
+  for (const note of [
     'Contributions at period-end \u00b7 Constant annual rate \u00b7 ' + compoundFreq.toLowerCase() + ' compounding.',
     'No taxes, fees, or withdrawals \u00b7 All values in ' + currency + '.',
     annualRate + '% is the annual rate before compounding, not APY.',
     compoundFreq.toLowerCase() + ' compounding gives an effective annual yield of about ' + apy + '.',
-  ]
-  for (const note of notes) {
-    y = await drawNote(page, font, note, leftMargin, y)
+  ]) {
+    y = noteRow(page2, font, note, MARGIN, y)
   }
-  y -= 10
-  page.drawText('Generated by KSEFinServe | Clarity \u00b7 Growth \u00b7 Impact', { x: leftMargin, y, size: 8, font, color: rgb(0.5, 0.5, 0.5) })
+
   return pdfDoc.save()
 }
+
+// ---------- Handler ----------
 
 export default async function handler(req: Request) {
   if (req.method === 'OPTIONS') {
@@ -787,7 +882,7 @@ export default async function handler(req: Request) {
         return json({ error: 'Invalid tool type' }, 400)
     }
 
-    console.log('Sending report email to:', email, 'subject:', subject)
+    console.log('Sending report email to:', email, 'subject:', subject, 'pdf bytes:', pdfBytes.length)
 
     const info = await transporter.sendMail({
       from: '"' + EMAIL_FROM_NAME + '" <' + EMAIL_FROM + '>',
@@ -820,7 +915,8 @@ export default async function handler(req: Request) {
   }
 }
 
-// Email templates
+// ---------- Email templates ----------
+
 function buildEmailHtml(opts: {
   preheaderText: string
   hero: { title: string; subtitle: string; bgColor: string; textColor: string }
@@ -848,7 +944,7 @@ function taxReportTemplate(params: { userName: string; reference: string; curren
     sections: [
       { title: 'Report Overview', content: '<p style="margin: 0 0 16px; font-size: 16px;">Hi <strong>' + params.userName + '</strong>,</p><p style="margin: 0 0 24px;">Thank you for using the KSEFinServe Tax Calculator. Your personalized tax clarity report is ready.</p>' },
       { title: 'Important Notes', content: '<ul style="margin: 0; padding-left: 20px; line-height: 2;"><li>Illustrative estimate based on simplified 2025 tax brackets for single filers</li><li>Excludes CPP/QPP, EI, payroll contributions, credits, and individual circumstances</li><li>Not personalized tax advice - consult a qualified tax professional for filing decisions</li><li>Tax brackets apply progressively; your marginal rate applies only to your next dollar of income</li></ul>' },
-      { title: 'Your PDF Report', content: '<p style="margin: 0 0 16px;">A detailed PDF version of this report is attached, including the full tax allocation chart and assumptions.</p>' },
+      { title: 'Your PDF Report', content: '<p style="margin: 0 0 16px;">A designed PDF version of this report is attached, including the tax allocation chart and full assumptions.</p>' },
     ],
     cards: [
       { label: 'Annual Employment Income', value: params.income },
@@ -874,7 +970,7 @@ function collegeSavingsReportTemplate(params: { userName: string; reference: str
     sections: [
       { title: 'Report Overview', content: '<p style="margin: 0 0 16px; font-size: 16px;">Hi <strong>' + params.userName + '</strong>,</p><p style="margin: 0 0 24px;">Your personalized education savings plan is ready, showing how your contributions could help fund your child\'s future education.</p>' },
       { title: 'Key Assumptions', content: '<ul style="margin: 0; padding-left: 20px; line-height: 2;"><li>4 years of education at $18,000/year (today\'s dollars), rising 3% annually</li><li>Contributions made monthly at period-end; returns compound monthly</li><li>Covers 100% of costs; no grants or other funding included</li><li>Household income $100k-$150k assumed for context</li></ul>' },
-      { title: 'Your PDF Report', content: '<p style="margin: 0 0 16px;">A detailed PDF version of this plan is attached, including the savings vs. goal chart and full assumptions.</p>' },
+      { title: 'Your PDF Report', content: '<p style="margin: 0 0 16px;">A designed PDF version of this plan is attached, including the savings vs. goal chart and full assumptions.</p>' },
     ],
     cards: [
       { label: "Child's Current Age", value: params.childAge + ' years' },
@@ -906,7 +1002,7 @@ function debtRepaymentReportTemplate(params: { userName: string; reference: stri
       { title: 'Report Overview', content: '<p style="margin: 0 0 16px; font-size: 16px;">Hi <strong>' + params.userName + '</strong>,</p><p style="margin: 0 0 24px;">Your personalized payoff blueprint compares two strategies so you can choose the path that fits your goals.</p>' },
       { title: 'Your Debts', content: debtsHtml },
       { title: 'Strategy Comparison', content: '<p style="margin: 0 0 16px;">' + (params.strategy === 'Avalanche' ? 'Avalanche targets the highest APR first and usually costs less overall.' : 'Snowball targets the smallest balance first for earlier psychological wins.') + '</p><p style="margin: 0;">Your selected strategy saves ' + params.interestSavings + ' in interest and ' + params.timeSaved + ' months vs. the alternative.</p>' },
-      { title: 'Your PDF Report', content: '<p style="margin: 0 0 16px;">A detailed PDF version of this blueprint is attached, including the strategy comparison charts.</p>' },
+      { title: 'Your PDF Report', content: '<p style="margin: 0 0 16px;">A designed PDF version of this blueprint is attached, including the strategy comparison charts.</p>' },
     ],
     cards: [
       { label: 'Selected Strategy', value: params.strategy },
@@ -930,7 +1026,7 @@ function retirementReportTemplate(params: { userName: string; reference: string;
     sections: [
       { title: 'Report Overview', content: '<p style="margin: 0 0 16px; font-size: 16px;">Hi <strong>' + params.userName + '</strong>,</p><p style="margin: 0 0 24px;">Your personalized retirement roadmap shows how today\'s savings could support tomorrow\'s income.</p>' },
       { title: 'Key Assumptions', content: '<ul style="margin: 0; padding-left: 20px; line-height: 2;"><li>Starting assets: RRSP $80,000 \u00b7 TFSA $30,000 \u00b7 Other $10,000</li><li>CPP/OAS: $1,500/month at age 65 (approx. $18,000/year)</li><li>Plan through age 95 \u00b7 Inflation 2% \u00b7 Growth return ' + params.growthReturn + '</li><li>Retirement draw: 4% initial annual withdrawal, rising 2% yearly</li><li>All amounts in future nominal ' + params.currency + '</li></ul>' },
-      { title: 'Your PDF Report', content: '<p style="margin: 0 0 16px;">A detailed PDF version of this roadmap is attached, including the savings growth chart and income gap analysis.</p>' },
+      { title: 'Your PDF Report', content: '<p style="margin: 0 0 16px;">A designed PDF version of this roadmap is attached, including the savings growth chart and income gap analysis.</p>' },
     ],
     cards: [
       { label: 'Age Today', value: params.ageToday + ' years' },
@@ -958,7 +1054,7 @@ function compoundInterestReportTemplate(params: { userName: string; reference: s
       { title: 'Report Overview', content: '<p style="margin: 0 0 16px; font-size: 16px;">Hi <strong>' + params.userName + '</strong>,</p><p style="margin: 0 0 24px;">Your personalized growth report shows how time and consistency can make your money work harder.</p>' },
       { title: 'Key Assumptions', content: '<ul style="margin: 0; padding-left: 20px; line-height: 2;"><li>Contributions at period-end \u00b7 Constant annual rate \u00b7 ' + params.compoundFreq.toLowerCase() + ' compounding</li><li>No taxes, fees, or withdrawals \u00b7 All values in ' + params.currency + '</li><li>' + params.annualRate + '% is the annual rate before compounding, not APY</li></ul>' },
       { title: 'The Power of Time', content: '<p style="margin: 0 0 16px;">The space between your deposits and your total balance is the interest earned\u2014and the interest on that interest. Time and consistency do the heavy lifting.</p>' },
-      { title: 'Your PDF Report', content: '<p style="margin: 0 0 16px;">A detailed PDF version of this report is attached, including the wealth composition pie chart and growth trajectory line chart.</p>' },
+      { title: 'Your PDF Report', content: '<p style="margin: 0 0 16px;">A designed PDF version of this report is attached, including the wealth composition chart and growth trajectory chart.</p>' },
     ],
     cards: [
       { label: 'Initial Deposit', value: params.initialDeposit },

@@ -1,284 +1,476 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react"
+import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react"
 import { useBookings, type BookingInput } from "./admin/bookingsDirectory"
+import { submitContactMessage } from "./admin/contactDirectory"
 
-/* ==================================================================
-   KSEFinServe — Wealth Protection (insurance) page
-   Loaded only at /insurance.
-   ================================================================== */
+/* ==========================================================================
+   /insurance — ported 1:1 from the Bloomingvine reference page.
+   Layout, sections and class names follow the reference; the booking form
+   keeps writing to the same `bookings` pipeline as /book-now.
+   ========================================================================== */
 
 const ASSETS = "/assets"
-const POSTER = `${ASSETS}/kayode-poster.png`
 
-/* ---------------- Icons (stroke, 48x48) ---------------- */
-type IcoProps = { size?: number; className?: string }
-const Svg = ({ size = 24, className, children, viewBox = "0 0 48 48" }: IcoProps & { children: ReactNode; viewBox?: string }) => (
-  <svg width={size} height={size} viewBox={viewBox} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">{children}</svg>
-)
-
-const IcoFamily = (p: IcoProps) => (<Svg {...p}><circle cx="17" cy="16" r="5" /><circle cx="32" cy="16" r="5" /><path d="M8 38c0-6 4-10 9-10s9 4 9 10" /><path d="M25 38c0-6 4-10 9-10s8 4 8 10" /></Svg>)
-const IcoHome = (p: IcoProps) => (<Svg {...p}><path d="M8 22 24 9l16 13" /><path d="M12 20v18h24V20" /><path d="M20 38V27h8v11" /></Svg>)
-const IcoGlobe = (p: IcoProps) => (<Svg {...p}><circle cx="24" cy="24" r="16" /><path d="M8 24h32" /><path d="M24 8c5 5 5 27 0 32c-5-5-5-27 0-32z" /></Svg>)
-const IcoCap = (p: IcoProps) => (<Svg {...p}><path d="M6 18 24 10l18 8-18 8z" /><path d="M14 22v10c0 3 4.5 6 10 6s10-3 10-6V22" /><path d="M42 20v12" /></Svg>)
-const IcoBriefcase = (p: IcoProps) => (<Svg {...p}><rect x="7" y="15" width="34" height="24" rx="4" /><path d="M18 15v-4a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v4" /><path d="M7 25h34" /></Svg>)
-const IcoCompass = (p: IcoProps) => (<Svg {...p}><circle cx="24" cy="24" r="16" /><path d="m30 18-4 10-10 4 4-10z" /></Svg>)
-const IcoShield = (p: IcoProps) => (<Svg {...p}><path d="M24 6l14 5v11c0 9-6 16-14 20-8-4-14-11-14-20V11z" /><path d="m17 24 5 5 9-10" /></Svg>)
-const IcoIUL = (p: IcoProps) => (<Svg {...p}><path d="M8 38V22" /><path d="M18 38V14" /><path d="M28 38V26" /><path d="M38 38V10" /><path d="M6 14c6-6 12 4 18-2s12 2 18-4" /></Svg>)
-const IcoFinal = (p: IcoProps) => (<Svg {...p}><path d="M24 8s-9 8-9 15a9 9 0 0 0 18 0c0-7-9-15-9-15z" /><path d="M24 23v6" /></Svg>)
-const IcoAnalysis = (p: IcoProps) => (<Svg {...p}><circle cx="21" cy="21" r="12" /><path d="m30 30 10 10" /><path d="M15 21h12" /><path d="M21 15v12" /></Svg>)
-const IcoReview = (p: IcoProps) => (<Svg {...p}><path d="M10 8h22a3 3 0 0 1 3 3v26a3 3 0 0 1-3 3H10a3 3 0 0 1-3-3V11a3 3 0 0 1 3-3z" /><path d="M14 18h20" /><path d="M14 26h20" /><path d="M14 34h10" /></Svg>)
-const IcoIncome = (p: IcoProps) => (<Svg {...p}><path d="M10 40h28" /><path d="M14 40V28" /><path d="M24 40V18" /><path d="M34 40V10" /><path d="M8 16l10-6 8 5 14-8" /></Svg>)
-const IcoCritical = (p: IcoProps) => (<Svg {...p}><path d="M24 6v8" /><path d="M14 42h20" /><path d="M18 42V24a6 6 0 0 1 12 0v18" /><path d="M24 18v6" /><circle cx="24" cy="14" r="3" /></Svg>)
-const IcoChronic = (p: IcoProps) => (<Svg {...p}><circle cx="20" cy="13" r="5" /><path d="M12 40V26a4 4 0 0 1 4-4h8" /><path d="M30 22v8" /><path d="M30 30l6 4 4 8" /><path d="M34 16l6 6" /></Svg>)
-const IcoTerminal = (p: IcoProps) => (<Svg {...p}><path d="M24 6c8 0 14 6 14 14s-6 14-14 14S10 29 10 20 16 6 24 6z" /><path d="M24 14v6l5 4" /><path d="M12 42h24" /></Svg>)
-const IcoCheck = (p: IcoProps) => (<Svg {...p} viewBox="0 0 24 24"><path d="m5 13 5 5L20 7" strokeWidth="3" /></Svg>)
-const IcoArrow = (p: IcoProps) => (<Svg {...p} viewBox="0 0 24 24"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></Svg>)
-const IcoPlay = (p: IcoProps) => (<Svg {...p} viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none" /></Svg>)
-const IcoClock = (p: IcoProps) => (<Svg {...p}><circle cx="24" cy="24" r="16" /><path d="M24 14v10l7 4" /></Svg>)
-const IcoVideo = (p: IcoProps) => (<Svg {...p}><rect x="6" y="11" width="26" height="26" rx="5" /><path d="m32 20 10-5v18l-10-5" /></Svg>)
-const IcoDoc = (p: IcoProps) => (<Svg {...p}><path d="M13 7h15a3 3 0 0 1 3 3v28a3 3 0 0 1-3 3H13a3 3 0 0 1-3-3V10a3 3 0 0 1 3-3z" /><path d="M17 19h14" /><path d="M17 27h14" /><path d="M17 35h8" /></Svg>)
-
-/* ---------------- Feature illustrations ---------------- */
-function ArtTerm() {
-  return (
-    <svg viewBox="0 0 320 220" fill="none" aria-hidden="true">
-      <defs>
-        <linearGradient id="at-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#e9bd55" /><stop offset="1" stopColor="#a9884f" /></linearGradient>
-      </defs>
-      <circle cx="160" cy="112" r="86" fill="#c9a963" fillOpacity="0.12" />
-      <path d="M160 44l56 21v44c0 37-24 63-56 79c-32-16-56-42-56-79V65z" fill="url(#at-g)" />
-      <path d="m135 112 17 17 33-34" stroke="#0d2b42" strokeWidth="9" strokeLinecap="round" strokeLinejoin="round" />
-      <g stroke="#0d2b42" strokeWidth="3" strokeLinecap="round">
-        <path d="M62 176h24" /><path d="M62 188h40" /><path d="M234 176h24" /><path d="M218 188h40" />
-      </g>
-      <g fill="#0d2b42" fillOpacity="0.14">
-        <circle cx="70" cy="60" r="5" /><circle cx="252" cy="52" r="4" /><circle cx="262" cy="150" r="5" />
-      </g>
-    </svg>
-  )
-}
-function ArtIUL() {
-  return (
-    <svg viewBox="0 0 320 220" fill="none" aria-hidden="true">
-      <path d="M24 190V110" stroke="#0d2b42" strokeWidth="6" strokeLinecap="round" strokeOpacity="0.25" />
-      <path d="M70 190V80" stroke="#0d2b42" strokeWidth="6" strokeLinecap="round" strokeOpacity="0.4" />
-      <path d="M116 190V126" stroke="#0d2b42" strokeWidth="6" strokeLinecap="round" strokeOpacity="0.55" />
-      <path d="M162 190V58" stroke="#0d2b42" strokeWidth="6" strokeLinecap="round" strokeOpacity="0.7" />
-      <path d="M208 190V94" stroke="#0d2b42" strokeWidth="6" strokeLinecap="round" strokeOpacity="0.85" />
-      <path d="M254 190V40" stroke="#c9a963" strokeWidth="8" strokeLinecap="round" />
-      <path d="M20 96c26-34 52 22 78-12s52 14 78-10 52 10 78-14 30-2 30-2" stroke="#c9a963" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="288" cy="72" r="7" fill="#c9a963" />
-      <circle cx="162" cy="58" r="6" fill="#fff" stroke="#c9a963" strokeWidth="3" />
-    </svg>
-  )
-}
-function ArtIncome() {
-  return (
-    <svg viewBox="0 0 320 220" fill="none" aria-hidden="true">
-      <rect x="34" y="20" width="252" height="180" rx="16" fill="#fff" stroke="#0d2b42" strokeOpacity="0.16" strokeWidth="2" />
-      <path d="M54 156h36v24H54z" fill="#c9a963" fillOpacity="0.4" />
-      <path d="M104 132h36v48h-36z" fill="#c9a963" fillOpacity="0.6" />
-      <path d="M154 108h36v72h-36z" fill="#c9a963" fillOpacity="0.8" />
-      <path d="M204 82h36v98h-36z" fill="#c9a963" />
-      <path d="M48 108l42-24 38 18 44-26 46 20" stroke="#0d2b42" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M224 74l14-16 10 22" stroke="#0d2b42" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="48" cy="108" r="6" fill="#0d2b42" />
-    </svg>
-  )
+const IMG = {
+  poster: `${ASSETS}/ins-poster.jpg`,
+  portrait: `${ASSETS}/ins-portrait.jpg`,
+  fna: `${ASSETS}/ins-fna.jpg`,
+  agent: `${ASSETS}/pix-removebg-preview.png`,
 }
 
-/* ---------------- Content ---------------- */
-const STATS = [
-  { to: 4500, suffix: "+", label: "Families & professionals served" },
-  { to: 1000, suffix: "+", label: "Advisors developed & mentored" },
-  { to: 50, suffix: "", label: "U.S. states licensed to serve" },
-  { to: 2, suffix: "", label: "Countries — United States & Canada" },
-]
+const AGENT_NAME = "Kayode Samson Elepe"
+const AGENT_CREDS = ", RR"
+const CONTACT_EMAIL = "info@ksefinserve.com"
+const CONTACT_PHONE = "+1 281-944-7306"
 
-const MARQUEE = [
-  "Term life with living benefits", "Indexed universal life", "Final expense coverage",
-  "Financial Needs Analysis", "DIME method", "A-rated carriers", "No-exam options",
-  "Coverage reviews", "Free-look period", "Independent advice",
+/* ------------------------------- content ------------------------------- */
+
+const STRIP = [
+  "Licensed financial professional",
+  "Licensed across the U.S. & Canada",
+  "I compare multiple carriers for you",
+  "Many options with no medical exam",
+  "Free consultation",
+  "Serving African immigrant families in the U.S.",
 ]
 
 const WHO_I_HELP = [
-  { ico: IcoFamily, title: "Families building a future", body: "You came here to give your family more. Let's make sure their future never depends on nothing going wrong." },
-  { ico: IcoGlobe, title: "Those supporting family back home", body: "If parents or siblings rely on what you send, a plan can keep that support going even if something happens to you." },
-  { ico: IcoHome, title: "Homeowners & first-time buyers", body: "You worked hard for that home. Make sure the mortgage never becomes your family's burden." },
-  { ico: IcoCap, title: "Parents planning education", body: "Protect your children's education and future, and leave them a legacy to build on." },
-  { ico: IcoBriefcase, title: "Professionals & business owners", body: "Your income keeps everything running. Protect it if a serious illness ever forces you to stop working." },
-  { ico: IcoCompass, title: "New to the U.S. or Canada", body: "Insurance works differently here. I'll explain it in plain language, with no judgment and no pressure." },
+  {
+    title: "Families building a life in America",
+    body: "You came here to give your family more. Let's make sure their future never depends on nothing going wrong.",
+    icon: (
+      <>
+        <path d="M9 7a3 3 0 106 0 3 3 0 00-6 0z" />
+        <path d="M4 21v-1a6 6 0 0112 0v1" />
+        <circle cx="18.5" cy="11.5" r="2" />
+        <path d="M16.5 21v-.5a3 3 0 015-2.2" />
+      </>
+    ),
+  },
+  {
+    title: "Those supporting family back home",
+    body: "If parents or siblings rely on what you send, a plan can keep that support going even if something happens to you.",
+    icon: (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M3 12h18" />
+        <path d="M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.500 5.600 12 3z" />
+      </>
+    ),
+  },
+  {
+    title: "Homeowners & first-time buyers",
+    body: "You worked hard for that home. Make sure the mortgage never becomes your family's burden.",
+    icon: (
+      <>
+        <path d="M3 11l9-7 9 7" />
+        <path d="M5 10v10h14V10" />
+        <path d="M10 20v-6h4v6" />
+      </>
+    ),
+  },
+  {
+    title: "Parents raising the next generation",
+    body: "Protect your children's education and future, and leave them a legacy to build on.",
+    icon: (
+      <>
+        <path d="M3 9l9-5 9 5-9 5-9-5z" />
+        <path d="M7 11.500V16c1.500 1.300 3.200 2 5 2s3.500-.700 5-2v-4.500" />
+        <path d="M21 9v5" />
+      </>
+    ),
+  },
+  {
+    title: "Professionals & business owners",
+    body: "Your income keeps everything running. Protect it if a serious illness ever forces you to stop working.",
+    icon: (
+      <>
+        <rect x="3" y="7" width="18" height="13" rx="2" />
+        <path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" />
+        <path d="M3 13h18" />
+      </>
+    ),
+  },
+  {
+    title: "New to the U.S. financial system",
+    body: "Insurance works differently here. I'll explain it in plain language, with no judgment and no pressure.",
+    icon: (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M9.500 9.300a2.600 2.600 0 115 .900c0 1.700-2.500 2.200-2.500 3.800" />
+        <path d="M12 17.500v.01" />
+      </>
+    ),
+  },
 ]
 
-const FEATURES = [
+const DO_ITEMS = [
   {
-    tag: "Core cover", ico: IcoShield, art: <ArtTerm />,
+    main: true,
+    pill: "My specialty",
     title: "Term life insurance with living benefits",
     body: "Affordable coverage for 10-30 years that protects your family, and can also give you access to part of your benefit if you face a qualifying critical, chronic or terminal illness.",
-    list: ["Death benefit for your family", "Accelerated riders for qualifying illness", "Level premiums you can plan around"],
   },
   {
-    tag: "Long-term value", ico: IcoIUL, art: <ArtIUL />,
     title: "Indexed universal life (IUL)",
-    body: "Permanent coverage that can build cash value over time, for people thinking long term and want flexibility as their life changes.",
-    list: ["Permanent protection, not a countdown", "Cash value that can grow with the market", "Flexible premiums and death benefit"],
+    body: "Permanent coverage that can build cash value over time, for people thinking long term.",
   },
   {
-    tag: "Dignity at the end", ico: IcoFinal, art: <ArtIncome />,
     title: "Final expense coverage",
-    body: "Smaller policies designed to help cover funeral and end-of-life costs so loved ones aren't left with the bill at the worst possible moment.",
-    list: ["Typically easier to qualify for", "Clears funeral and immediate costs", "Protects the family's savings"],
+    body: "Smaller policies designed to help cover funeral and end-of-life costs so loved ones aren't left with the bill.",
   },
-]
-
-const EXTRA_SERVICES = [
-  { ico: IcoAnalysis, title: "Financial Needs Analysis", body: "A free, personalized look at exactly how much protection your family needs - never too much, never too little." },
-  { ico: IcoReview, title: "Coverage reviews", body: "Already have a policy, or coverage through work? I'll review it and show you any gaps, in plain English." },
-  { ico: IcoIncome, title: "Income & investment protection", body: "Retirement and investment income strategies from KSEFinServe, coordinated with your protection plan." },
+  {
+    title: "Financial Needs Analysis",
+    body: "A free, personalized look at exactly how much protection your family needs.",
+  },
+  {
+    title: "Coverage reviews",
+    body: "Already have a policy, or coverage through work? I'll review it and show you any gaps.",
+  },
 ]
 
 const HOW_I_HELP = [
-  { title: "I educate, not sell", body: "I explain your options in plain English so you can make a confident decision." },
-  { title: "I tailor it to you", body: "Your Financial Needs Analysis shapes every recommendation. No cookie-cutter plans." },
-  { title: "I shop multiple carriers", body: "As an independent registered representative, I compare companies to find the right fit for your health and budget." },
-  { title: "I stay with you", body: "New baby, new home, new job? I'll review your coverage as your life changes." },
+  {
+    title: "I educate, not sell",
+    body: "I explain your options in plain English so you can make a confident decision.",
+  },
+  {
+    title: "I tailor it to you",
+    body: "Your Financial Needs Analysis shapes every recommendation. No cookie-cutter plans.",
+  },
+  {
+    title: "I shop multiple carriers",
+    body: "As an independent registered representative, I compare companies to find the right fit for your health and budget.",
+  },
+  {
+    title: "I stay with you",
+    body: "New baby, new home, new job? I'll review your coverage as your life changes.",
+  },
 ]
 
 const BENEFITS = [
-  { ico: IcoCritical, title: "Critical illness", body: "A qualifying diagnosis - such as a heart attack, stroke or invasive cancer - may let you accelerate part of your death benefit.", foot: "Covers costs insurance won't" },
-  { ico: IcoChronic, title: "Chronic illness", body: "If you become unable to perform basic daily activities (like bathing or dressing) long-term, benefits may help pay for care.", foot: "Help with long-term care costs" },
-  { ico: IcoTerminal, title: "Terminal illness", body: "With a qualifying terminal diagnosis, you may access a portion of your benefit to spend meaningful time with family and settle affairs.", foot: "Peace of mind when it matters most" },
+  {
+    title: "Critical illness",
+    body: "A qualifying diagnosis - such as a heart attack, stroke or invasive cancer - may let you accelerate part of your death benefit.",
+    ex: "Covers costs insurance won't",
+    icon: (
+      <path d="M12 21s-7-4.4-9.3-9C1 8.4 3.3 4.5 7 4.5c2 0 3.3 1 5 3 1.7-2 3-3 5-3 3.7 0 6 3.9 4.3 7.5C19 16.6 12 21 12 21z" />
+    ),
+  },
+  {
+    title: "Chronic illness",
+    body: "If you become unable to perform basic daily activities (like bathing or dressing) long-term, benefits may help pay for care.",
+    ex: "Help with long-term care costs",
+    icon: (
+      <>
+        <circle cx="12" cy="7" r="3.5" />
+        <path d="M5 21v-2a7 7 0 0114 0v2" />
+      </>
+    ),
+  },
+  {
+    title: "Terminal illness",
+    body: "With a qualifying terminal diagnosis, you may access a portion of your benefit to spend meaningful time with family and settle affairs.",
+    ex: "Peace of mind when it matters most",
+    icon: (
+      <>
+        <path d="M4 20h16M6 20V10l6-5 6 5v10" />
+        <path d="M10 20v-5h4v5" />
+      </>
+    ),
+  },
 ]
 
-const STEPS = [
-  { title: "Answer a few questions", body: "Tell me who you want to protect and roughly how much coverage you need. It takes about a minute." },
-  { title: "Your Financial Needs Analysis", body: "We talk one-on-one, figure out exactly how much protection your family needs, and I compare carriers to fit your budget. No pressure." },
-  { title: "Apply & get protected", body: "Pick the plan you like. Many applicants can qualify with no medical exam, and some get a decision quickly." },
+const GALLERY = [
+  {
+    title: "I listen first",
+    body: "Your family, your goals, your budget - before any numbers.",
+    art: (
+      <svg viewBox="0 0 400 500" className="g-art" role="img" aria-label="I listen first" preserveAspectRatio="xMidYMid slice">
+        <rect width="400" height="500" fill="#f4ecd9" />
+        <circle cx="200" cy="240" r="126" fill="#ffffff" opacity="0.8" />
+        <circle cx="200" cy="240" r="126" fill="none" stroke="#c9a963" strokeWidth="3" />
+        <rect x="72" y="96" width="112" height="52" rx="18" fill="#0d2b42" />
+        <path d="M104 148l-6 22 26-22z" fill="#0d2b42" />
+        <circle cx="100" cy="122" r="6" fill="#f5f1e8" />
+        <circle cx="128" cy="122" r="6" fill="#f5f1e8" />
+        <circle cx="156" cy="122" r="6" fill="#f5f1e8" />
+        <circle cx="196" cy="258" r="58" fill="#0d2b42" />
+        <path d="M244 236c14 4 22 18 22 34 0 18-10 30-22 36" fill="none" stroke="#dbab47" strokeWidth="11" strokeLinecap="round" />
+        <path d="M286 214a70 70 0 0 1 0 88" fill="none" stroke="#c9a963" strokeWidth="11" strokeLinecap="round" />
+        <path d="M320 188a108 108 0 0 1 0 140" fill="none" stroke="#c9a963" strokeWidth="11" strokeLinecap="round" opacity="0.55" />
+        <rect x="60" y="392" width="280" height="14" rx="7" fill="#0d2b42" />
+      </svg>
+    ),
+  },
+  {
+    title: "I do the homework",
+    body: "I compare carriers and read the fine print so you don't have to.",
+    art: (
+      <svg viewBox="0 0 400 500" className="g-art" role="img" aria-label="I do the homework" preserveAspectRatio="xMidYMid slice">
+        <rect width="400" height="500" fill="#f4ecd9" />
+        <circle cx="200" cy="240" r="126" fill="#ffffff" opacity="0.8" />
+        <circle cx="200" cy="240" r="126" fill="none" stroke="#c9a963" strokeWidth="3" />
+        <rect x="106" y="120" width="188" height="252" rx="16" fill="#ffffff" stroke="#0d2b42" strokeWidth="6" />
+        <rect x="164" y="104" width="72" height="36" rx="12" fill="#c9a963" />
+        <rect x="132" y="168" width="26" height="26" rx="7" fill="none" stroke="#0d2b42" strokeWidth="6" />
+        <path d="M136 181l7 8 13-16" fill="none" stroke="#c9a963" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="172" y="174" width="98" height="12" rx="6" fill="#0d2b42" opacity="0.85" />
+        <rect x="132" y="216" width="26" height="26" rx="7" fill="none" stroke="#0d2b42" strokeWidth="6" />
+        <path d="M136 229l7 8 13-16" fill="none" stroke="#c9a963" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="172" y="222" width="98" height="12" rx="6" fill="#0d2b42" opacity="0.85" />
+        <rect x="132" y="264" width="26" height="26" rx="7" fill="none" stroke="#0d2b42" strokeWidth="6" />
+        <path d="M136 277l7 8 13-16" fill="none" stroke="#c9a963" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="172" y="270" width="72" height="12" rx="6" fill="#0d2b42" opacity="0.55" />
+        <circle cx="252" cy="316" r="42" fill="#dbab47" opacity="0.28" />
+        <circle cx="252" cy="316" r="30" fill="none" stroke="#0d2b42" strokeWidth="9" />
+        <path d="M274 338l34 34" stroke="#0d2b42" strokeWidth="13" strokeLinecap="round" />
+        <rect x="60" y="392" width="280" height="14" rx="7" fill="#0d2b42" />
+      </svg>
+    ),
+  },
+  {
+    title: "I explain it simply",
+    body: "Plain English, every question answered, no jargon.",
+    art: (
+      <svg viewBox="0 0 400 500" className="g-art" role="img" aria-label="I explain it simply" preserveAspectRatio="xMidYMid slice">
+        <rect width="400" height="500" fill="#f4ecd9" />
+        <circle cx="200" cy="240" r="126" fill="#ffffff" opacity="0.8" />
+        <circle cx="200" cy="240" r="126" fill="none" stroke="#c9a963" strokeWidth="3" />
+        <rect x="92" y="128" width="216" height="170" rx="16" fill="#ffffff" stroke="#0d2b42" strokeWidth="6" />
+        <path d="M112 262l44-42 34 28 52-58" fill="none" stroke="#0d2b42" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="156" cy="220" r="9" fill="#c9a963" />
+        <circle cx="242" cy="198" r="9" fill="#c9a963" />
+        <rect x="112" y="276" width="120" height="10" rx="5" fill="#0d2b42" opacity="0.4" />
+        <rect x="284" y="160" width="16" height="150" rx="8" fill="#dbab47" transform="rotate(24 292 235)" />
+        <circle cx="292" cy="160" r="13" fill="#0d2b42" />
+        <rect x="60" y="392" width="280" height="14" rx="7" fill="#0d2b42" />
+      </svg>
+    ),
+  },
+  {
+    title: "I guide the application",
+    body: "Step by step, so nothing gets missed.",
+    art: (
+      <svg viewBox="0 0 400 500" className="g-art" role="img" aria-label="I guide the application" preserveAspectRatio="xMidYMid slice">
+        <rect width="400" height="500" fill="#f4ecd9" />
+        <circle cx="200" cy="240" r="126" fill="#ffffff" opacity="0.8" />
+        <circle cx="200" cy="240" r="126" fill="none" stroke="#c9a963" strokeWidth="3" />
+        <path d="M126 118h120l34 34v212a14 14 0 0 1-14 14h-140a14 14 0 0 1-14-14v-232a14 14 0 0 1 14-14z" fill="#ffffff" stroke="#0d2b42" strokeWidth="6" strokeLinejoin="round" />
+        <path d="M246 118v34h34" fill="none" stroke="#0d2b42" strokeWidth="6" strokeLinejoin="round" />
+        <rect x="148" y="186" width="22" height="22" rx="6" fill="none" stroke="#0d2b42" strokeWidth="6" />
+        <path d="M152 197l6 6 11-12" fill="none" stroke="#c9a963" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="182" y="191" width="86" height="11" rx="5.5" fill="#0d2b42" opacity="0.8" />
+        <rect x="148" y="232" width="22" height="22" rx="6" fill="none" stroke="#0d2b42" strokeWidth="6" />
+        <path d="M152 243l6 6 11-12" fill="none" stroke="#c9a963" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="182" y="237" width="86" height="11" rx="5.5" fill="#0d2b42" opacity="0.8" />
+        <rect x="148" y="278" width="22" height="22" rx="6" fill="none" stroke="#0d2b42" strokeWidth="6" />
+        <rect x="182" y="283" width="64" height="11" rx="5.5" fill="#0d2b42" opacity="0.5" />
+        <rect x="250" y="150" width="20" height="170" rx="10" fill="#dbab47" transform="rotate(32 260 235)" />
+        <path d="M292 330l16 16-14 14-16-16z" fill="#0d2b42" transform="rotate(32 300 338)" />
+        <rect x="60" y="392" width="280" height="14" rx="7" fill="#0d2b42" />
+      </svg>
+    ),
+  },
+  {
+    title: "I'm here for the long run",
+    body: "Life changes - I'll still be a call or text away.",
+    art: (
+      <svg viewBox="0 0 400 500" className="g-art" role="img" aria-label="I'm here for the long run" preserveAspectRatio="xMidYMid slice">
+        <rect width="400" height="500" fill="#f4ecd9" />
+        <circle cx="200" cy="240" r="126" fill="#ffffff" opacity="0.8" />
+        <circle cx="200" cy="240" r="126" fill="none" stroke="#c9a963" strokeWidth="3" />
+        <circle cx="292" cy="156" r="34" fill="#dbab47" />
+        <path d="M96 400c60-70 46-128 96-168 42-34 96-40 112-96" fill="none" stroke="#ffffff" strokeWidth="46" strokeLinecap="round" />
+        <path d="M96 400c60-70 46-128 96-168 42-34 96-40 112-96" fill="none" stroke="#c9a963" strokeWidth="46" strokeLinecap="round" strokeDasharray="4 26" />
+        <rect x="238" y="262" width="16" height="62" rx="8" fill="#0d2b42" />
+        <circle cx="246" cy="238" r="46" fill="#0d2b42" />
+        <circle cx="216" cy="256" r="30" fill="#0d2b42" />
+        <circle cx="276" cy="256" r="30" fill="#0d2b42" />
+        <circle cx="112" cy="364" r="15" fill="#0d2b42" />
+        <path d="M96 424c0-18 8-30 16-30s16 12 16 30z" fill="#0d2b42" />
+        <rect x="60" y="392" width="280" height="14" rx="7" fill="#0d2b42" />
+      </svg>
+    ),
+  },
 ]
 
 const FAQS = [
-  { q: "What is term life insurance with living benefits?", a: "It's a term life policy - coverage for a set period like 10, 20 or 30 years - that includes accelerated benefit riders. Those riders can let you access part of your death benefit early if you're diagnosed with a qualifying critical, chronic or terminal illness." },
-  { q: "Do living benefits cost extra?", a: "On many policies the accelerated benefit riders are included at no additional premium. Some carriers may charge a fee or reduce the payout when the benefit is used. I'll show you exactly how it works for each option." },
-  { q: "Will I need a medical exam?", a: "Not always. Many carriers offer no-exam options based on your health history and age. Whether you qualify depends on underwriting." },
-  { q: "How much coverage do I need?", a: "A common starting point is enough to replace several years of income plus pay off your mortgage and major debts. We'll help you find a number that fits your family and your budget." },
-  { q: "Am I obligated to buy anything?", a: "No. Your quote and consultation are completely free, and you're never under any obligation to purchase." },
-  { q: "Can I get coverage if I'm not a U.S. citizen?", a: "Often, yes. Many carriers offer coverage to permanent residents (green card holders), and some will consider certain visa holders. Eligibility depends on the carrier, your immigration status and how long you've lived in the U.S. I'll check which options are open to you before you apply." },
-  { q: "Can I name family back home as my beneficiaries?", a: "In most cases you can name loved ones who live outside the U.S. Each carrier has its own rules and paperwork for this, and I'll walk you through them." },
-  { q: "Which states do you serve?", a: "KSEFinServe is licensed across the United States and Canada, so wherever you live I can help. Product availability can still vary by carrier and state or province, and I'll confirm your options when we talk." },
+  {
+    q: "What is term life insurance with living benefits?",
+    a: "It's a term life policy - coverage for a set period like 10, 20 or 30 years - that includes accelerated benefit riders. Those riders can let you access part of your death benefit early if you're diagnosed with a qualifying critical, chronic or terminal illness.",
+  },
+  {
+    q: "Do living benefits cost extra?",
+    a: "On many policies the accelerated benefit riders are included at no additional premium. Some carriers may charge a fee or reduce the payout when the benefit is used. I'll show you exactly how it works for each option.",
+  },
+  {
+    q: "Will I need a medical exam?",
+    a: "Not always. Many carriers offer no-exam options based on your health history and age. Whether you qualify depends on underwriting.",
+  },
+  {
+    q: "How much coverage do I need?",
+    a: "A common starting point is enough to replace several years of income plus pay off your mortgage and major debts. We'll help you find a number that fits your family and your budget.",
+  },
+  {
+    q: "Am I obligated to buy anything?",
+    a: "No. Your quote and consultation are completely free, and you're never under any obligation to purchase.",
+  },
+  {
+    q: "Can I get coverage if I'm not a U.S. citizen?",
+    a: "Often, yes. Many carriers offer coverage to permanent residents (green card holders), and some will consider certain visa holders. Eligibility depends on the carrier, your immigration status and how long you've lived in the U.S. I'll check which options are open to you before you apply.",
+  },
+  {
+    q: "Can I name family back home as my beneficiaries?",
+    a: "In most cases you can name loved ones who live outside the U.S. Each carrier has its own rules and paperwork for this, and I'll walk you through them.",
+  },
+  {
+    q: "Which states do you serve?",
+    a: "I'm licensed across the United States and Canada, so wherever you live I can help. Product availability can still vary by carrier and state, and I'll confirm your options when we talk.",
+  },
 ]
 
-const QUESTIONS = [
-  { key: "coverage", label: "How much coverage are you looking for?", options: ["$100k - $250k", "$250k - $500k", "$500k - $1M", "$1M+"] },
-  { key: "exam", label: "Would you like options with no medical exam?", options: ["Yes, prefer no-exam", "Open to either", "No, happy to do a medical exam"] },
-  { key: "health", label: "How would you describe your health today?", options: ["Excellent", "Good", "Fair", "I'd rather discuss it"] },
-  { key: "term", label: "What coverage length suits you best?", options: ["10 - 20 years", "20 - 30 years", "Lifetime coverage"] },
+const US_STATES: Record<string, string> = {
+  AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California", CO: "Colorado",
+  CT: "Connecticut", DE: "Delaware", DC: "District of Columbia", FL: "Florida", GA: "Georgia",
+  HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa", KS: "Kansas", KY: "Kentucky",
+  LA: "Louisiana", ME: "Maine", MD: "Maryland", MA: "Massachusetts", MI: "Michigan", MN: "Minnesota",
+  MS: "Mississippi", MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire",
+  NJ: "New Jersey", NM: "New Mexico", NY: "New York", NC: "North Carolina", ND: "North Dakota",
+  OH: "Ohio", OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina",
+  SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont", VA: "Virginia",
+  WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
+}
+
+const CA_PROVINCES: Record<string, string> = {
+  AB: "Alberta", BC: "British Columbia", MB: "Manitoba", NB: "New Brunswick",
+  NL: "Newfoundland and Labrador", NS: "Nova Scotia", ON: "Ontario",
+  PE: "Prince Edward Island", QC: "Quebec", SK: "Saskatchewan",
+}
+
+/* ------------------------------ form model ------------------------------ */
+
+interface RadioOption {
+  name: string
+  value: string
+  label: string
+  wide?: boolean
+}
+
+interface Step {
+  /** Questions on this step; every one must be answered before continuing. */
+  groups: { name: string; label?: string; options: RadioOption[]; one?: boolean }[]
+  /** Optional contact fields shown after the questions. */
+  contact?: boolean
+  /** Optional slot picker shown after the questions. */
+  slots?: boolean
+}
+
+const STEPS: Step[] = [
+  {
+    groups: [
+      {
+        name: "protect",
+        label: "Who would struggle financially if your income stopped tomorrow?",
+        one: true,
+        options: [
+          { name: "protect", value: "Spouse/partner and children", label: "My spouse/partner and children" },
+          { name: "protect", value: "My children (single parent)", label: "My children (I'm a single parent)" },
+          { name: "protect", value: "Family I support here and back home", label: "Family I support here and back home" },
+          { name: "protect", value: "Mainly debts (mortgage, loans)", label: "Mainly debts I don't want to leave behind" },
+          { name: "protect", value: "No one depends on my income", label: "No one depends on my income" },
+        ],
+      },
+    ],
+  },
+  {
+    groups: [
+      {
+        name: "age",
+        label: "What's your age range?",
+        options: [
+          { name: "age", value: "18-29", label: "18-29" },
+          { name: "age", value: "30-39", label: "30-39" },
+          { name: "age", value: "40-49", label: "40-49" },
+          { name: "age", value: "50-59", label: "50-59" },
+          { name: "age", value: "60-70", label: "60-70" },
+          { name: "age", value: "70+", label: "70+" },
+        ],
+      },
+      {
+        name: "tobacco",
+        label: "Do you use tobacco or nicotine?",
+        options: [
+          { name: "tobacco", value: "No", label: "No" },
+          { name: "tobacco", value: "Yes", label: "Yes" },
+        ],
+      },
+    ],
+  },
+  {
+    groups: [
+      {
+        name: "timeline",
+        label: "When do you want your coverage in place?",
+        one: true,
+        options: [
+          { name: "timeline", value: "Within 2 weeks", label: "Within the next 2 weeks" },
+          { name: "timeline", value: "Within 30 days", label: "Within 30 days" },
+          { name: "timeline", value: "In 1-3 months", label: "In 1-3 months" },
+          { name: "timeline", value: "Just researching", label: "Just researching for now" },
+        ],
+      },
+      {
+        name: "budget",
+        label: "What monthly amount could you set aside to protect your family?",
+        options: [
+          { name: "budget", value: "Under $50", label: "Under $50" },
+          { name: "budget", value: "$50-$100", label: "$50-$100" },
+          { name: "budget", value: "$100-$200", label: "$100-$200" },
+          { name: "budget", value: "$200+", label: "$200+" },
+          { name: "budget", value: "Not sure - show me what fits", label: "Not sure. Show me what fits my budget", wide: true },
+        ],
+      },
+    ],
+  },
+  {
+    groups: [
+      {
+        name: "decision",
+        label: "If the right plan fits your needs and budget, who makes the final decision?",
+        one: true,
+        options: [
+          { name: "decision", value: "Me - ready to move forward on the call", label: "I do, and I'm ready to move forward on the call" },
+          { name: "decision", value: "Spouse and I - spouse will join the call", label: "My spouse and I, and they'll join the call" },
+          { name: "decision", value: "Spouse and I - spouse won't be on the call", label: "My spouse and I, but they won't be on the call" },
+          { name: "decision", value: "Only gathering information", label: "I'm only gathering information" },
+        ],
+      },
+    ],
+  },
+  { groups: [], contact: true },
+  { groups: [], slots: true },
 ]
-const COUNTRIES = ["United States", "Canada", "Nigeria", "United Kingdom", "Other"]
 
-/* ---------------- Reveal hook ---------------- */
-function useScrollReveal() {
-  useEffect(() => {
-    const root = document.querySelector<HTMLElement>(".insurance-page")
-    const els = Array.from(document.querySelectorAll<HTMLElement>(".insurance-page [data-reveal]"))
-    if (!els.length) return
-    root?.classList.add("js-anim")
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      els.forEach((el) => el.classList.add("is-visible"))
-      return
-    }
-    const show = (el: HTMLElement) => el.classList.add("is-visible")
-    let io: IntersectionObserver | null = null
-    try {
-      io = new IntersectionObserver(
-        (entries) => entries.forEach((e) => { if (e.isIntersecting) { show(e.target as HTMLElement); io?.unobserve(e.target) } }),
-        { threshold: 0.1, rootMargin: "0px 0px -40px 0px" },
-      )
-      els.forEach((el) => io!.observe(el))
-    } catch { els.forEach(show) }
+const EMPTY_ANSWERS: Record<string, string> = {}
 
-    const revealInView = () => {
-      const vh = window.innerHeight
-      els.forEach((el) => {
-        if (el.classList.contains("is-visible")) return
-        const r = el.getBoundingClientRect()
-        if (r.top < vh * 0.92 && r.bottom > 0) show(el)
-      })
-    }
-    let ticking = false
-    const onScroll = () => {
-      revealInView()
-      if (ticking) return
-      ticking = true
-      requestAnimationFrame(() => { revealInView(); ticking = false })
-    }
-    window.addEventListener("scroll", onScroll, { passive: true })
-    window.addEventListener("resize", onScroll)
-    revealInView()
-    return () => {
-      io?.disconnect()
-      window.removeEventListener("scroll", onScroll)
-      window.removeEventListener("resize", onScroll)
-    }
-  }, [])
+const EMPTY_DETAILS = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  state: "",
+  consent: false,
 }
 
-/* ---------------- Animated counter ---------------- */
-function Counter({ to, suffix = "" }: { to: number; suffix?: string }) {
-  const ref = useRef<HTMLSpanElement>(null)
-  const [val, setVal] = useState(0)
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    let started = false
-    let raf = 0
-    const run = () => {
-      if (started) return
-      started = true
-      const start = performance.now()
-      const dur = 1700
-      const tick = (t: number) => {
-        const p = Math.min(1, (t - start) / dur)
-        setVal(Math.round(to * (1 - Math.pow(1 - p, 3))))
-        if (p < 1) raf = requestAnimationFrame(tick)
-      }
-      raf = requestAnimationFrame(tick)
-    }
-    let io: IntersectionObserver | null = null
-    try {
-      io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { run(); io?.disconnect() } }), { threshold: 0.35 })
-      io.observe(el)
-    } catch { run() }
-    const fallback = window.setTimeout(run, 900)
-    return () => { io?.disconnect(); window.clearTimeout(fallback); cancelAnimationFrame(raf) }
-  }, [to])
-  return <span ref={ref}>{val.toLocaleString()}{suffix}</span>
-}
+/* ------------------------ availability slot picker ------------------------ */
 
-/* ---------------- Form state ---------------- */
-interface Details {
-  firstName: string; lastName: string; email: string; phone: string
-  city: string; province: string; country: string; contact: string
-  availableDate: string; availableTime: string
-  consentContact: boolean
-}
-const EMPTY_DETAILS: Details = {
-  firstName: "", lastName: "", email: "", phone: "", city: "", province: "",
-  country: "United States", contact: "Email",
-  availableDate: "", availableTime: "", consentContact: true,
-}
-
-const stagger = (i: number) => ({ ["--i" as string]: i }) as CSSProperties
-
-
-/* ---------------- Availability slot picker (same source as /book-now) ---------------- */
 type Slot = { label: string; value: string; start: string; end: string }
 
 /**
  * Timezone abbreviations that are correct for the visitor and for the season.
- *
  * `Intl`'s short name is only trustworthy for a handful of zones (Chrome gives
- * "GMT+1" for Lagos, "GMT+1" for Paris, "GMT+11" for Sydney, ...), so the
- * abbreviation is worked out from the zone's real UTC offset at that moment:
- * standard offset -> standard abbreviation, anything else -> DST abbreviation.
+ * "GMT+1" for Lagos), so the abbreviation is worked out from the zone's real
+ * UTC offset at that moment.
  */
 const ZONE_ABBRS: Record<string, { std: string; dst?: string; stdOffset: number }> = {
   "Africa/Lagos": { std: "WAT", stdOffset: 60 },
@@ -298,7 +490,6 @@ const ZONE_ABBRS: Record<string, { std: string; dst?: string; stdOffset: number 
   "Pacific/Auckland": { std: "NZST", dst: "NZDT", stdOffset: 720 },
 }
 
-/** Offset of `tz` from UTC at `at`, in minutes. */
 function tzOffsetMinutes(tz: string, at: Date): number {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: tz,
@@ -314,7 +505,6 @@ function tzOffsetMinutes(tz: string, at: Date): number {
   return Math.round((asUtc - at.getTime()) / 60000)
 }
 
-/** e.g. 60 -> "UTC+1", -330 -> "UTC-5:30" */
 function offsetLabel(minutes: number): string {
   const sign = minutes >= 0 ? "+" : "-"
   const abs = Math.abs(minutes)
@@ -329,7 +519,6 @@ function tzAbbrev(tz: string, at?: Date): string {
   if (meta) {
     return meta.dst && tzOffsetMinutes(tz, instant) !== meta.stdOffset ? meta.dst : meta.std
   }
-  // Unknown zone: take a real Intl abbreviation if there is one, else the offset.
   try {
     const name = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "short" })
       .formatToParts(instant)
@@ -343,7 +532,7 @@ function todayInTz(tz: string): string {
   try { return new Date().toLocaleDateString("en-CA", { timeZone: tz }) } catch { return new Date().toISOString().split("T")[0] }
 }
 
-function InsSlotPicker({
+function SlotPicker({
   date, time, onDate, onTime,
 }: {
   date: string
@@ -354,18 +543,15 @@ function InsSlotPicker({
   const [slots, setSlots] = useState<Slot[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [open, setOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
-  const triggerRef = useRef<HTMLButtonElement>(null)
 
   const userTz = typeof window !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "America/Chicago"
 
   // Same endpoint and conversion the booking short form uses, so the stored
   // value lands in the admin console and calendar exactly as a normal booking.
   useEffect(() => {
-    if (!date) { setSlots([]); setOpen(false); return }
+    if (!date) { setSlots([]); return }
     let cancelled = false
-    setLoading(true); setError(null); setOpen(false)
+    setLoading(true); setError(null)
     fetch(`/.netlify/functions/calendar?date=${date}`)
       .then((r) => { if (!r.ok) throw new Error("Could not load availability"); return r.json() })
       .then((data) => {
@@ -384,636 +570,811 @@ function InsSlotPicker({
         setSlots(converted)
         if (time && !(data.slots || []).some((raw: Slot) => raw.value === time)) onTime("")
       })
-      .catch((e: unknown) => { if (!cancelled) { setError(e instanceof Error ? e.message : "Could not load availability"); setSlots([]) } })
+      .catch((e: unknown) => {
+        if (!cancelled) { setError(e instanceof Error ? e.message : "Could not load availability"); setSlots([]) }
+      })
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date])
 
-  useEffect(() => {
-    const onDoc = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node) && !triggerRef.current?.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener("mousedown", onDoc)
-    return () => document.removeEventListener("mousedown", onDoc)
-  }, [])
-
-  const selected = slots.find((s) => s.value === time)
-
   return (
-    <div className="ins-slot">
-      <p className="ins-slot-label">Pick a time for your 1:1 call</p>
-      <div className="ins-row-2">
-        <div className="ins-field">
-          <label htmlFor="ins-date">Preferred date</label>
-          <input id="ins-date" type="date" required min={todayInTz(userTz)} value={date}
-            onChange={(e) => { onDate(e.target.value); onTime("") }} />
-        </div>
-        <div className="ins-field">
-          <label htmlFor="ins-time">Preferred time</label>
-          <div className="ins-slot-field">
-            {loading && <span className="ins-slot-hint">Loading…</span>}
-            {!loading && !date && <span className="ins-slot-hint">Pick a date first</span>}
-            {!loading && date && slots.length === 0 && <span className="ins-slot-hint">No slots — try another date</span>}
-            {!loading && date && slots.length > 0 && (
-              <div className="ins-select">
-                <button type="button" ref={triggerRef} className={`ins-select-trigger${time ? " has-value" : ""}`}
-                  onClick={() => setOpen((v) => !v)} aria-haspopup="listbox" aria-expanded={open} aria-label="Select time">
-                  <span className="ins-select-value">{time ? selected?.label || time : "Select a time"}</span>
-                  <span className="ins-select-chevron">▾</span>
-                </button>
-                {open && (
-                  <div ref={menuRef} className="ins-select-menu" role="listbox" aria-label="Available time slots">
-                    {slots.map((slot) => (
-                      <button type="button" key={slot.value} role="option" aria-selected={time === slot.value}
-                        className={`ins-select-option${time === slot.value ? " selected" : ""}`}
-                        onClick={() => { onTime(slot.value); setOpen(false) }}>
-                        {slot.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-            <small className="ins-slot-tz">Time zone: {tzAbbrev(userTz)} ({offsetLabel(tzOffsetMinutes(userTz, new Date()))})</small>
-          </div>
-        </div>
+    <div>
+      <div className="field">
+        <label htmlFor="ins-date">Preferred date</label>
+        <input
+          id="ins-date"
+          type="date"
+          required
+          min={todayInTz(userTz)}
+          value={date}
+          onChange={(e) => { onDate(e.target.value); onTime("") }}
+        />
       </div>
-      {error && <p className="ins-error">{error}</p>}
-      <small className="ins-slot-note">Pick a slot that suits you. We'll confirm the exact time when we get in touch.</small>
+      <div className="field">
+        <label id="ins-time-label">Preferred time</label>
+        {loading && <p className="slot-loading">Loading available times…</p>}
+        {!loading && !date && <p className="slot-loading">Pick a date first</p>}
+        {!loading && date && slots.length === 0 && <p className="slot-loading">No slots on that day - try another date.</p>}
+        {!loading && date && slots.length > 0 && (
+          <div className="slot-grid" role="group" aria-labelledby="ins-time-label">
+            {slots.map((slot) => (
+              <button
+                type="button"
+                key={slot.value}
+                className="slot"
+                aria-pressed={time === slot.value}
+                onClick={() => onTime(slot.value)}
+              >
+                {slot.label}
+              </button>
+            ))}
+          </div>
+        )}
+        <small className="slot-meta">Time zone: {tzAbbrev(userTz)} ({offsetLabel(tzOffsetMinutes(userTz, new Date()))})</small>
+      </div>
+      {error && <p className="err-msg">{error}</p>}
     </div>
   )
 }
 
+/* --------------------------------- icons --------------------------------- */
+
+const Ico = ({ children }: { children: ReactNode }) => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {children}
+  </svg>
+)
+
+const IcoCheck = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M20 6L9 17l-5-5" />
+  </svg>
+)
+
+const CalIco = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <rect x="3" y="5" width="18" height="16" rx="2.5" stroke="currentColor" strokeWidth="2.2" />
+    <path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+  </svg>
+)
+
+/* --------------------------------- page ---------------------------------- */
+
 export default function InsurancePage() {
-  useScrollReveal()
+  const { submitBooking } = useBookings()
 
   const [step, setStep] = useState(0)
-  const [answers, setAnswers] = useState<Record<string, string>>({})
-  const [details, setDetails] = useState<Details>(EMPTY_DETAILS)
+  const [answers, setAnswers] = useState<Record<string, string>>(EMPTY_ANSWERS)
+  const [details, setDetails] = useState(EMPTY_DETAILS)
+  const [slotDate, setSlotDate] = useState("")
+  const [slotTime, setSlotTime] = useState("")
   const [submitting, setSubmitting] = useState(false)
-  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const [reference, setReference] = useState<string | null>(null)
-  const formRef = useRef<HTMLDivElement>(null)
-  const { submitBooking } = useBookings()
-  const [showSticky, setShowSticky] = useState(false)
-  const [playing, setPlaying] = useState(false)
-  const videoRef = useRef<HTMLVideoElement>(null)
+  const [formInvalid, setFormInvalid] = useState<Record<string, boolean>>({})
 
-  const toggleVideo = useCallback(() => {
-    if (!playing) {
-      setPlaying(true)
-      window.setTimeout(() => { void videoRef.current?.play().catch(() => {}) }, 30)
-    } else {
-      videoRef.current?.pause()
-      setPlaying(false)
+  const [popOpen, setPopOpen] = useState(false)
+  const [popDone, setPopDone] = useState(false)
+  const [popSending, setPopSending] = useState(false)
+  const [popError, setPopError] = useState<string | null>(null)
+  const [popInvalid, setPopInvalid] = useState<Record<string, boolean>>({})
+
+  const [playing, setPlaying] = useState(false)
+  const [ctaHidden, setCtaHidden] = useState(false)
+
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const quoteRef = useRef<HTMLDivElement>(null)
+  const popRef = useRef<HTMLDivElement>(null)
+
+  const totalSteps = STEPS.length
+  const isContact = STEPS[step].contact === true
+  const isSlot = STEPS[step].slots === true
+
+  /* Hide the floating CTA while the quote card is on screen (as in the reference). */
+  useEffect(() => {
+    const target = quoteRef.current
+    if (!target) return
+    const io = new IntersectionObserver(([entry]) => setCtaHidden(entry.isIntersecting), { threshold: 0.15 })
+    io.observe(target)
+    return () => io.disconnect()
+  }, [])
+
+  /* Lead popup: once per load, after 8s, on 50% scroll or on exit intent. */
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has("popup")) {
+      const t = window.setTimeout(() => setPopOpen(true), 400)
+      return () => window.clearTimeout(t)
     }
-  }, [playing])
+    let shown = false
+    const loadedAt = Date.now()
+    const open = () => {
+      if (shown || step > 0) return
+      if (Date.now() - loadedAt < 6000) return
+      shown = true
+      setPopOpen(true)
+    }
+    const onOut = (e: MouseEvent) => { if (!e.relatedTarget && e.clientY <= 0) open() }
+    const onScroll = () => {
+      if (window.scrollY + window.innerHeight > document.documentElement.scrollHeight * 0.5) open()
+    }
+    const timer = window.setTimeout(open, 8000)
+    document.addEventListener("mouseout", onOut)
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => {
+      window.clearTimeout(timer)
+      document.removeEventListener("mouseout", onOut)
+      window.removeEventListener("scroll", onScroll)
+    }
+  }, [step])
 
   useEffect(() => {
-    const onScroll = () => setShowSticky(window.scrollY > 520)
-    onScroll()
-    window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setPopOpen(false) }
+    document.addEventListener("keydown", onKey)
+    return () => document.removeEventListener("keydown", onKey)
   }, [])
 
-  const totalSteps = QUESTIONS.length + 1
-  const isContactStep = step === QUESTIONS.length
+  const closePop = useCallback(() => setPopOpen(false), [])
 
-  const scrollToForm = useCallback(() => {
-    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+  const scrollToQuote = useCallback(() => {
+    quoteRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
   }, [])
 
-  const pick = (key: string, value: string) => {
-    setAnswers((prev) => ({ ...prev, [key]: value }))
-    window.setTimeout(() => setStep((s) => Math.min(s + 1, QUESTIONS.length)), 240)
+  const answer = (name: string, value: string) => {
+    // Keep the updater pure: React may invoke it twice in StrictMode, and a
+    // side effect in there would skip a whole question.
+    const next = { ...answers, [name]: value }
+    setAnswers(next)
+    const groups = STEPS[step].groups
+    if (groups.length && groups.every((g) => next[g.name])) {
+      window.setTimeout(() => setStep((s) => Math.min(s + 1, totalSteps - 1)), 240)
+    }
   }
 
+  const validateStep = (): string => {
+    const groups = STEPS[step].groups
+    for (const g of groups) if (!answers[g.name]) return "Please choose an option to continue."
+
+    if (isContact) {
+      const bad: Record<string, boolean> = {}
+      const need = ["firstName", "lastName", "email", "phone", "state"] as const
+      need.forEach((k) => { if (!details[k].trim()) bad[k] = true })
+      if (!/^\S+@\S+\.\S+$/.test(details.email.trim())) bad.email = true
+      if (details.phone.replace(/\D/g, "").length < 10) bad.phone = true
+      if (!details.consent) bad.consent = true
+      setFormInvalid(bad)
+      if (Object.keys(bad).length) return "Please complete the highlighted fields."
+    }
+
+    if (isSlot && !slotTime) return "Please pick a time for your call."
+    return ""
+  }
+
+  const next = () => {
+    const msg = validateStep()
+    setError(msg || null)
+    if (!msg) setStep((s) => Math.min(s + 1, totalSteps - 1))
+  }
+
+  const back = () => { setError(null); setStep((s) => Math.max(0, s - 1)) }
+
   const send = async () => {
+    const msg = validateStep()
+    if (msg) { setError(msg); return }
     setSubmitting(true)
-    setSubmitError(null)
-    const answered = QUESTIONS.map((q) => `${q.label.replace(/\?$/, "")}: ${answers[q.key] ?? "-"}`).join("  |  ")
+    setError(null)
+
+    const answered = STEPS.flatMap((s) => s.groups)
+      .map((g) => `${(g.label ?? g.name).replace(/\?$/, "")}: ${answers[g.name] ?? "-"}`)
+      .join("  |  ")
+
     const payload: BookingInput = {
       firstName: details.firstName,
       lastName: details.lastName,
       email: details.email,
       phone: details.phone,
-      city: details.city,
-      province: details.province,
-      country: details.country,
-      contactMethod: details.contact,
+      city: "",
+      province: details.state,
+      country: US_STATES[details.state] ? "United States" : "Canada",
+      contactMethod: "Email",
       source: "Wealth protection page (insurance)",
       route: "Wealth protection",
       path: "Insurance enquiry",
-      topic: `Family Protection Report - ${answers.coverage ?? "coverage enquiry"}`,
-      priorities: QUESTIONS.map((q) => `${q.label.replace(/\?$/, "")}: ${answers[q.key] ?? "-"}`),
+      topic: "Family Protection Report - free 1:1 call",
+      priorities: STEPS.flatMap((s) => s.groups).map((g) => `${(g.label ?? g.name).replace(/\?$/, "")}: ${answers[g.name] ?? "-"}`),
       outcome: "Attend a free 1:1 call and receive their Family Protection Report",
       context: answered,
-      question: answers.term ? `Coverage length: ${answers.term}` : "",
-      availableDate: details.availableDate,
-      availableTime: details.availableTime,
-      consentContact: details.consentContact,
-      consentUpdates: details.consentContact,
+      question: "",
+      availableDate: slotDate,
+      availableTime: slotTime,
+      consentContact: details.consent,
+      consentUpdates: details.consent,
       userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     }
+
     const result = await submitBooking(payload)
     setSubmitting(false)
-    if (result.error) { setSubmitError(result.error); return }
+    if (result.error) { setError(result.error); return }
     setReference(result.reference ?? null)
   }
 
-  const restart = () => {
-    setStep(0); setAnswers({}); setDetails(EMPTY_DETAILS); setReference(null); setSubmitError(null)
+  const sendPopLead = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const form = e.currentTarget
+    const data = Object.fromEntries(new FormData(form)) as Record<string, string>
+    const bad: Record<string, boolean> = {}
+    if (!data.name?.trim()) bad.name = true
+    if ((data.phone ?? "").replace(/\D/g, "").length < 10) bad.phone = true
+    if (!/^\S+@\S+\.\S+$/.test(data.email ?? "")) bad.email = true
+    if (data.consent !== "yes") bad.consent = true
+    setPopInvalid(bad)
+    if (Object.keys(bad).length) { setPopError("Please complete the highlighted fields."); return }
+
+    setPopSending(true)
+    setPopError(null)
+    const result = await submitContactMessage({
+      name: (data.name ?? "").trim(),
+      email: (data.email ?? "").trim(),
+      subject: "Insurance page - Family Protection Report",
+      message:
+        `Phone: ${(data.phone ?? "").trim()}\n` +
+        `Source: insurance page popup ("Before you go - can I help?")\n` +
+        `Consent: ${data.consent === "yes" ? "agreed" : "not given"}\n\n` +
+        `I'd like free, no-pressure term life options for my family.`,
+    })
+    setPopSending(false)
+    if (!result.ok) { setPopError(result.error ?? "Something went wrong. Please try again."); return }
+    setPopDone(true)
+  }
+
+  const prefillFromPop = () => {
+    const form = popRef.current?.querySelector("form")
+    if (!(form instanceof HTMLFormElement)) return
+    const data = Object.fromEntries(new FormData(form)) as Record<string, string>
+    const [first = "", ...rest] = (data.name ?? "").trim().split(/\s+/)
+    setDetails((d) => ({
+      ...d,
+      firstName: d.firstName || first,
+      lastName: d.lastName || rest.join(" "),
+      email: d.email || data.email || "",
+      phone: d.phone || data.phone || "",
+    }))
+    closePop()
+    scrollToQuote()
   }
 
   return (
     <div className="insurance-page">
-      {/* ============ HERO ============ */}
-      <section className="ins-hero">
-        <div className="ins-aurora a" />
-        <div className="ins-aurora b" />
-        <div className="ins-container ins-hero-grid">
-          <div className="ins-hero-copy">
-            <p className="ins-hero-eyebrow">KSEFinServe Wealth Protection</p>
-            <h1 className="ins-hero-title">Protect the people who <span className="grad">depend on you.</span></h1>
-            <p className="ins-hero-lead">
-              Get a free <strong>Family Protection Report</strong>, built with you on one 1:1 call. You'll come away
-              knowing exactly how much cover your family needs, what it should cost, and which A-rated carriers fit
-              your budget.
+      {/* ============ HERO + FORM ============ */}
+      <section className="hero">
+        <div className="wrap">
+          <div className="hero-intro pitch">
+            <p className="pitch-who">
+              African Immigrant Families in the U.S. <span>(Parents, Homeowners &amp; Breadwinners)</span>
             </p>
-            <ul className="ins-hero-checks">
-              <li><IcoCheck size={16} /> Your coverage number</li>
-              <li><IcoCheck size={16} /> Side-by-side quotes</li>
-              <li><IcoCheck size={16} /> Your rate-lock date</li>
+            <h1>
+              Find Out Exactly How Much Life Insurance <span className="hl">Your Family Needs!</span>
+            </h1>
+            <p className="pitch-sub">
+              Get your free <strong>Family Protection Report</strong>, built with you on one short 1:1 call:
+            </p>
+            <ul className="pitch-report">
+              <li><b>1</b><span><strong>Your coverage number:</strong> how much your family would need if your income stopped</span></li>
+              <li><b>2</b><span><strong>Side-by-side quotes</strong> from multiple A-rated carriers, built around your budget</span></li>
+              <li><b>3</b><span><strong>Your rate-lock date:</strong> when your price is likely to go up because of your age</span></li>
             </ul>
-            <div className="ins-hero-actions">
-              <button type="button" className="ins-btn ins-btn-gold" onClick={scrollToForm}>
-                Get My Free Report <IcoArrow size={18} />
-              </button>
-              <button type="button" className="ins-btn ins-btn-ghost-light" onClick={toggleVideo}>
-                <IcoPlay size={16} /> Watch · 1 minute
-              </button>
-            </div>
-            <p className="ins-hero-note">Free · No obligation · You keep the report either way</p>
+            <p className="pitch-promise">
+              <strong>My No-Pressure Promise:</strong> if nothing fits, I'll tell you, and you keep the report.
+              <br />
+              If you do apply, every policy has a free-look period, so you can cancel for a full refund.
+            </p>
+            <a href="#book" className="pitch-btn">Get My Free Report</a>
           </div>
 
-          <div className="ins-hero-visual">
-            <div className={`ins-video-card${playing ? " is-playing" : ""}`}>
-              <img className="ins-video-poster" src={POSTER} alt="Kayode Samson Elepe, RR - Founder of KSEFinServe" />
-              <video ref={videoRef} className="ins-video-el" src={`${ASSETS}/kayode-story.mp4`} poster={POSTER}
-                controls={playing} preload="metadata" onEnded={() => setPlaying(false)} />
-              <button type="button" className="ins-video-play" onClick={toggleVideo}
-                aria-label={playing ? "Close video" : "Play Kayode's story"}>
-                <span className="ins-video-play-circle"><IcoPlay size={26} /></span>
-                <span className="ins-video-play-label">Watch · 1 minute</span>
-              </button>
+          <div className={`vsl${playing ? " playing" : ""}`}>
+            <div className="vsl-player">
+              <video
+                ref={videoRef}
+                playsInline
+                preload="none"
+                poster={IMG.poster}
+                controls={playing}
+                src={`${ASSETS}/kayode-story.mp4`}
+                onPlay={() => setPlaying(true)}
+                onPause={() => setPlaying(false)}
+                onEnded={() => { setPlaying(false); videoRef.current?.load() }}
+              />
+              {!playing && (
+                <button type="button" className="vsl-play" onClick={() => void videoRef.current?.play().catch(() => {})} aria-label="Play video: Why I do what I do">
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M8 5.14v13.72a1 1 0 001.5.86l11-6.86a1 1 0 000-1.72l-11-6.86A1 1 0 008 5.140z" />
+                  </svg>
+                </button>
+              )}
             </div>
-            <p className="ins-video-caption"><strong>Kayode Samson Elepe, RR</strong> · Founder, KSEFinServe</p>
-          </div>
-        </div>
-
-        <div className="ins-stats">
-          <div className="ins-container ins-stats-grid">
-            {STATS.map((s, i) => (
-              <div className="ins-stat" key={s.label} data-reveal style={stagger(i)}>
-                <b><Counter to={s.to} suffix={s.suffix} /></b>
-                <span>{s.label}</span>
-              </div>
-            ))}
+            <div className="vsl-text">
+              <p className="vsl-kicker">Watch · 1 minute</p>
+              <h2>Why I do what I do</h2>
+              <p>
+                Hi, I am {AGENT_NAME}{AGENT_CREDS}. Before you look at any numbers, hear why this work matters to me.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ============ MARQUEE ============ */}
-      <div className="ins-marquee" aria-hidden="true">
-        <div className="ins-marquee-track">
-          {[0, 1].map((copy) => (
-            <span key={copy}>
-              {MARQUEE.map((m) => (<span key={m}>{m} <i>✦</i></span>))}
-            </span>
-          ))}
+      <div className="strip">
+        <div className="wrap">
+          {STRIP.map((item) => <span key={item}>✦ {item}</span>)}
         </div>
       </div>
 
-      {/* ============ WHO I HELP ============ */}
-      <section className="ins-section" id="ins-who">
-        <div className="ins-container">
-          <div className="ins-section-head center" data-reveal>
-            <p className="ins-eyebrow">Who I help</p>
-            <h2 className="ins-section-title">I help families protect what they've <span className="grad">worked so hard to build</span></h2>
-            <p className="ins-section-sub">
-              You left home, started over and built a life. I help make sure a serious illness or the unexpected
-              never undoes that - for your family here and the loved ones who count on you back home.
-            </p>
-          </div>
-          <div className="ins-grid ins-grid-3">
-            {WHO_I_HELP.map((item, i) => (
-              <article className="ins-card" key={item.title} data-reveal style={stagger(i)}>
-                <div className="ins-card-index">{String(i + 1).padStart(2, "0")}</div>
-                <span className="ins-card-ico"><item.ico size={24} /></span>
-                <h3>{item.title}</h3>
-                <p>{item.body}</p>
-              </article>
-            ))}
-          </div>
-          <p className="ins-section-sub ins-center">
-            Not from the African community? You're welcome here too.{" "}
-            <strong>If anyone would struggle financially without you, we should talk.</strong>
+      {/* ============ WHO I HELP / WHAT I DO / HOW I HELP ============ */}
+      <section className="section" id="who">
+        <div className="wrap center">
+          <p className="eyebrow">Who I help</p>
+          <h2 style={{ marginTop: 10 }}>I help African immigrant families in the U.S. protect what they've worked so hard to build</h2>
+          <p className="lede">
+            You left home, started over and built a life here. I help make sure a serious illness or the unexpected never
+            undoes that, for your family here and the loved ones who count on you back home.
           </p>
-        </div>
-      </section>
 
-      {/* ============ WHAT I DO ============ */}
-      <section className="ins-section ins-section-tint" id="ins-services">
-        <div className="ins-container">
-          <div className="ins-section-head center" data-reveal>
-            <p className="ins-eyebrow">What I do</p>
-            <h2 className="ins-section-title">Protection that fits your life <span className="grad">and your budget</span></h2>
-            <p className="ins-section-sub">My specialty - three ways to protect what matters, plus the analysis that ties them together.</p>
-          </div>
-
-          {FEATURES.map((f, i) => (
-            <div className={`ins-feature${i % 2 === 1 ? " flip" : ""}`} key={f.title} data-reveal>
-              <div className="ins-feature-art">{f.art}</div>
-              <div className="ins-feature-body">
-                <span className="ins-tag">{f.tag}</span>
-                <h3>{f.title}</h3>
-                <p>{f.body}</p>
-                <ul className="ins-feature-list">
-                  {f.list.map((li) => (<li key={li}><IcoCheck size={16} />{li}</li>))}
-                </ul>
-              </div>
-            </div>
-          ))}
-
-          <div className="ins-grid ins-grid-3" style={{ marginTop: 22 }}>
-            {EXTRA_SERVICES.map((item, i) => (
-              <article className="ins-card" key={item.title} data-reveal style={stagger(i)}>
-                <span className="ins-card-ico"><item.ico size={24} /></span>
-                <h3>{item.title}</h3>
-                <p>{item.body}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ============ HOW I HELP ============ */}
-      <section className="ins-section ins-section-navy">
-        <div className="ins-aurora a" style={{ opacity: 0.25 }} />
-        <div className="ins-container">
-          <div className="ins-section-head" data-reveal>
-            <p className="ins-eyebrow">How I help</p>
-            <h2 className="ins-section-title">I make it simple, personal <span className="grad">and pressure-free</span></h2>
-          </div>
-          <div className="ins-steps">
-            {HOW_I_HELP.map((item, i) => (
-              <div className="ins-step" key={item.title} data-reveal style={stagger(i)}>
-                <div className="ins-step-no">{i + 1}</div>
+          <div className="who-grid">
+            {WHO_I_HELP.map((card) => (
+              <div className="who-card" key={card.title}>
+                <span className="ic"><Ico>{card.icon}</Ico></span>
                 <div>
-                  <h3>{item.title}</h3>
-                  <p>{item.body}</p>
+                  <h3>{card.title}</h3>
+                  <p>{card.body}</p>
                 </div>
               </div>
             ))}
           </div>
-          <div style={{ marginTop: 36 }}>
-            <button type="button" className="ins-btn ins-btn-gold" onClick={scrollToForm}>Book a 1:1 call <IcoArrow size={18} /></button>
+          <p className="who-note">
+            Not from the African community? You're welcome here too.{" "}
+            <strong>If anyone would struggle financially without you, we should talk.</strong>
+          </p>
+
+          <div className="do-wrap">
+            <div className="do-col">
+              <p className="eyebrow">What I do</p>
+              <h2 style={{ marginTop: 8 }}>Protection that fits your life and your budget</h2>
+              <div className="do-list">
+                {DO_ITEMS.map((item) => (
+                  <div className={`do-item${item.main ? " main" : ""}`} key={item.title}>
+                    {item.pill && <span className="pill">{item.pill}</span>}
+                    <h3>{item.title}</h3>
+                    <p>{item.body}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="how-col">
+              <p className="eyebrow">How I help</p>
+              <h2 style={{ marginTop: 8 }}>I make it simple, personal and pressure-free</h2>
+              <ul className="how-list">
+                {HOW_I_HELP.map((item, i) => (
+                  <li key={item.title}>
+                    <span className="n">{i + 1}</span>
+                    <div>
+                      <strong>{item.title}</strong>
+                      <span>{item.body}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <a href="#book" className="btn btn-bloom">Book a 1:1 call →</a>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ============ WHY LIVING BENEFITS ============ */}
-      <section className="ins-section">
-        <div className="ins-container">
-          <div className="ins-section-head center" data-reveal>
-            <p className="ins-eyebrow">Why living benefits matter</p>
-            <h2 className="ins-section-title">Not all term policies <span className="grad">are built the same</span></h2>
-            <p className="ins-section-sub">
-              A heart attack, cancer diagnosis or stroke can stop your paycheck long before it threatens your life.
-              The right policy is designed for both.
-            </p>
-          </div>
-          <div className="ins-compare">
-            <div className="ins-compare-card" data-reveal>
-              <span className="ins-pill">Basic term life</span>
-              <h3>The old way</h3>
+      {/* ============ COMPARE ============ */}
+      <section className="section">
+        <div className="wrap center">
+          <p className="eyebrow">Why living benefits matter</p>
+          <h2 style={{ marginTop: 10 }}>Not all term policies are built the same</h2>
+          <p className="lede">
+            A heart attack, cancer diagnosis or stroke can stop your paycheck long before it threatens your life. The
+            right policy is designed for both.
+          </p>
+          <div className="compare" style={{ textAlign: "left" }}>
+            <div className="cmp">
+              <h3>Basic term life</h3>
               <ul>
-                <li>Pays your beneficiaries only after you pass away.</li>
-                <li>No help if you get seriously sick and can't work.</li>
-                <li>Medical bills and lost income can drain your savings.</li>
+                <li>Pays your beneficiaries only after you pass away</li>
+                <li>No help if you get seriously sick and can't work</li>
+                <li>Medical bills and lost income can drain your savings</li>
               </ul>
             </div>
-            <div className="ins-compare-card good" data-reveal style={stagger(1)}>
-              <span className="ins-pill">Term life + living benefits</span>
-              <h3>The better way</h3>
+            <div className="cmp good">
+              <h3>Term life with living benefits</h3>
               <ul>
-                <li>Still pays a death benefit to protect your family.</li>
-                <li>Can let you access part of your coverage early for a qualifying illness.</li>
-                <li>Use the money how you need it - bills, treatment, mortgage, time off.</li>
+                <li>Still pays a death benefit to protect your family</li>
+                <li>Can let you access part of your coverage early for a qualifying illness</li>
+                <li>Use the money how you need it - bills, treatment, mortgage, time off</li>
               </ul>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ============ LIVING BENEFITS ============ */}
-      <section className="ins-section ins-section-tint">
-        <div className="ins-container">
-          <div className="ins-section-head center" data-reveal>
-            <p className="ins-eyebrow">What living benefits can cover</p>
-            <h2 className="ins-section-title">Three ways your policy can work for you <span className="grad">while you're alive</span></h2>
-          </div>
-          <div className="ins-grid ins-grid-3">
-            {BENEFITS.map((item, i) => (
-              <article className="ins-card" key={item.title} data-reveal style={stagger(i)}>
-                <div className="ins-card-index">{String(i + 1).padStart(2, "0")}</div>
-                <span className="ins-card-ico"><item.ico size={24} /></span>
-                <h3>{item.title}</h3>
-                <p>{item.body}</p>
-                <p className="ins-card-foot">{item.foot}</p>
-              </article>
+      {/* ============ BENEFITS ============ */}
+      <section className="section" style={{ paddingTop: 0 }}>
+        <div className="wrap center">
+          <p className="eyebrow">What living benefits can cover</p>
+          <h2 style={{ marginTop: 10 }}>Three ways your policy can work for you while you're alive</h2>
+          <div className="benefits" style={{ textAlign: "left" }}>
+            {BENEFITS.map((card) => (
+              <div className="card" key={card.title}>
+                <div className="ic">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    {card.icon}
+                  </svg>
+                </div>
+                <h3>{card.title}</h3>
+                <p>{card.body}</p>
+                <p className="ex">{card.ex}</p>
+              </div>
             ))}
           </div>
-          <p className="ins-section-sub" style={{ marginTop: 28, fontSize: 13.5 }}>
+          <p className="fine">
             Living benefits are provided through accelerated benefit riders. Availability, qualifying conditions and
             amounts vary by carrier, product and state, and any amount accelerated reduces the death benefit.
           </p>
         </div>
       </section>
 
-      {/* ============ APPROACH ============ */}
-      <section className="ins-section">
-        <div className="ins-container ins-approach">
-          <figure className="ins-photo-card" data-reveal>
-            <img src={POSTER} alt="Kayode Samson Elepe with a planning notebook" loading="lazy" />
-            <figcaption>
-              <b>Kayode Samson Elepe, RR</b>
-              <span>Registered Representative · Financial Services</span>
-            </figcaption>
-          </figure>
+      {/* ============ FINANCIAL NEEDS ANALYSIS ============ */}
+      <section className="section fna" id="approach" style={{ background: "var(--white)" }}>
+        <div className="wrap">
+          <div className="fna-photo">
+            <img src={IMG.fna} alt="Your adviser with a planning notebook" loading="lazy" />
+            <div className="note">
+              <strong>No guesswork. No one-size-fits-all.</strong>
+              Your recommendation comes from your numbers and your goals, not a sales script.
+            </div>
+          </div>
           <div>
-            <p className="ins-eyebrow">My approach</p>
-            <h2 className="ins-section-title">How I find the solution that <span className="grad">actually fits you</span></h2>
-            <p className="ins-section-sub">
+            <p className="eyebrow">My approach</p>
+            <h2 style={{ marginTop: 10 }}>How I find the solution that actually fits you</h2>
+            <p className="lede" style={{ marginTop: 14 }}>
               Before I recommend anything, we do a <strong>Financial Needs Analysis</strong> together. It's a simple,
               judgment-free look at your family's finances that shows how much protection you really need and what fits
               your budget, so you never buy too much or too little.
             </p>
-            <ol>
-              <li data-reveal>
-                <div>
-                  <h3>We get to know your story</h3>
-                  <p>Who depends on you, your income, your goals, any coverage you already have through work, and what keeps you up at night.</p>
+            <ol className="fna-steps">
+              <li>
+                <h3>We get to know your story</h3>
+                <p>Who depends on you, your income, your goals, any coverage you already have through work, and what keeps you up at night.</p>
+              </li>
+              <li>
+                <h3>We calculate your real need</h3>
+                <p>I use the DIME method to put a real number on what your family would need if something happened to you:</p>
+                <div className="dime">
+                  <span><b>D</b>Debts</span>
+                  <span><b>I</b>Income to replace</span>
+                  <span><b>M</b>Mortgage</span>
+                  <span><b>E</b>Education</span>
                 </div>
               </li>
-              <li data-reveal>
-                <div>
-                  <h3>We calculate your real need</h3>
-                  <p>I use the DIME method to put a real number on what your family would need if something happened to you:</p>
-                  <div className="ins-dime">
-                    <div><b>D</b><span>Debts</span></div>
-                    <div><b>I</b><span>Income to replace</span></div>
-                    <div><b>M</b><span>Mortgage</span></div>
-                    <div><b>E</b><span>Education</span></div>
-                  </div>
-                </div>
+              <li>
+                <h3>We match it to your budget</h3>
+                <p>I compare carriers, term lengths and living benefit riders side by side and find the strongest protection for a premium you're comfortable with.</p>
               </li>
-              <li data-reveal>
-                <div>
-                  <h3>We match it to your budget</h3>
-                  <p>I compare carriers, term lengths and living benefit riders side by side and find the strongest protection for a premium you're comfortable with.</p>
-                </div>
-              </li>
-              <li data-reveal>
-                <div>
-                  <h3>You get a clear, written plan</h3>
-                  <p>Plain-English recommendations and the reasons behind them. You decide, with no pressure. Then I check in as your life changes.</p>
-                </div>
+              <li>
+                <h3>You get a clear, written plan</h3>
+                <p>Plain-English recommendations and the reasons behind them. You decide, with no pressure. Then I check in as your life changes, like a new baby, a new home or a raise.</p>
               </li>
             </ol>
+            <a href="#book" className="btn btn-bloom" style={{ marginTop: 6 }}>Book a 1:1 call →</a>
           </div>
         </div>
       </section>
 
-      {/* ============ MEET ============ */}
-      <section className="ins-section ins-section-tint">
-        <div className="ins-container ins-meet">
-          <figure className="ins-photo-card" data-reveal>
-            <img src={POSTER} alt="Kayode Samson Elepe, RR - Founder, KSEFinServe" loading="lazy" />
-            <figcaption>
-              <b>Kayode Samson Elepe, RR</b>
-              <span>Founder, KSEFinServe</span>
-            </figcaption>
-          </figure>
-          <div>
-            <p className="ins-eyebrow">Meet your advisor</p>
-            <h2 className="ins-section-title">A real person who'll <span className="grad">walk this road with you</span></h2>
-            <p className="ins-section-sub" style={{ marginTop: 18 }}>
-              Hi, I am <strong>Kayode Samson Elepe, RR</strong>. I started KSEFinServe because I saw too many families
+      {/* ============ MEET YOUR AGENT ============ */}
+      <section className="section meet" style={{ background: "var(--white)" }}>
+        <div className="wrap">
+          <div className="portrait">
+            <img src={IMG.portrait} alt={`${AGENT_NAME}, RR`} loading="lazy" />
+            <span className="tag">
+              Licensed Financial Professional
+              <small>RR · KSEFinServe</small>
+            </span>
+          </div>
+          <div className="letter">
+            <p className="eyebrow">Meet {AGENT_NAME}, RR</p>
+            <h2 style={{ marginTop: 10 }}>A real person who'll walk this road with you</h2>
+            <p>
+              Hi, I am <strong>{AGENT_NAME}{AGENT_CREDS}</strong>. I started KSEFinServe because I saw too many families
               find out the hard way that a serious illness can hurt just as much as a loss - the bills pile up, the
               paycheck stops, and the savings disappear.
             </p>
-            <p className="ins-section-sub" style={{ marginTop: 14 }}>
+            <p>
               I'm an independent registered representative, which means I don't work for one insurance company. I work
-              for <em>you</em>. I compare options across carriers, explain everything in plain English, and only
-              recommend what truly fits your family and your budget.
+              for <em>you</em>. I compare options across carriers, explain everything in plain English, and only recommend
+              what truly fits your family and your budget.
             </p>
-            <p className="ins-section-sub" style={{ marginTop: 14 }}>
-              My background is engineering and data - Shell, ExxonMobil, Imperial Oil and the Canada Mortgage and
-              Housing Corporation - and I've spent years developing advisors and serving over 4,500 families and
-              professionals. For you, that means a careful, research-minded look at your numbers and a practical plan
-              you can actually afford, without the jargon.
+            <p>
+              I work closely with African immigrant families across the communities I serve. I know how much it took to
+              build your life here, and how many people may be counting on you, both here and back home.
             </p>
-            <blockquote data-reveal>
-              If you've been putting this off because it feels confusing or salesy - I understand. Let's just talk. No pressure, ever.
-            </blockquote>
-            <p className="ins-meet-name">Kayode Samson Elepe, RR</p>
-            <p className="ins-meet-role">Founder &amp; Registered Representative, KSEFinServe</p>
-            <div className="ins-cred">
-              <span><IcoCheck size={14} /> Registered Representative</span>
-              <span><IcoCheck size={14} /> Licensed across the U.S.</span>
-              <span><IcoCheck size={14} /> Serving Canada</span>
-              <span><IcoCheck size={14} /> Independent advice</span>
+            <p>
+              If you've been putting this off because it feels confusing or salesy - I understand. Let's just talk. No
+              pressure, ever.
+            </p>
+            <p className="sig">
+              {AGENT_NAME}{AGENT_CREDS}
+              <small>Founder, KSEFinServe</small>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ============ BOOK A 1:1 ============ */}
+      <section className="section book" id="book" style={{ background: "var(--sand)" }}>
+        <div className="wrap">
+          <div>
+            <p className="eyebrow">Your free Family Protection Report</p>
+            <h2 style={{ marginTop: 10 }}>Get your number, your quotes and your rate-lock date.</h2>
+            <p className="lede" style={{ marginTop: 14 }}>
+              Answer four quick questions, then pick a time. On a relaxed, one-on-one call we'll build your Family
+              Protection Report together. It's free, with no obligation, and you keep the report either way.
+            </p>
+            <ul className="book-points">
+              <li>
+                <span className="ic"><Ico><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></Ico></span>
+                <div><strong>About 30 minutes</strong><span>Enough time for real answers, short enough for a lunch break.</span></div>
+              </li>
+              <li>
+                <span className="ic"><Ico><rect x="3" y="6" width="13" height="12" rx="2" /><path d="M16 10l5-3v10l-5-3" /></Ico></span>
+                <div><strong>By video call, from anywhere</strong><span>Join from your phone or computer. The link arrives as soon as you book.</span></div>
+              </li>
+              <li>
+                <span className="ic"><Ico><path d="M5 12.5l4.5 4.5L19 7.5" /></Ico></span>
+                <div><strong>Walk away with your report</strong><span>Your coverage number, side-by-side quotes, your rate-lock date, and how living benefits work for you.</span></div>
+              </li>
+            </ul>
+            <div className="book-agent">
+              <img src={IMG.agent} alt="" />
+              <p>
+                "I'll come prepared, listen first, and never pressure you. You'll be talking with me, not a call center."
+                <br />
+                <strong style={{ color: "var(--vine)" }}>{AGENT_NAME}{AGENT_CREDS}</strong>
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <div className="quote-card" id="quote" ref={quoteRef}>
+              {reference ? (
+                <div className="thanks">
+                  <div className="badge"><IcoCheck /></div>
+                  <h2>You're booked, {details.firstName || "friend"}!</h2>
+                  <p>
+                    Reference <strong>{reference}</strong>. We'll email {details.email} your confirmation and the video
+                    link for {slotDate} at the time you picked.
+                  </p>
+                  <p className="small" style={{ marginTop: 12 }}>
+                    Add it to your calendar and come with any policy you already have - that's all you need.
+                  </p>
+                </div>
+              ) : (
+                <div id="formBody">
+                  <h2>Get my free report</h2>
+                  <p className="small">Answer 4 quick questions, then pick a time for your 1:1 call. Free, no obligation.</p>
+                  <div className="progress" aria-hidden="true">
+                    {STEPS.map((_, i) => <i key={i} className={i <= step ? "on" : ""} />)}
+                  </div>
+
+                  <form id="leadForm" noValidate onSubmit={(e) => e.preventDefault()}>
+                    {STEPS.map((s, index) => (
+                      <div key={index} className={`step${index === step ? " active" : ""}`} data-step={index + 1}>
+                        {s.groups.map((g) => (
+                          <div key={g.name} style={{ marginTop: g.label && s.groups.indexOf(g) > 0 ? 18 : 0 }}>
+                            {g.label && <span className="q-label">{g.label}</span>}
+                            <div className={`choices${g.one ? " one" : ""}`}>
+                              {g.options.map((opt) => (
+                                <label
+                                  key={opt.value}
+                                  className="choice"
+                                  style={opt.wide ? { gridColumn: "1 / -1" } : undefined}
+                                >
+                                  <input
+                                    type="radio"
+                                    name={g.name}
+                                    value={opt.value}
+                                    checked={answers[g.name] === opt.value}
+                                    onChange={() => answer(g.name, opt.value)}
+                                  />
+                                  <span>{opt.label}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+
+                        {s.contact && (
+                          <>
+                            <span className="q-label">Who will I be meeting with?</span>
+                            <div className="row2">
+                              <div className={`field${formInvalid.firstName ? " invalid" : ""}`}>
+                                <label htmlFor="fn">First name</label>
+                                <input
+                                  id="fn"
+                                  name="first_name"
+                                  autoComplete="given-name"
+                                  required
+                                  value={details.firstName}
+                                  onChange={(e) => setDetails((d) => ({ ...d, firstName: e.target.value }))}
+                                />
+                              </div>
+                              <div className={`field${formInvalid.lastName ? " invalid" : ""}`}>
+                                <label htmlFor="ln">Last name</label>
+                                <input
+                                  id="ln"
+                                  name="last_name"
+                                  autoComplete="family-name"
+                                  required
+                                  value={details.lastName}
+                                  onChange={(e) => setDetails((d) => ({ ...d, lastName: e.target.value }))}
+                                />
+                              </div>
+                            </div>
+                            <div className={`field${formInvalid.email ? " invalid" : ""}`}>
+                              <label htmlFor="em">Email</label>
+                              <input
+                                id="em"
+                                type="email"
+                                name="email"
+                                autoComplete="email"
+                                required
+                                value={details.email}
+                                onChange={(e) => setDetails((d) => ({ ...d, email: e.target.value }))}
+                              />
+                            </div>
+                            <div className="row2">
+                              <div className={`field${formInvalid.phone ? " invalid" : ""}`}>
+                                <label htmlFor="ph">Phone</label>
+                                <input
+                                  id="ph"
+                                  type="tel"
+                                  name="phone"
+                                  autoComplete="tel"
+                                  inputMode="tel"
+                                  placeholder="(555) 555-5555"
+                                  required
+                                  value={details.phone}
+                                  onChange={(e) => setDetails((d) => ({ ...d, phone: e.target.value }))}
+                                />
+                              </div>
+                              <div className={`field${formInvalid.state ? " invalid" : ""}`}>
+                                <label htmlFor="st">State / Province</label>
+                                <select
+                                  id="st"
+                                  name="state"
+                                  required
+                                  value={details.state}
+                                  onChange={(e) => setDetails((d) => ({ ...d, state: e.target.value }))}
+                                >
+                                  <option value="">Select…</option>
+                                  <optgroup label="United States">
+                                    {Object.entries(US_STATES).map(([code, name]) => <option key={code} value={code}>{name}</option>)}
+                                  </optgroup>
+                                  <optgroup label="Canada">
+                                    {Object.entries(CA_PROVINCES).map(([code, name]) => <option key={code} value={code}>{name}</option>)}
+                                  </optgroup>
+                                </select>
+                              </div>
+                            </div>
+                            <label className={`consent${formInvalid.consent ? " invalid" : ""}`}>
+                              <input
+                                type="checkbox"
+                                name="consent"
+                                value="yes"
+                                checked={details.consent}
+                                onChange={(e) => setDetails((d) => ({ ...d, consent: e.target.checked }))}
+                              />
+                              <span>
+                                By checking this box and submitting, I agree that KSEFinServe and its licensed agents may
+                                contact me about life insurance at the phone number and email provided, including by call,
+                                text, and automated technology. Consent is not a condition of purchase. Message &amp; data
+                                rates may apply. Reply STOP to opt out.
+                              </span>
+                            </label>
+                          </>
+                        )}
+
+                        {s.slots && (
+                          <>
+                            <span className="q-label">Pick a time for your 1:1 call</span>
+                            <SlotPicker date={slotDate} time={slotTime} onDate={setSlotDate} onTime={setSlotTime} />
+                          </>
+                        )}
+                      </div>
+                    ))}
+
+                    <p className="err-msg" role="alert">{error}</p>
+                    <div className="nav-row">
+                      <button type="button" className="btn btn-ghost" onClick={back} hidden={step === 0}>← Back</button>
+                      {step < totalSteps - 1 ? (
+                        <button type="button" className="btn btn-bloom" onClick={next}>
+                          {step === totalSteps - 2 ? "Continue to pick a time →" : "Continue →"}
+                        </button>
+                      ) : (
+                        <button type="button" className="btn btn-bloom" onClick={send} disabled={submitting}>
+                          {submitting ? "Sending…" : "Request my free report"}
+                        </button>
+                      )}
+                    </div>
+                    <p className="secure">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <rect x="4" y="10" width="16" height="11" rx="2" stroke="currentColor" strokeWidth="2" />
+                        <path d="M8 10V7a4 4 0 018 0v3" stroke="currentColor" strokeWidth="2" />
+                      </svg>
+                      Your information is private and never sold.
+                    </p>
+                  </form>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </section>
 
-      {/* ============ BOOK ============ */}
-      <section className="ins-section" id="ins-book" ref={formRef}>
-        <div className="ins-container ins-book">
-          <div>
-            <p className="ins-eyebrow">Book a 1:1 call</p>
-            <h2 className="ins-section-title">Your free <span className="grad">Family Protection Report</span></h2>
-            <p className="ins-section-sub">
-              Get your number, your quotes and your rate-lock date. Answer four quick questions, then pick a time.
-              On a relaxed, one-on-one call we'll build your Family Protection Report together. It's free, with no
-              obligation, and you keep the report either way.
-            </p>
-            <ul className="ins-book-points">
-              <li>
-                <span className="ins-ico"><IcoClock size={22} /></span>
-                <div><strong>About 30 minutes</strong><span>Enough time for real answers, short enough for a lunch break.</span></div>
-              </li>
-              <li>
-                <span className="ins-ico"><IcoVideo size={22} /></span>
-                <div><strong>By video call, from anywhere</strong><span>Join from your phone or computer. The link arrives as soon as you book.</span></div>
-              </li>
-              <li>
-                <span className="ins-ico"><IcoDoc size={22} /></span>
-                <div><strong>Walk away with your report</strong><span>Your coverage number, side-by-side quotes, your rate-lock date, and how living benefits work for you.</span></div>
-              </li>
-            </ul>
-          </div>
-
-          <div className="ins-quote">
-            {reference ? (
-              <div className="ins-success">
-                <span className="ins-success-ico"><IcoCheck size={26} /></span>
-                <h3>Thank you - you're booked in.</h3>
-                <p>
-                  Your reference is <strong>{reference}</strong>. A confirmation email is on its way to {details.email}.
-                  I'll come prepared and we'll build your Family Protection Report together.
-                </p>
-                <div className="ins-nav-row">
-                  <button type="button" className="ins-btn ins-btn-outline" onClick={restart}>Start again</button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <h3>Get my free report</h3>
-                <p>Answer {QUESTIONS.length} quick questions, then pick a time for your 1:1 call. Free, no obligation.</p>
-                <div className="ins-progress" aria-hidden="true">
-                  {Array.from({ length: totalSteps }).map((_, i) => (<i key={i} className={i <= step ? "active" : ""} />))}
-                </div>
-
-                {!isContactStep ? (
-                  <>
-                    <p className="ins-q-label">{QUESTIONS[step].label}</p>
-                    <div className="ins-choices">
-                      {QUESTIONS[step].options.map((opt) => (
-                        <label key={opt} className={`ins-choice${answers[QUESTIONS[step].key] === opt ? " selected" : ""}`}>
-                          <input type="radio" name={QUESTIONS[step].key} value={opt}
-                            checked={answers[QUESTIONS[step].key] === opt}
-                            onChange={() => pick(QUESTIONS[step].key, opt)} />
-                          <span>{opt}</span>
-                        </label>
-                      ))}
-                    </div>
-                    <div className="ins-nav-row">
-                      <button type="button" className="ins-btn ins-btn-outline" onClick={() => setStep((s) => Math.max(0, s - 1))}
-                        disabled={step === 0}>Back</button>
-                      <button type="button" className="ins-btn ins-btn-navy"
-                        onClick={() => setStep((s) => Math.min(s + 1, QUESTIONS.length))}
-                        disabled={!answers[QUESTIONS[step].key]}>Continue <IcoArrow size={18} /></button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="ins-row-2">
-                      <div className="ins-field">
-                        <label htmlFor="ins-first">First name</label>
-                        <input id="ins-first" value={details.firstName} onChange={(e) => setDetails({ ...details, firstName: e.target.value })} autoComplete="given-name" />
-                      </div>
-                      <div className="ins-field">
-                        <label htmlFor="ins-last">Last name</label>
-                        <input id="ins-last" value={details.lastName} onChange={(e) => setDetails({ ...details, lastName: e.target.value })} autoComplete="family-name" />
-                      </div>
-                    </div>
-                    <div className="ins-field">
-                      <label htmlFor="ins-email">Email</label>
-                      <input id="ins-email" type="email" value={details.email} onChange={(e) => setDetails({ ...details, email: e.target.value })} autoComplete="email" />
-                    </div>
-                    <div className="ins-field">
-                      <label htmlFor="ins-phone">Phone</label>
-                      <input id="ins-phone" type="tel" value={details.phone} onChange={(e) => setDetails({ ...details, phone: e.target.value })} autoComplete="tel" />
-                    </div>
-                    <div className="ins-row-2">
-                      <div className="ins-field">
-                        <label htmlFor="ins-city">City</label>
-                        <input id="ins-city" value={details.city} onChange={(e) => setDetails({ ...details, city: e.target.value })} autoComplete="address-level2" />
-                      </div>
-                      <div className="ins-field">
-                        <label htmlFor="ins-province">State / Province</label>
-                        <input id="ins-province" value={details.province} onChange={(e) => setDetails({ ...details, province: e.target.value })} autoComplete="address-level1" />
-                      </div>
-                    </div>
-                    <div className="ins-row-2">
-                      <div className="ins-field">
-                        <label htmlFor="ins-country">Country</label>
-                        <select id="ins-country" value={details.country} onChange={(e) => setDetails({ ...details, country: e.target.value })}>
-                          {COUNTRIES.map((c) => (<option key={c} value={c}>{c}</option>))}
-                        </select>
-                      </div>
-                      <div className="ins-field">
-                        <label htmlFor="ins-contact">Preferred contact</label>
-                        <select id="ins-contact" value={details.contact} onChange={(e) => setDetails({ ...details, contact: e.target.value })}>
-                          <option>Email</option><option>Phone</option><option>WhatsApp</option>
-                        </select>
-                      </div>
-                    </div>
-                    <InsSlotPicker
-                      date={details.availableDate}
-                      time={details.availableTime}
-                      onDate={(v) => setDetails((d) => ({ ...d, availableDate: v }))}
-                      onTime={(v) => setDetails((d) => ({ ...d, availableTime: v }))}
-                    />
-
-                    <label className="ins-consent">
-                      <input type="checkbox" checked={details.consentContact}
-                        onChange={(e) => setDetails({ ...details, consentContact: e.target.checked })} />
-                      <span>I agree to be contacted by KSEFinServe about my enquiry and the Family Protection Report.</span>
-                    </label>
-                    {submitError && <p className="ins-error">{submitError}</p>}
-                    <div className="ins-nav-row">
-                      <button type="button" className="ins-btn ins-btn-outline" onClick={() => setStep(QUESTIONS.length - 1)}>Back</button>
-                      <button type="button" className="ins-btn ins-btn-gold" onClick={() => void send()}
-                        disabled={submitting || !details.firstName.trim() || !details.email.trim() || !details.phone.trim() || !details.availableDate || !details.availableTime || !details.consentContact}>
-                        {submitting ? "Sending..." : "Request my free report"}
-                      </button>
-                    </div>
-                    <p className="ins-form-status">Prefer email? Write to <a href="mailto:info@ksefinserve.com">info@ksefinserve.com</a></p>
-                  </>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* ============ HOW IT WORKS ============ */}
-      <section className="ins-section ins-section-tint">
-        <div className="ins-container">
-          <div className="ins-section-head center" data-reveal>
-            <p className="ins-eyebrow">How it works</p>
-            <h2 className="ins-section-title">Covered in <span className="grad">three simple steps</span></h2>
-          </div>
-          <div className="ins-grid ins-grid-3">
-            {STEPS.map((s, i) => (
-              <article className="ins-card" key={s.title} data-reveal style={stagger(i)}>
-                <div className="ins-card-index">{String(i + 1).padStart(2, "0")}</div>
-                <h3>{s.title}</h3>
-                <p>{s.body}</p>
-              </article>
+      {/* ============ WORKING WITH ME ============ */}
+      <section className="section">
+        <div className="wrap center">
+          <p className="eyebrow">What working with me looks like</p>
+          <h2 style={{ marginTop: 10 }}>Personal, patient and always in your corner</h2>
+          <p className="lede">You'll never be a policy number to me. Here's what you can expect from the first conversation to years down the road.</p>
+          <div className="gallery">
+            {GALLERY.map((g) => (
+              <figure key={g.title}>
+                <div className="g-art-frame">{g.art}</div>
+                <figcaption><strong>{g.title}</strong>{g.body}</figcaption>
+              </figure>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ============ FAQ ============ */}
-      <section className="ins-section">
-        <div className="ins-container ins-faq">
-          <div data-reveal>
-            <p className="ins-eyebrow">Questions</p>
-            <h2 className="ins-section-title">Frequently asked questions</h2>
-            <p className="ins-section-sub">
-              Anything else? Email <a href="mailto:info@ksefinserve.com"><strong>info@ksefinserve.com</strong></a> and I'll answer it directly.
-            </p>
+      {/* ============ HOW IT WORKS ============ */}
+      <section className="section">
+        <div className="wrap center">
+          <p className="eyebrow">How it works</p>
+          <h2 style={{ marginTop: 10 }}>Covered in three simple steps</h2>
+          <div className="steps" style={{ textAlign: "left" }}>
+            <div className="card">
+              <div className="num">01</div>
+              <h3>Answer a few questions</h3>
+              <p>Tell me who you want to protect and roughly how much coverage you need. It takes about a minute.</p>
+            </div>
+            <div className="card">
+              <div className="num">02</div>
+              <h3>Your Financial Needs Analysis</h3>
+              <p>We talk one-on-one, figure out exactly how much protection your family needs, and I compare carriers to fit your budget. No pressure.</p>
+            </div>
+            <div className="card">
+              <div className="num">03</div>
+              <h3>Apply &amp; get protected</h3>
+              <p>Pick the plan you like. Many applicants can qualify with no medical exam, and some get a decision quickly.</p>
+            </div>
           </div>
-          <div>
-            {FAQS.map((f, i) => (
-              <details className="ins-faq-item" key={f.q} data-reveal style={stagger(i)}>
+        </div>
+      </section>
+
+      {/* ============ FAQ ============ */}
+      <section className="section" style={{ background: "var(--sand)" }}>
+        <div className="wrap">
+          <div className="center">
+            <p className="eyebrow">Questions</p>
+            <h2 style={{ marginTop: 10 }}>Frequently asked questions</h2>
+          </div>
+          <div className="faq">
+            {FAQS.map((f) => (
+              <details key={f.q}>
                 <summary>{f.q}</summary>
                 <p>{f.a}</p>
               </details>
@@ -1022,26 +1383,125 @@ export default function InsurancePage() {
         </div>
       </section>
 
-      {/* ============ FINAL ============ */}
-      <section className="ins-final">
-        <div className="ins-container">
-          <img src={POSTER} alt="Kayode Samson Elepe, RR" data-reveal />
-          <h2 data-reveal style={stagger(1)}>Let's protect the people you love, <span className="grad">together.</span></h2>
-          <p data-reveal style={stagger(2)}>
-            Rates are based on your age and health today, so the best time to look is now. Tell me a little about your
-            family and I'll personally reach out with your options.
-          </p>
-          <div data-reveal style={stagger(3)}>
-            <button type="button" className="ins-btn ins-btn-gold" onClick={scrollToForm}>
-              Get my free report <IcoArrow size={18} />
-            </button>
+      {/* ============ CTA ============ */}
+      <section className="section cta">
+        <div className="wrap">
+          <img src={IMG.portrait} alt={AGENT_NAME} loading="lazy" />
+          <div>
+            <h2>Let's protect the people you love - together.</h2>
+            <p>
+              Rates are based on your age and health today, so the best time to look is now. Tell me a little about your
+              family and I'll personally reach out with your options.
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }} className="cta-btns">
+              <a href="#book" className="btn btn-book light">
+                <CalIco />
+                Book a 1:1 consultation
+              </a>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ============ STICKY ============ */}
-      <div className={`ins-sticky${showSticky ? " is-visible" : ""}`}>
-        <button type="button" className="ins-btn ins-btn-gold" onClick={scrollToForm}>Get My Free Report</button>
+      <section className="ins-legal">
+        <div className="wrap">
+          <p>
+            <strong>KSEFinServe</strong> · <a href="https://ksefinserve.com/">ksefinserve.com</a> ·{" "}
+            <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> ·{" "}
+            <a href="tel:+12819447306">{CONTACT_PHONE}</a>
+          </p>
+          <p>
+            This is a solicitation for insurance. KSEFinServe is an independent insurance agency; agents are licensed only
+            in the states and provinces where they hold an active license (currently across the United States and
+            Canada). Coverage is underwritten by the issuing insurance carrier, and all policies are subject to
+            underwriting approval, terms, conditions and exclusions. Not all products, riders or features are available
+            in every state or province.
+          </p>
+          <p>
+            Living benefits are provided through accelerated death benefit riders. Qualifying conditions, benefit
+            amounts and any associated fees vary by carrier and product. Accelerated benefits reduce the death benefit
+            payable to beneficiaries, may be taxable, and may affect eligibility for public assistance programs. Consult
+            a tax advisor regarding your situation.
+          </p>
+          <p>
+            Indexed universal life (IUL) is a life insurance product, not an investment in the stock market or any index.
+            Interest credited is subject to caps, participation rates and policy charges; past index performance does not
+            guarantee future results; and cash value accumulation is not guaranteed beyond the policy's minimum
+            guarantees. Policy loans and withdrawals reduce cash value and the death benefit.
+          </p>
+          <p><a href="#book">Book a 1:1 consultation</a></p>
+          <p>
+            Submitting your information does not obligate you to purchase. We do not sell your personal information. ©{" "}
+            {new Date().getFullYear()} KSEFinServe. All rights reserved.
+          </p>
+        </div>
+      </section>
+
+      {/* ============ LEAD POPUP ============ */}
+      <div
+        className={`pop${popOpen ? " open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!popOpen}
+        onClick={(e) => { if (e.target === e.currentTarget) closePop() }}
+      >
+        <div className="pop-box" ref={popRef}>
+          <button type="button" className="pop-close" onClick={closePop} aria-label="Close">×</button>
+          {!popDone ? (
+            <div>
+              <img className="avatar" src={IMG.agent} alt="" />
+              <h2>Before you go - can I help?</h2>
+              <p className="small">Leave your info and I'll personally reach out with free, no-pressure term life options for your family.</p>
+              <form noValidate onSubmit={sendPopLead}>
+                <div className={`field${popInvalid.name ? " invalid" : ""}`}>
+                  <label htmlFor="pName">Full name</label>
+                  <input id="pName" name="name" autoComplete="name" required />
+                </div>
+                <div className={`field${popInvalid.phone ? " invalid" : ""}`}>
+                  <label htmlFor="pPhone">Phone</label>
+                  <input id="pPhone" type="tel" name="phone" autoComplete="tel" inputMode="tel" placeholder="(555) 555-5555" required />
+                </div>
+                <div className={`field${popInvalid.email ? " invalid" : ""}`}>
+                  <label htmlFor="pEmail">Email</label>
+                  <input id="pEmail" type="email" name="email" autoComplete="email" required />
+                </div>
+                <label className={`consent${popInvalid.consent ? " invalid" : ""}`}>
+                  <input type="checkbox" name="consent" value="yes" />
+                  <span>
+                    By checking this box and submitting, I agree that KSEFinServe and its licensed agents may contact me
+                    about life insurance at the phone number and email provided. Consent is not a condition of purchase.
+                  </span>
+                </label>
+                <p className="err-msg" role="alert">{popError}</p>
+                <button type="submit" className="btn btn-bloom" disabled={popSending}>
+                  {popSending ? "Sending…" : "Yes, contact me"}
+                </button>
+              </form>
+              <a href="#book" className="pop-book" onClick={(e) => { e.preventDefault(); closePop(); scrollToQuote() }}>
+                Rather pick a time? Book a 1:1 consultation →
+              </a>
+              <button type="button" className="pop-no" onClick={closePop}>No thanks, I'm just browsing</button>
+            </div>
+          ) : (
+            <div className="thanks">
+              <img className="avatar" src={IMG.agent} alt="" />
+              <h2>You're in! One last step.</h2>
+              <p>Skip the phone tag: pick a time for your free 1:1 call now. It takes about a minute, and your details are already filled in.</p>
+              <button type="button" className="btn btn-bloom" style={{ marginTop: 18 }} onClick={prefillFromPop}>
+                Pick my call time →
+              </button>
+              <button type="button" className="pop-no" onClick={closePop}>I'll wait for your call</button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ============ FLOATING CTA ============ */}
+      <div className={`mobile-cta${ctaHidden ? " hide" : ""}`}>
+        <a href="#book" className="btn btn-bloom btn-float">
+          <CalIco />
+          Book a 1:1 call
+        </a>
       </div>
     </div>
   )

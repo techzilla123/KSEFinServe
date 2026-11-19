@@ -1015,9 +1015,34 @@ export default function App() {
                                   // Close the frame but keep the story playing in the background.
                                   setStoryVideoPlaying(false);
                                   if (video) {
+                                    // Drop focus so space cannot reach the hidden video's
+                                    // native controls while the frame is closed.
+                                    video.blur();
                                     video.muted = false;
                                     video.play().catch(() => {});
                                   }
+                                }
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key !== " " && e.code !== "Space") return;
+                                const video = storyVideoRef.current;
+                                if (!video) return;
+                                // Space never does anything while the frame is closed.
+                                if (!storyVideoPlaying) {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  return;
+                                }
+                                // When the video itself is focused its native controls already
+                                // handle space, so leave that alone.
+                                if (e.target === video) return;
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (video.paused) {
+                                  video.muted = false;
+                                  video.play().catch(() => {});
+                                } else {
+                                  video.pause();
                                 }
                               }}
                               aria-label={storyVideoPlaying ? "Pause Kayode's story" : "Play Kayode's story"}

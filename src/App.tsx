@@ -18,7 +18,8 @@ const artwork = {
   footerLogo: `${assetPathPrefix}/14b9a.webp`,
   portrait: `${assetPathPrefix}/eab0f.webp`,
   story: `${assetPathPrefix}/profile pix-5.jpg`,
-  kayodePoster: `${assetPathPrefix}/kayode-poster.png`,
+  kayodePoster: `${assetPathPrefix}/kayode-story-poster.jpg`,
+  kayodeVideo: `${assetPathPrefix}/kayode-story.m4v`,
   macPhini: `${assetPathPrefix}/83ae0.webp`,
   cifp: `${assetPathPrefix}/1cf6f.webp`,
   rrc: `${assetPathPrefix}/8b8a5.webp`,
@@ -574,6 +575,7 @@ const money = (amount: number) =>
 export default function App() {
   const [panel, setPanel] = useState<Panel | null>(null)
   const [storyVideoPlaying, setStoryVideoPlaying] = useState(false)
+  const [storyVideoActive, setStoryVideoActive] = useState(false)
   const storyVideoRef = useRef<HTMLVideoElement>(null)
   const [mobileMenu, setMobileMenu] = useState(false)
   const [showInsights, setShowInsights] = useState(false)
@@ -1001,13 +1003,21 @@ export default function App() {
                               variant="text"
                               className={`story-photo-button ${storyVideoPlaying ? 'is-playing' : ''}`}
                               onClick={() => {
+                                const video = storyVideoRef.current;
                                 if (!storyVideoPlaying) {
-                                  setStoryVideoPlaying(true)
-                                  storyVideoRef.current?.play()
+                                  setStoryVideoPlaying(true);
+                                  setStoryVideoActive(true);
+                                  if (video) {
+                                    video.muted = false;
+                                    video.play().catch(() => {});
+                                  }
                                 } else {
-                                  setStoryVideoPlaying(false)
-                                  storyVideoRef.current?.pause()
-                                  storyVideoRef.current.currentTime = 0
+                                  // Close the frame but keep the story playing in the background.
+                                  setStoryVideoPlaying(false);
+                                  if (video) {
+                                    video.muted = false;
+                                    video.play().catch(() => {});
+                                  }
                                 }
                               }}
                               aria-label={storyVideoPlaying ? "Pause Kayode's story" : "Play Kayode's story"}
@@ -1018,26 +1028,24 @@ export default function App() {
                                                               className="story-photo"
                                                             />
                               <video
-                                                                                            ref={storyVideoRef}
-                                                                                            className="story-video"
-                                                                                            playsInline
-                                                                                            muted
-                                                                                            loop
-                                                                                            controls
-                                                                                            poster={artwork.kayodePoster}
-                                                                                          >
-                                                                                            <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4" />
-                                                                                            <source src="https://www.w3schools.com/html/mov_bbb.webm" type="video/webm" />
-                              </video>
+                                                                                                                          ref={storyVideoRef}
+                                                                                                                          className="story-video"
+                                                                                                                          playsInline
+                                                                                                                          loop
+                                                                                                                          controls
+                                                                                                                          poster={artwork.kayodePoster}
+                                                                                                                          src={artwork.kayodeVideo}
+                                                                                                                        />
                               <span className="play-circle">
                                 <Art src={artwork.play} />
                               </span>
-                              {storyVideoPlaying && (
+                              {(storyVideoPlaying || storyVideoActive) && (
                                 <button
                                   className="story-video-close"
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     setStoryVideoPlaying(false)
+                                    setStoryVideoActive(false)
                                     storyVideoRef.current?.pause()
                                     storyVideoRef.current.currentTime = 0
                                   }}

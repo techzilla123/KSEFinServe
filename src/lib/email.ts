@@ -225,6 +225,7 @@ function buildEmail(opts) {
   const sections = opts.sections || [];
   const cards = opts.cards || [];
   const buttonConfig = opts.button;
+  const buttons = opts.buttons || [];
   const showFooter = opts.footer !== false;
 
   const heroHtml = hero ? `<div style="background-color: ${hero.bgColor || "#081d2b"}; padding: 48px 32px; text-align: center; border-radius: 16px 16px 0 0;">
@@ -248,7 +249,7 @@ function buildEmail(opts) {
         `).join("")}
       </table>
     </div>` : "";
-  const buttonHtml = opts.button ? `<div style="text-align: center; margin: 32px 0;">
+  const singleButtonHtml = opts.button ? `<div style="text-align: center; margin: 32px 0;">
       <!--[if mso]>
       <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${opts.button.href}" style="height:48px;v-text-anchor:middle;width:200px;" arcsize="8%" stroke="f" fillcolor="${opts.button.bgColor || "#c9a963"}">
         <w:anchorlock/>
@@ -256,6 +257,17 @@ function buildEmail(opts) {
       </v:roundrect>
       <![endif]-->
       <a href="${opts.button.href}" style="display: inline-block; background-color: ${opts.button.bgColor || "#c9a963"}; color: ${opts.button.textColor || "#081d2b"}; padding: 16px 32px; border-radius: 8px; font-size: 16px; font-weight: 600; text-decoration: none; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif;">${opts.button.text}</a>
+    </div>` : "";
+  const multiButtonHtml = (opts.buttons && opts.buttons.length) ? `<div style="text-align: center; margin: 32px 0;">
+        ${(opts.buttons as Array<{text: string; href: string; bgColor?: string; textColor?: string}>).map(btn => `
+      <!--[if mso]>
+      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${btn.href}" style="height:48px;v-text-anchor:middle;width:200px;" arcsize="8%" stroke="f" fillcolor="${btn.bgColor || "#c9a963"}">
+        <w:anchorlock/>
+        <center style="color:${btn.textColor || "#081d2b"};font-family:Arial,sans-serif;font-size:16px;font-weight:600;">${btn.text}</center>
+      </v:roundrect>
+      <![endif]-->
+      <a href="${btn.href}" style="display: inline-block; background-color: ${btn.bgColor || "#c9a963"}; color: ${btn.textColor || "#081d2b"}; padding: 16px 32px; border-radius: 8px; font-size: 16px; font-weight: 600; text-decoration: none; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif; margin: 0 8px;">${btn.text}</a>
+      `).join("")}
     </div>` : "";
   const footerHtml = opts.footer !== false ? `<div style="background-color: #081d2b; padding: 32px; text-align: center; border-radius: 0 0 16px 16px;">
       <div style="margin-bottom: 16px;">
@@ -330,15 +342,7 @@ function buildEmail(opts) {
         `).join("")}
       </table>
     </div>` : ""}
-    ${opts.button ? `<div style="text-align: center; margin: 32px 0;">
-      <!--[if mso]>
-      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${opts.button.href}" style="height:48px;v-text-anchor:middle;width:200px;" arcsize="8%" stroke="f" fillcolor="${opts.button.bgColor || "#c9a963"}">
-        <w:anchorlock/>
-        <center style="color:${opts.button.textColor || "#081d2b"};font-family:Arial,sans-serif;font-size:16px;font-weight:600;">${opts.button.text}</center>
-      </v:roundrect>
-      <![endif]-->
-      <a href="${opts.button.href}" style="display: inline-block; background-color: ${opts.button.bgColor || "#c9a963"}; color: ${opts.button.textColor || "#081d2b"}; padding: 16px 32px; border-radius: 8px; font-size: 16px; font-weight: 600; text-decoration: none; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif;">${opts.button.text}</a>
-    </div>` : ""}
+    ${opts.buttons && opts.buttons.length ? multiButtonHtml : singleButtonHtml}
     <div style="background-color: #081d2b; padding: 32px; text-align: center; border-radius: 0 0 16px 16px;">
       <div style="margin-bottom: 16px;">
         <a href="https://ksefinserve.com" style="display: inline-block; margin: 0 8px;">
@@ -404,7 +408,15 @@ function contactNotificationTemplate(params) {
 function bookingConfirmationUserTemplate(params) {
   // Build Google Calendar URL
   const calendarUrl = params.calendarUrl || `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(params.serviceType + ' Session')}&dates=${encodeURIComponent(params.bookingDate + ' ' + params.bookingTime)}/&details=${encodeURIComponent('Your KSEFinServe session with Kayode Samson Elepe, RR. Reference: ' + params.reference)}`
-  
+
+  // Build Zoom join button if join URL exists
+  const zoomButton = params.zoomJoinUrl ? {
+    text: "Join Zoom Meeting",
+    href: params.zoomJoinUrl,
+    bgColor: "#2d8cff",
+    textColor: "#ffffff",
+  } : null;
+
   return buildEmail({
     preheaderText: `Booking confirmed: ${params.serviceType} on ${params.bookingDate} at ${params.bookingTime}`,
     hero: {
@@ -442,12 +454,21 @@ function bookingConfirmationUserTemplate(params) {
         content: `<div style="background: #f0ede6; padding: 20px; border-radius: 8px; border-left: 4px solid #c9a963; white-space: pre-wrap; font-size: 14px;">${params.question || 'No additional notes provided.'}</div>`,
       },
     ],
-    button: {
+    button: zoomButton || {
       text: "Add to Calendar",
       href: calendarUrl,
       bgColor: "#c9a963",
       textColor: "#081d2b",
     },
+    buttons: zoomButton ? [
+      {
+        text: "Add to Calendar",
+        href: calendarUrl,
+        bgColor: "#c9a963",
+        textColor: "#081d2b",
+      },
+      zoomButton,
+    ] : undefined,
   });
 }
 
@@ -486,6 +507,16 @@ function bookingNotificationAdminTemplate(params) {
     },
   ]
 
+  if (params.zoomJoinUrl) {
+    sections.splice(1, 0, {
+      title: "Zoom Meeting",
+      content: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+          <tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Join URL:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><a href="${params.zoomJoinUrl}" style="color: #2d8cff;">${params.zoomJoinUrl}</a></td></tr>
+          <tr><td style="padding: 12px 0;"><strong style="color: #c9a963;">Meeting ID:</strong></td><td style="padding: 12px 0;">${params.zoomMeetingId || 'N/A'}</td></tr>
+        </table>`,
+    });
+  }
+
   if (params.priorities && params.priorities.length > 0) {
     sections.push({
       title: "Client Priorities",
@@ -520,12 +551,26 @@ function bookingNotificationAdminTemplate(params) {
       textColor: "#ffffff",
     },
     sections,
-    button: {
+    buttons: params.zoomJoinUrl ? [
+      {
+        text: "View Booking in Admin",
+        href: adminLink("/admin/bookings"),
+        bgColor: "#c9a963",
+        textColor: "#081d2b",
+      },
+      {
+        text: "Join Zoom Meeting",
+        href: params.zoomJoinUrl,
+        bgColor: "#2d8cff",
+        textColor: "#ffffff",
+      },
+    ] : undefined,
+    button: !params.zoomJoinUrl ? {
       text: "View Booking in Admin",
       href: adminLink("/admin/bookings"),
       bgColor: "#c9a963",
       textColor: "#081d2b",
-    },
+    } : undefined,
   });
 }
 
@@ -1081,6 +1126,7 @@ export async function sendBookingConfirmation(params) {
     topic: params.topic,
     question: params.question,
     calendarUrl,
+    zoomJoinUrl: params.zoomJoinUrl,
   });
 
   const adminHtml = bookingNotificationAdminTemplate({
@@ -1105,11 +1151,13 @@ export async function sendBookingConfirmation(params) {
     consentUpdates: params.consentUpdates,
     contactMethod: params.contactMethod,
     source: params.source,
+    zoomJoinUrl: params.zoomJoinUrl,
+    zoomMeetingId: params.zoomMeetingId,
   });
 
   const [user, admin] = await Promise.all([
     sendEmail({ to: params.userEmail, subject: "Booking Confirmed — KSEFinServe", html: userHtml, text: `Booking Confirmed - ${params.serviceType} on ${formattedDate} at ${formattedTime}. Reference: ${reference}` }),
-    sendEmail({ to: adminEmail, subject: `New Booking Received — KSEFinServe (${reference})`, html: adminHtml, text: `New booking from ${params.userName} (${params.userEmail}) - ${params.serviceType} on ${formattedDateCDT} at ${formattedTimeCDT}. Reference: ${reference}` }),
+    sendEmail({ to: adminEmail, subject: `New Booking Received — KSEFinServe (${reference})`, html: adminHtml, text: `New booking from ${params.userName} (${params.userEmail}) - ${params.serviceType} on ${formattedDateCDT} at ${formattedTimeCDT}. Reference: ${reference}${params.zoomJoinUrl ? `\nZoom: ${params.zoomJoinUrl}` : ''}` }),
   ]);
   return { user, admin };
 }

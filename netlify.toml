@@ -20,32 +20,43 @@
 [functions.send-report]
   external_node_modules = ["@supabase/supabase-js", "nodemailer", "pdf-lib"]
 
+# Zoom OAuth callback function
+[functions.zoom-callback]
+  external_node_modules = []
+
+# Create Zoom meeting function
+[functions.create-zoom-meeting]
+  external_node_modules = []
+
 # Omit specific environment variable values from secrets scanning
 # These are expected to be in the build output as they're used in the application
 [secrets]
   scan = true
   omit_keys = [
-    "EMAIL_FROM",
-    "EMAIL_FROM_NAME",
-    "SMTP_HOST",
-    "SMTP_PORT",
-    "SMTP_USER",
-    "SMTP_PASS",
-    "EMAIL_FROM",
-    "ADMIN_ALLOWED_ORIGIN",
-    "VITE_GEMINI_API_KEY",
-    "VITE_GEMINI_NAME",
-    "VITE_GEMINI_PROJECT_NAME",
-    "VITE_GEMINI_PROJECT_NUMBER",
-    "VITE_SUPABASE_URL",
-    "VITE_SUPABASE_ANON_KEY",
-    "VITE_SUPABASE_SERVICE_ROLE_KEY",
-    "SUPABASE_URL",
-    "SERVICE_ROLE_KEY",
-    "VITE_SUPABASE_URL",
-    "VITE_SUPABASE_ANON_KEY",
-    "VITE_SUPABASE_SERVICE_ROLE_KEY"
-  ]
+      "EMAIL_FROM",
+      "EMAIL_FROM_NAME",
+      "SMTP_HOST",
+      "SMTP_PORT",
+      "SMTP_USER",
+      "SMTP_PASS",
+      "EMAIL_FROM",
+      "ADMIN_ALLOWED_ORIGIN",
+      "VITE_GEMINI_API_KEY",
+      "VITE_GEMINI_NAME",
+      "VITE_GEMINI_PROJECT_NAME",
+      "VITE_GEMINI_PROJECT_NUMBER",
+      "VITE_SUPABASE_URL",
+      "VITE_SUPABASE_ANON_KEY",
+      "VITE_SUPABASE_SERVICE_ROLE_KEY",
+      "SUPABASE_URL",
+      "SERVICE_ROLE_KEY",
+      "VITE_SUPABASE_URL",
+      "VITE_SUPABASE_ANON_KEY",
+      "VITE_SUPABASE_SERVICE_ROLE_KEY",
+      "ZOOM_CLIENT_ID",
+      "ZOOM_CLIENT_SECRET",
+      "ZOOM_REDIRECT_URI"
+    ]
 
 [[redirects]]
   from = "/events"

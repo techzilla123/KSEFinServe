@@ -18,6 +18,50 @@ const A = "/assets"
 type Go = (screen: Screen, bookingId?: string | null, eventId?: string | null) => void
 type Active = "events" | "monitoring" | "bookings" | "settings"
 
+function ZoomConnectButton() {
+  const [connecting, setConnecting] = useState(false)
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+
+  const isConnected = typeof window !== "undefined" && !!localStorage.getItem("zoom_access_token")
+
+  const handleConnect = () => {
+    const clientId = "NmCX2kJzTYWhG2ez3ia0gA"
+    const redirectUri = `${window.location.origin}/.netlify/functions/zoom-callback`
+    const scope = "meeting:write:meeting meeting:read:meeting"
+    const url = `https://zoom.us/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`
+    window.location.href = url
+  }
+
+  const handleDisconnect = () => {
+    localStorage.removeItem("zoom_access_token")
+    localStorage.removeItem("zoom_refresh_token")
+    localStorage.removeItem("zoom_expires_at")
+    setMessage({ type: "success", text: "Zoom disconnected. You can reconnect anytime." })
+  }
+
+  return (
+    <div className="flex items-center gap-4">
+      {isConnected ? (
+        <>
+          <Status>Connected</Status>
+          <button className="white-button text-[12px]" onClick={handleDisconnect}>
+            Disconnect
+          </button>
+        </>
+      ) : (
+        <button className="gold-button" onClick={handleConnect} disabled={connecting}>
+          {connecting ? "Connecting…" : "Connect Zoom"}
+        </button>
+      )}
+      {message && (
+        <p className={`text-[12px] ${message.type === "success" ? "text-[#276b55]" : "text-[#8f2f24]"}`}>
+          {message.text}
+        </p>
+      )}
+    </div>
+  )
+}
+
 function Shell({
   active,
   page,

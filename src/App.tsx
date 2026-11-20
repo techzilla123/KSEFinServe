@@ -750,35 +750,62 @@ export default function App() {
           ? panel.calculator
           : ""
 
-  // Path-based routing: /contact shows Contact page, unknown paths show 404
-  if (route === "/contact") {
-    return (
-      <SiteLayout
-        navigate={navigate}
-        setPanel={setPanel}
-        setMobileMenu={setMobileMenu}
-        mobileMenu={mobileMenu}
-        eventsMenuOpen={eventsMenuOpen}
-        setEventsMenuOpen={setEventsMenuOpen}
-        calcMenuOpen={calcMenuOpen}
-        setCalcMenuOpen={setCalcMenuOpen}
-        eventsMenuRef={eventsMenuRef} workMenuOpen={workMenuOpen} setWorkMenuOpen={setWorkMenuOpen} workMenuRef={workMenuRef}
-        calcMenuRef={calcMenuRef}
-        growing={growing}
-        setGrowing={setGrowing}
-        socials={[]}
-        hideAboutNav={false}
-        hideContactNav={true}
-      >
-        <Link href="#main" className="skip-link">
-          Skip to content
-        </Link>
-        <ContactPage />
-      </SiteLayout>
-    )
-  }
+  // Path-based routing: /contact shows Contact page, /zoom-success handles Zoom OAuth callback, unknown paths show 404
+    if (route === "/contact") {
+      return (
+        <SiteLayout
+          navigate={navigate}
+          setPanel={setPanel}
+          setMobileMenu={setMobileMenu}
+          mobileMenu={mobileMenu}
+          eventsMenuOpen={eventsMenuOpen}
+          setEventsMenuOpen={setEventsMenuOpen}
+          calcMenuOpen={calcMenuOpen}
+          setCalcMenuOpen={setCalcMenuOpen}
+          eventsMenuRef={eventsMenuRef} workMenuOpen={workMenuOpen} setWorkMenuOpen={setWorkMenuOpen} workMenuRef={workMenuRef}
+          calcMenuRef={calcMenuRef}
+          growing={growing}
+          setGrowing={setGrowing}
+          socials={[]}
+          hideAboutNav={false}
+          hideContactNav={true}
+        >
+          <Link href="#main" className="skip-link">
+            Skip to content
+          </Link>
+          <ContactPage />
+        </SiteLayout>
+      )
+    }
 
-  // 404 for unknown paths
+    if (route === "/zoom-success") {
+      return (
+        <SiteLayout
+          navigate={navigate}
+          setPanel={setPanel}
+          setMobileMenu={setMobileMenu}
+          mobileMenu={mobileMenu}
+          eventsMenuOpen={eventsMenuOpen}
+          setEventsMenuOpen={setEventsMenuOpen}
+          calcMenuOpen={calcMenuOpen}
+          setCalcMenuOpen={setCalcMenuOpen}
+          eventsMenuRef={eventsMenuRef} workMenuOpen={workMenuOpen} setWorkMenuOpen={setWorkMenuOpen} workMenuRef={workMenuRef}
+          calcMenuRef={calcMenuRef}
+          growing={growing}
+          setGrowing={setGrowing}
+          socials={[]}
+          hideAboutNav={true}
+          hideContactNav={true}
+        >
+          <Link href="#main" className="skip-link">
+            Skip to content
+          </Link>
+          <ZoomSuccessPage />
+        </SiteLayout>
+      )
+    }
+
+    // 404 for unknown paths
   if (route !== "/") {
     return (
       <main className="not-found-page">
@@ -2174,10 +2201,57 @@ function CompoundGraph({
         )}
       </div>
     </div>
-  )
-}
+      )
+    }
 
-function Benefit({
+    function ZoomSuccessPage() {
+      useEffect(() => {
+        // Extract tokens from URL fragment
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        const accessToken = params.get("access_token");
+        const refreshToken = params.get("refresh_token");
+        const expiresIn = params.get("expires_in");
+
+        if (accessToken) {
+          // Store securely (e.g., in secure httpOnly cookie via backend, or encrypted in localStorage for demo)
+          localStorage.setItem("zoom_access_token", accessToken);
+          if (refreshToken) localStorage.setItem("zoom_refresh_token", refreshToken);
+          if (expiresIn) localStorage.setItem("zoom_expires_at", String(Date.now() + parseInt(expiresIn) * 1000));
+          // Clean URL
+          window.history.replaceState({}, document.title, "/zoom-success");
+        }
+      }, []);
+
+      const storedToken = typeof window !== "undefined" ? localStorage.getItem("zoom_access_token") : null;
+
+      return (
+        <section className="zoom-success">
+          <div className="container text-center">
+            <h1>Zoom Connected Successfully</h1>
+            <p className="lede">Your Zoom account has been linked. You can now create meetings from KSEFinServe.</p>
+            {storedToken ? (
+              <div className="zoom-token-status">
+                <p><strong>Access Token:</strong> stored securely</p>
+                <button className="button button-navy" onClick={() => {
+                  localStorage.removeItem("zoom_access_token");
+                  localStorage.removeItem("zoom_refresh_token");
+                  localStorage.removeItem("zoom_expires_at");
+                  window.location.reload();
+                }}>
+                  Disconnect Zoom
+                </button>
+              </div>
+            ) : (
+              <p className="muted">No active Zoom connection found.</p>
+            )}
+            <p className="mt-4"><a href="/" className="button button-gold">Back to Home</a></p>
+          </div>
+        </section>
+      );
+    }
+
+    function Benefit({
   title,
   subtitle,
   children,

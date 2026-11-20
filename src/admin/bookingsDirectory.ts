@@ -35,6 +35,10 @@ export interface Booking {
   internalNotes: string
   createdAt: string
   updatedAt: string
+  // Zoom integration fields
+  zoomJoinUrl?: string
+  zoomMeetingId?: string
+  zoomStartUrl?: string
 }
 
 /** What the public form sends. */
@@ -267,6 +271,10 @@ function toBooking(row: Record<string, any>): Booking {
     internalNotes: row.internal_notes ?? '',
     createdAt: row.created_at ?? '',
     updatedAt: row.updated_at ?? '',
+    // Zoom integration fields
+    zoomJoinUrl: row.zoom_join_url ?? undefined,
+    zoomMeetingId: row.zoom_meeting_id ?? undefined,
+    zoomStartUrl: row.zoom_start_url ?? undefined,
   }
 }
 
@@ -350,7 +358,44 @@ export function useBookings(): BookingDirectory {
         if (err) return { error: err.message }
         await refresh()
 
-        // Create Google Calendar event (non-blocking)
+        // Send confirmation emails (non-blocking)
+                let zoomJoinUrl: string | undefined
+                let zoomMeetingId: string | undefined
+
+                // Create Zoom meeting if date/time provided
+                                if (input.availableDate && input.availableTime) {
+                                  try {
+                                    // Get Zoom access token from localStorage (set by ZoomSuccessPage after OAuth)
+                                    const accessToken = typeof window !== 'undefined' ? localStorage.getItem('zoom_access_token') : null;
+                    
+                                    const zoomRes = await fetch(`/.netlify/functions/create-zoom-meeting`, {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({
+                                        reference,
+                                        userName: `${input.firstName.trim()} ${input.lastName.trim()}`.trim(),
+                                        userEmail: input.email.trim(),
+                                        bookingDate: input.availableDate,
+                                        bookingTime: input.availableTime,
+                                        topic: input.topic,
+                                        path: input.path,
+                                        duration: 60,
+                                        accessToken,
+                                      }),
+                                    })
+                                    const zoomData = await zoomRes.json()
+                                    if (zoomData.success) {
+                                      zoomJoinUrl = zoomData.join_url
+                                      zoomMeetingId = zoomData.meeting_id
+                                    } else {
+                                      console.error('Zoom meeting creation failed:', zoomData.error)
+                                    }
+                                  } catch (zoomErr) {
+                                    console.error('Zoom meeting creation error:', zoomErr)
+                                  }
+                                }
+
+                // Create Google Calendar event (non-blocking)
                 if (input.availableDate && input.availableTime) {
                   try {
                     // availableTime is an ISO string in UTC (e.g., "2026-11-11T14:00:00.000Z" for 8 AM CDT)
@@ -369,7 +414,7 @@ export function useBookings(): BookingDirectory {
                     const [month, day, year] = cdtParts[0].split("/");
                     const [hour, minute, second] = cdtParts[1].split(":");
                     const startTime = `${year}-${month}-${day}T${hour}:${minute}:${second}`;
-            
+    
                     // Add 1 hour for end time
                     const endDate = new Date(utcTime.getTime() + 60 * 60 * 1000);
                     const endParts = endDate.toLocaleString("en-US", {
@@ -385,54 +430,56 @@ export function useBookings(): BookingDirectory {
                     const [endMonth, endDay, endYear] = endParts[0].split("/");
                     const [endHour, endMinute, endSecond] = endParts[1].split(":");
                     const endTime = `${endYear}-${endMonth}-${endDay}T${endHour}:${endMinute}:${endSecond}`;
-            
+    
                     const description = `KSEFinServe Session Booking\n\nReference: ${reference}\nClient: ${input.firstName.trim()} ${input.lastName.trim()}\nEmail: ${input.email.trim()}\nPhone: ${input.phone.trim()}\nPath: ${input.path}\nTopic: ${input.topic}\nPriorities: ${(input.priorities || []).join(', ')}\nOutcome: ${input.outcome}\nContext: ${input.context}\nQuestion: ${input.question}\nContact Method: ${input.contactMethod}\nSource: ${input.source}\nConsent Contact: ${input.consentContact}\nConsent Updates: ${input.consentUpdates}`
-            
+    
                     await fetch(`/.netlify/functions/calendar`, {
-                                          method: 'POST',
-                                          headers: { 'Content-Type': 'application/json' },
-                                          body: JSON.stringify({
-                                            startTime,
-                                            endTime,
-                                            summary: `KSEFinServe Session - ${input.firstName.trim()} ${input.lastName.trim()}`,
-                                            description,
-                                          }),
-                                        })
+                                                  method: 'POST',
+                                                  headers: { 'Content-Type': 'application/json' },
+                                                  body: JSON.stringify({
+                                                    startTime,
+                                                    endTime,
+                                                    summary: `KSEFinServe Session - ${input.firstName.trim()} ${input.lastName.trim()}`,
+                                                    description,
+                                                  }),
+                                                })
                   } catch (calErr) {
                     console.error('Google Calendar booking failed:', calErr)
                   }
                 }
 
-        // Send confirmation emails (non-blocking)
-        try {
-          const { sendBookingConfirmation } = await import('@/lib/email')
-          await sendBookingConfirmation({
-            userEmail: input.email.trim(),
-            userName: `${input.firstName.trim()} ${input.lastName.trim()}`.trim(),
-            userPhone: input.phone ?? 'Not provided',
-            bookingDate: input.availableDate ? new Date(input.availableDate).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'To be arranged',
-            bookingTime: input.availableTime || 'To be confirmed',
-            serviceType: input.path || input.topic || 'Wealth Strategy Session',
-            city: input.city,
-            province: input.province,
-            country: input.country,
-            path: input.path,
-            topic: input.topic,
-            priorities: input.priorities,
-            outcome: input.outcome,
-            context: input.context,
-            question: input.question,
-            consentContact: input.consentContact,
-            consentUpdates: input.consentUpdates,
-            contactMethod: input.contactMethod,
-            source: input.source,
-            reference,
-          })
-        } catch (err) {
-          console.error('Booking confirmation emails failed to send:', err)
-        }
+                // Send confirmation emails (non-blocking)
+                try {
+                  const { sendBookingConfirmation } = await import('@/lib/email')
+                  await sendBookingConfirmation({
+                    userEmail: input.email.trim(),
+                    userName: `${input.firstName.trim()} ${input.lastName.trim()}`.trim(),
+                    userPhone: input.phone ?? 'Not provided',
+                    bookingDate: input.availableDate ? new Date(input.availableDate).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'To be arranged',
+                    bookingTime: input.availableTime || 'To be confirmed',
+                    serviceType: input.path || input.topic || 'Wealth Strategy Session',
+                    city: input.city,
+                    province: input.province,
+                    country: input.country,
+                    path: input.path,
+                    topic: input.topic,
+                    priorities: input.priorities,
+                    outcome: input.outcome,
+                    context: input.context,
+                    question: input.question,
+                    consentContact: input.consentContact,
+                    consentUpdates: input.consentUpdates,
+                    contactMethod: input.contactMethod,
+                    source: input.source,
+                    reference,
+                    zoomJoinUrl,
+                    zoomMeetingId,
+                  })
+                } catch (err) {
+                  console.error('Booking confirmation emails failed to send:', err)
+                }
 
-        return { error: null, reference }
+                return { error: null, reference }
       }, [refresh])
 
   const updateStatus = useCallback(async (id: string, status: Booking['status']) => {

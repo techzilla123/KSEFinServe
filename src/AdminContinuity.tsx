@@ -1887,6 +1887,7 @@ export function Settings({ go, onSignOut }: { go: Go; onSignOut?: () => void }) 
   const [roleFilter, setRoleFilter] = useState("All roles")
   const [stateFilter, setStateFilter] = useState("All states")
   const [refreshKey, setRefreshKey] = useState(0)
+  const [activeTab, setActiveTab] = useState("User management")
 
   // Re-read the directory after a mutation. `refresh` is stable (useCallback),
   // so depending on it directly does not loop.
@@ -1917,7 +1918,7 @@ export function Settings({ go, onSignOut }: { go: Go; onSignOut?: () => void }) 
       <Heading
         overline="A THOUGHTFUL WORKSPACE, RESPONSIBLY MANAGED"
         title="Settings"
-        intro="Manage your team’s access and keep the foundations clear."
+        intro="Manage your team's access and keep the foundations clear."
         action={
           <button className="gold-button" onClick={() => { setEditingUser(null); setModal("create") }}>
             + Create user
@@ -1926,124 +1927,147 @@ export function Settings({ go, onSignOut }: { go: Go; onSignOut?: () => void }) 
       />
       <Tabs
         labels={["User management", "Account & security", "Integrations"]}
+        active={activeTab}
+        onChange={setActiveTab}
       />
       <Notice title="Admin-only provisioning">
-        Only administrators can create users, change roles or deactivate access.
-        There is no public sign-up — every account below was created here.
-      </Notice>
-      <div className="flex items-start justify-between">
-        <div>
-          <h2 className="text-[21px] font-semibold">Administrative users</h2>
-          <p className="mt-1 text-[12px] text-[#66757d]">
-            {directory.users.length} users · {activeCount} active · {invitedCount} invited
-            {deactivatedCount ? ` · ${deactivatedCount} deactivated` : ""} · Role-based access
-          </p>
-        </div>
-        <Status>Administrator access</Status>
-      </div>
-      <Controls
-        placeholder="Search name or email…"
-        filters={["All roles", "All states"]}
-        value={query}
-        onSearch={setQuery}
-      />
-      <div className="records-wrap">
-        <table className="records-table users-table">
-          <thead>
-            <tr>
-              <th>USER</th>
-              <th>ROLE</th>
-              <th>ACCESS SCOPE</th>
-              <th>STATE</th>
-              <th>LAST ACTIVITY</th>
-              <th>MANAGE</th>
-            </tr>
-          </thead>
-          <tbody>
-            {directory.loading && (
-              <tr><td colSpan={6} className="text-[13px] text-[#66757d]">Loading users…</td></tr>
-            )}
-            {!directory.loading && directory.error && (
-              <tr><td colSpan={6} className="text-[13px] text-[#8f2f24]">{directory.error}</td></tr>
-            )}
-            {!directory.loading && !directory.error && rows.length === 0 && (
-              <tr><td colSpan={6} className="text-[13px] text-[#66757d]">No users match this search.</td></tr>
-            )}
-            {rows.map((u) => (
-              <tr key={u.id}>
-                <td>
-                  <b>{u.firstName} {u.lastName}</b>
-                  <span>{u.email}</span>
-                </td>
-                <td>{u.role}</td>
-                <td>{scopeForRole(u.role)}</td>
-                <td className={u.state === "Active" ? "green" : u.state === "Invited" ? "gold" : "red"}>{u.state}</td>
-                <td>{u.lastActivity}</td>
-                <td className="gold">
-                  <div className="flex justify-end gap-2 whitespace-nowrap">
-                    <button className="hover:underline" onClick={() => { setEditingUser(u); setModal("edit") }}>
-                      Edit
-                    </button>
-                    {u.state === "Active" ? (
-                      <button className="text-[#b3382c] hover:underline" onClick={() => setConfirm(u)}>
-                        Deactivate
-                      </button>
-                    ) : u.state === "Invited" ? (
-                      <button className="text-[#b3382c] hover:underline" onClick={() => setConfirm(u)}>
-                        Revoke
-                      </button>
-                    ) : (
-                      <button className="text-[#276b55] hover:underline" onClick={() => setConfirm(u)}>
-                        Activate
-                      </button>
-                    )}
+              Only administrators can create users, change roles or deactivate access.
+              There is no public sign-up — every account below was created here.
+            </Notice>
+            {activeTab === "User management" && (
+              <>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h2 className="text-[21px] font-semibold">Administrative users</h2>
+                    <p className="mt-1 text-[12px] text-[#66757d]">
+                      {directory.users.length} users · {activeCount} active · {invitedCount} invited
+                      {deactivatedCount ? ` · ${deactivatedCount} deactivated` : ""} · Role-based access
+                    </p>
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <Pagination text={`${directory.users.length} administrative users · Connected to Supabase Auth`} />
-      </div>
-      <div className="grid grid-cols-2 gap-6 max-[800px]:grid-cols-1">
-        <Panel title="Account & security" aside="Manage →">
-          <div className="space-y-5 text-[12px]">
-            <p className="text-[13px]">Your role: Administrator</p>
-            <p className="text-[#66757d]">
-              Use a unique password and review access regularly. Administrative
-              actions should remain attributable to individual accounts.
-            </p>
-            <hr className="border-[#dddcd5]" />
-            <button className="block text-[#876728] hover:underline" onClick={() => setSecurity("password")}>Change password →</button>
-            <button className="mt-2 block text-[#876728] hover:underline" onClick={() => setSecurity("activity")}>Review sign-in activity →</button>
-            <p className="text-[11px] text-[#66757d]">
-              Authentication is connected to Supabase. Password changes apply
-              to your account immediately.
-            </p>
-          </div>
-        </Panel>
-        <Panel title="Integration readiness" aside="Fully configured">
-                  <div className="space-y-5">
-                    {([
-                      ["Supabase", "Authentication & database", true],
-                      ["Google Calendar", "Session scheduling", true],
-                      ["Email service", "Client confirmations & admin notices", true],
-                    ] as [string, string, boolean][]).map(([name, detail, connected]) => (
-              <div className="flex items-center" key={name}>
-                <div className="flex-1">
-                  <b className="text-[13px]">{name}</b>
-                  <p className="text-[11px] text-[#66757d]">{detail}</p>
+                  <Status>Administrator access</Status>
                 </div>
-                {connected ? <Status>Connected</Status> : <Status gray>Not connected</Status>}
-              </div>
-            ))}
-            <p className="text-[11px] text-[#66757d]">
-              Supabase Auth is live. Calendar and email are configured separately
-              when those features are connected.
-            </p>
-          </div>
-        </Panel>
-      </div>
+                <Controls
+                  placeholder="Search name or email…"
+                  filters={["All roles", "All states"]}
+                  value={query}
+                  onSearch={setQuery}
+                />
+                <div className="records-wrap">
+                  <table className="records-table users-table">
+                    <thead>
+                      <tr>
+                        <th>USER</th>
+                        <th>ROLE</th>
+                        <th>ACCESS SCOPE</th>
+                        <th>STATE</th>
+                        <th>LAST ACTIVITY</th>
+                        <th>MANAGE</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {directory.loading && (
+                        <tr><td colSpan={6} className="text-center py-8 text-[13px] text-[#66757d]">Loading users…</td></tr>
+                      )}
+                      {!directory.loading && directory.error && (
+                        <tr><td colSpan={6} className="text-center py-8 text-[13px] text-[#8f2f24]">{directory.error}</td></tr>
+                      )}
+                      {!directory.loading && !directory.error && rows.length === 0 && (
+                        <tr><td colSpan={6} className="text-center py-8 text-[13px] text-[#66757d]">No users match this search.</td></tr>
+                      )}
+                      {rows.map((u) => (
+                        <tr key={u.id}>
+                          <td>
+                            <b>{u.firstName} {u.lastName}</b>
+                            <span>{u.email}</span>
+                          </td>
+                          <td>{u.role}</td>
+                          <td>{scopeForRole(u.role)}</td>
+                          <td className={u.state === "Active" ? "green" : u.state === "Invited" ? "gold" : "red"}>{u.state}</td>
+                          <td>{u.lastActivity}</td>
+                          <td className="gold">
+                            <div className="flex justify-end gap-2 whitespace-nowrap">
+                              <button className="hover:underline" onClick={() => { setEditingUser(u); setModal("edit") }}>
+                                Edit
+                              </button>
+                              {u.state === "Active" ? (
+                                <button className="text-[#b3382c] hover:underline" onClick={() => setConfirm(u)}>
+                                  Deactivate
+                                </button>
+                              ) : u.state === "Invited" ? (
+                                <button className="text-[#b3382c] hover:underline" onClick={() => setConfirm(u)}>
+                                  Revoke
+                                </button>
+                              ) : (
+                                <button className="text-[#276b55] hover:underline" onClick={() => setConfirm(u)}>
+                                  Activate
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <Pagination text={`${directory.users.length} administrative users · Connected to Supabase Auth`} />
+                </div>
+              </>
+            )}
+            {activeTab === "Account & security" && (
+              <Panel title="Account & security" aside="Manage →">
+                <div className="space-y-5 text-[12px]">
+                  <p className="text-[13px]">Your role: Administrator</p>
+                  <p className="text-[#66757d]">
+                    Use a unique password and review access regularly. Administrative
+                    actions should remain attributable to individual accounts.
+                  </p>
+                  <hr className="border-[#dddcd5]" />
+                  <button className="block text-[#876728] hover:underline" onClick={() => setSecurity("password")}>Change password →</button>
+                  <button className="mt-2 block text-[#876728] hover:underline" onClick={() => setSecurity("activity")}>Review sign-in activity →</button>
+                  <p className="text-[11px] text-[#66757d]">
+                    Authentication is connected to Supabase. Password changes apply
+                    to your account immediately.
+                  </p>
+                </div>
+              </Panel>
+            )}
+            {activeTab === "Integrations" && (
+              <Panel title="Integration readiness" aside="Fully configured">
+                <div className="space-y-5">
+                  {([
+                    ["Supabase", "Authentication & database", true],
+                    ["Google Calendar", "Session scheduling", true],
+                    ["Email service", "Client confirmations & admin notices", true],
+                  ] as [string, string, boolean][]).map(([name, detail, connected]) => (
+                    <div className="flex items-center" key={name}>
+                      <div className="flex-1">
+                        <b className="text-[13px]">{name}</b>
+                        <p className="text-[11px] text-[#66757d]">{detail}</p>
+                      </div>
+                      {connected ? <Status>Connected</Status> : <Status gray>Not connected</Status>}
+                    </div>
+                  ))}
+                  <p className="text-[11px] text-[#66757d]">
+                    Supabase Auth is live. Calendar and email are configured separately
+                    when those features are connected.
+                  </p>
+                  <hr className="border-[#dddcd5]" />
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-4 p-4 bg-[#f5f3ee] rounded-[8px]">
+                      <svg className="size-[24px] flex-shrink-0 text-[#2d8cff]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 12V7H5V5H19a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7v2h12a2 2 0 0 0 2-2v-5" />
+                        <circle cx="7" cy="17" r="4" />
+                        <path d="M5 17l2 2 4-4" />
+                      </svg>
+                      <div className="flex-1">
+                        <b className="text-[13px]">Zoom</b>
+                        <p className="text-[11px] text-[#66757d]">Video meetings for client sessions</p>
+                      </div>
+                      <ZoomConnectButton />
+                    </div>
+                  </div>
+                </div>
+              </Panel>
+            )}
       <Footer />
       {modal && (
         <CreateUser

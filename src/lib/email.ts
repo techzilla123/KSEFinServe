@@ -409,13 +409,8 @@ function bookingConfirmationUserTemplate(params) {
   // Build Google Calendar URL
   const calendarUrl = params.calendarUrl || `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(params.serviceType + ' Session')}&dates=${encodeURIComponent(params.bookingDate + ' ' + params.bookingTime)}/&details=${encodeURIComponent('Your KSEFinServe session with Kayode Samson Elepe, RR. Reference: ' + params.reference)}`
 
-  // Build Zoom join button if join URL exists
-  const zoomButton = params.zoomJoinUrl ? {
-    text: "Join Zoom Meeting",
-    href: params.zoomJoinUrl,
-    bgColor: "#2d8cff",
-    textColor: "#ffffff",
-  } : null;
+  // Build Zoom meeting link for cards (blue clickable link)
+  const zoomCard = params.zoomJoinUrl ? { label: "Meeting", value: `<a href="${params.zoomJoinUrl}" style="color: #2d8cff; text-decoration: underline;">${params.zoomJoinUrl}</a>` } : null;
 
   return buildEmail({
     preheaderText: `Booking confirmed: ${params.serviceType} on ${params.bookingDate} at ${params.bookingTime}`,
@@ -438,6 +433,7 @@ function bookingConfirmationUserTemplate(params) {
       { label: "Time", value: params.bookingTime },
       { label: "Discussion Path", value: params.path || 'Wealth planning' },
       { label: "Topic", value: params.topic || 'General' },
+      ...(zoomCard ? [zoomCard] : []),
       { label: "Reference", value: params.reference },
     ],
     sections: [
@@ -454,21 +450,12 @@ function bookingConfirmationUserTemplate(params) {
         content: `<div style="background: #f0ede6; padding: 20px; border-radius: 8px; border-left: 4px solid #c9a963; white-space: pre-wrap; font-size: 14px;">${params.question || 'No additional notes provided.'}</div>`,
       },
     ],
-    button: zoomButton || {
+    button: {
       text: "Add to Calendar",
       href: calendarUrl,
       bgColor: "#c9a963",
       textColor: "#081d2b",
     },
-    buttons: zoomButton ? [
-      {
-        text: "Add to Calendar",
-        href: calendarUrl,
-        bgColor: "#c9a963",
-        textColor: "#081d2b",
-      },
-      zoomButton,
-    ] : undefined,
   });
 }
 
@@ -495,6 +482,7 @@ function bookingNotificationAdminTemplate(params) {
           ${params.topic ? `<tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Topic:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.topic}</td></tr>` : ''}
           ${params.contactMethod ? `<tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Preferred Contact:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.contactMethod}</td></tr>` : ''}
           ${params.source ? `<tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Source:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${params.source}</td></tr>` : ''}
+          ${params.zoomJoinUrl ? `<tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Meeting:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><a href="${params.zoomJoinUrl}" style="color: #2d8cff; text-decoration: underline;">${params.zoomJoinUrl}</a></td></tr>` : ''}
           <tr><td style="padding: 12px 0;"><strong style="color: #c9a963;">Reference:</strong></td><td style="padding: 12px 0;">${params.reference}</td></tr>
         </table>`,
     },
@@ -506,16 +494,6 @@ function bookingNotificationAdminTemplate(params) {
         </table>`,
     },
   ]
-
-  if (params.zoomJoinUrl) {
-    sections.splice(1, 0, {
-      title: "Zoom Meeting",
-      content: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
-          <tr><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><strong style="color: #c9a963;">Join URL:</strong></td><td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><a href="${params.zoomJoinUrl}" style="color: #2d8cff;">${params.zoomJoinUrl}</a></td></tr>
-          <tr><td style="padding: 12px 0;"><strong style="color: #c9a963;">Meeting ID:</strong></td><td style="padding: 12px 0;">${params.zoomMeetingId || 'N/A'}</td></tr>
-        </table>`,
-    });
-  }
 
   if (params.priorities && params.priorities.length > 0) {
     sections.push({
@@ -551,30 +529,24 @@ function bookingNotificationAdminTemplate(params) {
       textColor: "#ffffff",
     },
     sections,
-    buttons: params.zoomJoinUrl ? [
+    buttons: [
       {
         text: "View Booking in Admin",
         href: adminLink("/admin/bookings"),
         bgColor: "#c9a963",
         textColor: "#081d2b",
       },
-      {
+      ...(params.zoomJoinUrl ? [{
         text: "Join Zoom Meeting",
         href: params.zoomJoinUrl,
         bgColor: "#2d8cff",
         textColor: "#ffffff",
-      },
-    ] : undefined,
-    button: !params.zoomJoinUrl ? {
-      text: "View Booking in Admin",
-      href: adminLink("/admin/bookings"),
-      bgColor: "#c9a963",
-      textColor: "#081d2b",
-    } : undefined,
-  });
-}
+      }] : []),
+          ],
+        });
+      }
 
-function careerApplicationNotificationTemplate(params) {
+      function careerApplicationNotificationTemplate(params) {
   return buildEmail({
     preheaderText: `New career application: ${params.name}`,
     hero: {

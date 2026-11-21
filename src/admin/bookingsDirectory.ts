@@ -431,7 +431,24 @@ export function useBookings(): BookingDirectory {
                     const [endHour, endMinute, endSecond] = endParts[1].split(":");
                     const endTime = `${endYear}-${endMonth}-${endDay}T${endHour}:${endMinute}:${endSecond}`;
     
-                    const description = `KSEFinServe Session Booking\n\nReference: ${reference}\nClient: ${input.firstName.trim()} ${input.lastName.trim()}\nEmail: ${input.email.trim()}\nPhone: ${input.phone.trim()}\nPath: ${input.path}\nTopic: ${input.topic}\nPriorities: ${(input.priorities || []).join(', ')}\nOutcome: ${input.outcome}\nContext: ${input.context}\nQuestion: ${input.question}\nContact Method: ${input.contactMethod}\nSource: ${input.source}\nConsent Contact: ${input.consentContact}\nConsent Updates: ${input.consentUpdates}`
+                    const description = `KSEFinServe Session Booking
+
+Reference: ${reference}
+Client: ${input.firstName.trim()} ${input.lastName.trim()}
+Email: ${input.email.trim()}
+Phone: ${input.phone.trim()}
+Path: ${input.path}
+Topic: ${input.topic}
+Priorities: ${(input.priorities || []).join(', ')}
+Outcome: ${input.outcome}
+Context: ${input.context}
+Question: ${input.question}
+Contact Method: ${input.contactMethod}
+Source: ${input.source}
+Consent Contact: ${input.consentContact}
+Consent Updates: ${input.consentUpdates}${zoomJoinUrl ? `
+
+Zoom Meeting: ${zoomJoinUrl}` : ''}`
     
                     await fetch(`/.netlify/functions/calendar`, {
                                                   method: 'POST',

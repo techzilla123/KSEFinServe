@@ -777,21 +777,28 @@ a {
 
 .video-card {
   position: relative;
-  height: 320px;
+  height: 450px;
   overflow: hidden;
   border-radius: 20px;
   color: white;
   background: #0a0908;
 }
 
-.video-card > img,
-.video-shade {
+@media (max-width: 768px) {
+  .video-card {
+    height: 340px; /* Adjust between 220px–280px to fit your mobile layout */
+  }
+}
+
+
+.video-card-el {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
+
 
 .video-shade {
   background: linear-gradient(180deg, rgb(0 0 0 / 55%), transparent 48%, rgb(0 0 0 / 65%));

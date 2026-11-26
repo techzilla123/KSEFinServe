@@ -320,36 +320,28 @@ KSEFinServe · </p>
           </div>
         </div>
         <aside className="story-aside">
-          <div className="philosophy-card">
-            <h2>Philosophy</h2>
-            <p>“Our goal is helping people make better decisions for their families and futures.”</p>
-            <p>“Wealth means freedom: to protect family, support causes, and build legacies.”</p>
-          </div>
-          <div className="video-card">
-            <img src={asset("97742.png")} alt="Kayode sharing his career story" />
-            <div className="video-shade" />
-            <div className="video-meta">
-              <span>Video Story</span>
-              <strong>A Career Defined by Transition</strong>
-            </div>
-            <span className="duration">04:18</span>
-            <button
-              className="play-button"
-              type="button"
-              onClick={() => setIsPlaying((playing) => !playing)}
-              aria-label={isPlaying ? "Pause video" : "Play video"}
-            >
-              <img src={asset(isPlaying ? "ac793.svg" : "190a4.svg")} alt="" />
-            </button>
-            <div className="video-controls">
-              <span><i style={{ width: isPlaying ? "58%" : "34%" }} /></span>
-              <button type="button" onClick={() => setIsPlaying((playing) => !playing)}>
-                <img src={asset(isPlaying ? "ac793.svg" : "a3943.svg")} alt="" />
-              </button>
-              <button type="button"><img src={asset("127cd.svg")} alt="" /></button>
-            </div>
-          </div>
-        </aside>
+  <div className="philosophy-card">
+    <h2>Philosophy</h2>
+    <p>“Our goal is helping people make better decisions for their families and futures.”</p>
+    <p>“Wealth means freedom: to protect family, support causes, and build legacies.”</p>
+  </div>
+
+  <div className="video-card">
+    <video
+      className="video-card-el"
+      src={asset("KSE_FinServe_Service_Page_WEB.mp4")}
+      preload="metadata"
+      playsInline
+      controls
+      aria-label="A Career Defined by Transition video"
+    />
+    <div className="video-meta" style={{ pointerEvents: "none" }}>
+      <span>Video Story</span>
+      <strong>A Career Defined by Transition</strong>
+    </div>
+  </div>
+</aside>
+
       </section>
 
       <section className="values">

@@ -44,6 +44,7 @@ const artwork = {
   careerCard: `${assetPathPrefix}/careerCard.webp`,
   nextChapter: `${assetPathPrefix}/fb1d4.webp`,
   conversation: `${assetPathPrefix}/0f1eb.webp`,
+  conversationVideo: `${assetPathPrefix}/KSE_FinServe_Clarity_Session_WEB.mp4`,
   chevron: `${assetPathPrefix}/32174.svg`,
   halo: `${assetPathPrefix}/d59b6.svg`,
   ring: `${assetPathPrefix}/b0288.svg`,
@@ -577,6 +578,8 @@ export default function App() {
   const [storyVideoPlaying, setStoryVideoPlaying] = useState(false)
   const [storyVideoActive, setStoryVideoActive] = useState(false)
   const storyVideoRef = useRef<HTMLVideoElement>(null)
+  const [conversationVideoPlaying, setConversationVideoPlaying] = useState(false)
+  const conversationVideoRef = useRef<HTMLVideoElement>(null)
   const [mobileMenu, setMobileMenu] = useState(false)
   const [showInsights, setShowInsights] = useState(false)
   const [principal, setPrincipal] = useState(10000)
@@ -1677,39 +1680,54 @@ export default function App() {
               </div>
             </article>
             <article className="contact-card conversation-card" data-reveal>
-              <Art src={artwork.conversationGlow} className="card-glow-top" />
-              <Art
-                src={artwork.chapterGlowBottom}
-                className="card-glow-bottom"
-              />
-              <div className="contact-card-grid grid items-center">
-                <Button
-                  variant="text"
-                  className="conversation-image"
-                  aria-label="Learn about working together"
-                  onClick={() => setPanel({ kind: "story" })}
-                >
-                  <img
-                    src={artwork.conversation}
-                    alt="A financial professional ready for a conversation"
-                    loading="lazy"
-                  />
-                  <span className="play-circle">
-                    <Art src={artwork.conversationPlay} />
-                  </span>
-                </Button>
-                <div>
-                  <Eyebrow>REACH OUT</Eyebrow>
-                  <Heading>Let's Start with a Conversation</Heading>
-                  <p>
-                    Whether you're planning your financial future or exploring
-                    your next career chapter, I'd be honoured to learn more
-                    about your goals and discuss how I can help.
-                  </p>
-                  <BookingLink>Book a Strategy Session</BookingLink>
-                </div>
-              </div>
-            </article>
+                          <Art src={artwork.conversationGlow} className="card-glow-top" />
+                          <Art
+                            src={artwork.chapterGlowBottom}
+                            className="card-glow-bottom"
+                          />
+                          <div className="contact-card-grid grid items-center">
+                            <div className={`conversation-video ${conversationVideoPlaying ? 'is-playing' : ''}`}>
+                                              <video
+                                                ref={conversationVideoRef}
+                                                className="conversation-video-el"
+                                                src={artwork.conversationVideo}
+                                                preload="metadata"
+                                                playsInline
+                                                controls
+                                                aria-label="KSEFinServe Clarity Session video"
+                                                onPlay={() => setConversationVideoPlaying(true)}
+                                                onPause={() => setConversationVideoPlaying(false)}
+                                              />
+                                              <button
+                                                className="conversation-video-play"
+                                                type="button"
+                                                aria-label={conversationVideoPlaying ? "Pause video" : "Play video"}
+                                                onClick={() => {
+                                                  const video = conversationVideoRef.current
+                                                  if (video) {
+                                                    if (video.paused) {
+                                                      video.play()
+                                                    } else {
+                                                      video.pause()
+                                                    }
+                                                  }
+                                                }}
+                                              >
+                                                <Art src={artwork.conversationPlay} />
+                                              </button>
+                                            </div>
+                            <div>
+                              <Eyebrow>REACH OUT</Eyebrow>
+                              <Heading>Let's Start with a Conversation</Heading>
+                              <p>
+                                Whether you're planning your financial future or exploring
+                                your next career chapter, I'd be honoured to learn more
+                                about your goals and discuss how I can help.
+                              </p>
+                              <BookingLink>Book a Strategy Session</BookingLink>
+                            </div>
+                          </div>
+                        </article>
           </div>
         </section>
       </main>

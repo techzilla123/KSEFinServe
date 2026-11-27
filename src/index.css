@@ -546,11 +546,15 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .conversation-image .play-circle { background: white; }
 
 .conversation-video { position: relative; width: 100%; overflow: hidden; border-radius: 8px; background: #000; }
-.conversation-video-el { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
+.conversation-video-el { width: 100%; aspect-ratio: 16/9; object-fit: contain; display: block; }
 .conversation-video-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: grid; width: 74px; height: 74px; place-items: center; border: 0; border-radius: 50%; cursor: pointer; background: white; box-shadow: 0 8px 12px rgb(0 0 0 / 15%); transition: opacity 0.3s ease; }
 .conversation-video-play > .art { margin-left: 4px; }
 .conversation-video.is-playing .conversation-video-play { opacity: 0; pointer-events: none; }
 .conversation-video.is-playing .conversation-video-el { cursor: pointer; }
+
+.conversation-grid { grid-template-columns: 1fr; gap: 32px; }
+.conversation-video-wrapper { width: 100%; }
+.conversation-content { text-align: left; }
 
 .site-footer { color: white; background: var(--color-navy); }
 .footer-top { max-width: 1320px; padding: 70px 0 55px; }

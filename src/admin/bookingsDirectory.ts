@@ -359,41 +359,37 @@ export function useBookings(): BookingDirectory {
         await refresh()
 
         // Send confirmation emails (non-blocking)
-                let zoomJoinUrl: string | undefined
-                let zoomMeetingId: string | undefined
+                        let zoomJoinUrl: string | undefined
+                        let zoomMeetingId: string | undefined
 
-                // Create Zoom meeting if date/time provided
-                                if (input.availableDate && input.availableTime) {
-                                  try {
-                                    // Get Zoom access token from localStorage (set by ZoomSuccessPage after OAuth)
-                                    const accessToken = typeof window !== 'undefined' ? localStorage.getItem('zoom_access_token') : null;
-                    
-                                    const zoomRes = await fetch(`/.netlify/functions/create-zoom-meeting`, {
-                                      method: 'POST',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({
-                                        reference,
-                                        userName: `${input.firstName.trim()} ${input.lastName.trim()}`.trim(),
-                                        userEmail: input.email.trim(),
-                                        bookingDate: input.availableDate,
-                                        bookingTime: input.availableTime,
-                                        topic: input.topic,
-                                        path: input.path,
-                                        duration: 60,
-                                        accessToken,
-                                      }),
-                                    })
-                                    const zoomData = await zoomRes.json()
-                                    if (zoomData.success) {
-                                      zoomJoinUrl = zoomData.join_url
-                                      zoomMeetingId = zoomData.meeting_id
-                                    } else {
-                                      console.error('Zoom meeting creation failed:', zoomData.error)
-                                    }
-                                  } catch (zoomErr) {
-                                    console.error('Zoom meeting creation error:', zoomErr)
-                                  }
-                                }
+                        // Create Zoom meeting if date/time provided
+                        if (input.availableDate && input.availableTime) {
+                          try {
+                            const zoomRes = await fetch(`/.netlify/functions/create-zoom-meeting`, {
+                                              method: 'POST',
+                                              headers: { 'Content-Type': 'application/json' },
+                                              body: JSON.stringify({
+                                                reference,
+                                                userName: `${input.firstName.trim()} ${input.lastName.trim()}`.trim(),
+                                                userEmail: input.email.trim(),
+                                                bookingDate: input.availableDate,
+                                                bookingTime: input.availableTime,
+                                                topic: input.topic,
+                                                path: input.path,
+                                                duration: 60,
+                                              }),
+                                            })
+                                            const zoomData = await zoomRes.json()
+                                            if (zoomData.success) {
+                                              zoomJoinUrl = zoomData.join_url
+                                              zoomMeetingId = zoomData.meeting_id
+                                            } else {
+                                              console.error('Zoom meeting creation failed:', zoomData.error)
+                                            }
+                                          } catch (zoomErr) {
+                                            console.error('Zoom meeting creation error:', zoomErr)
+                                          }
+                                        }
 
                 // Create Google Calendar event (non-blocking)
                 if (input.availableDate && input.availableTime) {

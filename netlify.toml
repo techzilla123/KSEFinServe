@@ -22,11 +22,11 @@
 
 # Zoom OAuth callback function
 [functions.zoom-callback]
-  external_node_modules = []
+  external_node_modules = ["@supabase/supabase-js"]
 
 # Create Zoom meeting function
 [functions.create-zoom-meeting]
-  external_node_modules = []
+  external_node_modules = ["@supabase/supabase-js"]
 
 # Omit specific environment variable values from secrets scanning
 # These are expected to be in the build output as they're used in the application

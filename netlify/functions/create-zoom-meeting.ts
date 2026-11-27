@@ -1,6 +1,80 @@
 import type { Config, Context } from "@netlify/functions";
+import { createClient } from "@supabase/supabase-js";
 
 const ZOOM_API_BASE = "https://api.zoom.us/v2";
+const ZOOM_CLIENT_ID = process.env.ZOOM_CLIENT_ID!;
+const ZOOM_CLIENT_SECRET = process.env.ZOOM_CLIENT_SECRET!;
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL!;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+const ADMIN_EMAIL = "admin@ksefinserve.com";
+
+async function refreshAccessToken(refreshToken: string): Promise<{ access_token: string; refresh_token: string; expires_in: number } | null> {
+  try {
+    const res = await fetch(
+      `https://zoom.us/oauth/token?grant_type=refresh_token&refresh_token=${encodeURIComponent(refreshToken)}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${btoa(`${ZOOM_CLIENT_ID}:${ZOOM_CLIENT_SECRET}`)}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
+    );
+
+    const tokens = await res.json();
+
+    if (!res.ok) {
+      console.error("Token refresh failed:", tokens);
+      return null;
+    }
+
+    // Store refreshed tokens
+    const expiresAt = Date.now() + tokens.expires_in * 1000;
+    await supabase
+      .from("zoom_tokens")
+      .upsert(
+        {
+          user_id: ADMIN_EMAIL,
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+          expires_at: expiresAt,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" }
+      );
+
+    return tokens;
+  } catch (err) {
+    console.error("Token refresh error:", err);
+    return null;
+  }
+}
+
+async function getValidAccessToken(): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("zoom_tokens")
+    .select("access_token, refresh_token, expires_at")
+    .eq("user_id", ADMIN_EMAIL)
+    .single();
+
+  if (error || !data) {
+    console.error("No Zoom tokens found:", error);
+    return null;
+  }
+
+  // Check if token is still valid (with 5 min buffer)
+  if (Date.now() < data.expires_at - 5 * 60 * 1000) {
+    return data.access_token;
+  }
+
+  // Token expired, try to refresh
+  console.log("Access token expired, refreshing...");
+  const refreshed = await refreshAccessToken(data.refresh_token);
+  return refreshed?.access_token ?? null;
+}
 
 async function createZoomMeeting(accessToken: string, meetingDetails: {
   topic: string;
@@ -67,7 +141,6 @@ export default async (req: Request, context: Context) => {
     topic,
     path,
     duration = 60,
-    accessToken,
   } = body;
 
   if (!reference || !userName || !bookingDate || !bookingTime) {
@@ -77,9 +150,12 @@ export default async (req: Request, context: Context) => {
     );
   }
 
+  // Get valid access token from Supabase (auto-refreshes if expired)
+  const accessToken = await getValidAccessToken();
+
   if (!accessToken) {
     return new Response(
-      JSON.stringify({ error: "No Zoom access token provided. Please connect Zoom first." }),
+      JSON.stringify({ error: "No valid Zoom access token. Please connect Zoom in admin settings." }),
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
@@ -107,7 +183,7 @@ export default async (req: Request, context: Context) => {
 
   if (!meeting) {
     return new Response(
-      JSON.stringify({ error: "Failed to create Zoom meeting. Token may be expired." }),
+      JSON.stringify({ error: "Failed to create Zoom meeting. Token may be invalid." }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }

@@ -1686,37 +1686,39 @@ export default function App() {
                             className="card-glow-bottom"
                           />
                           <div className="contact-card-grid grid items-center">
-                            <div className={`conversation-video ${conversationVideoPlaying ? 'is-playing' : ''}`}>
-                                              <video
-                                                ref={conversationVideoRef}
-                                                className="conversation-video-el"
-                                                src={artwork.conversationVideo}
-                                                preload="metadata"
-                                                playsInline
-                                                controls
-                                                aria-label="KSEFinServe Clarity Session video"
-                                                onPlay={() => setConversationVideoPlaying(true)}
-                                                onPause={() => setConversationVideoPlaying(false)}
-                                              />
-                                              <button
-                                                className="conversation-video-play"
-                                                type="button"
-                                                aria-label={conversationVideoPlaying ? "Pause video" : "Play video"}
-                                                onClick={() => {
-                                                  const video = conversationVideoRef.current
-                                                  if (video) {
-                                                    if (video.paused) {
-                                                      video.play()
-                                                    } else {
-                                                      video.pause()
-                                                    }
-                                                  }
-                                                }}
-                                              >
-                                                <Art src={artwork.conversationPlay} />
-                                              </button>
-                                            </div>
-                            <div>
+                            <div className="conversation-video-wrapper">
+                              <div className={`conversation-video ${conversationVideoPlaying ? 'is-playing' : ''}`}>
+                                <video
+                                  ref={conversationVideoRef}
+                                  className="conversation-video-el"
+                                  src={artwork.conversationVideo}
+                                  preload="metadata"
+                                  playsInline
+                                  controls
+                                  aria-label="KSEFinServe Clarity Session video"
+                                  onPlay={() => setConversationVideoPlaying(true)}
+                                  onPause={() => setConversationVideoPlaying(false)}
+                                />
+                                <button
+                                  className="conversation-video-play"
+                                  type="button"
+                                  aria-label={conversationVideoPlaying ? "Pause video" : "Play video"}
+                                  onClick={() => {
+                                    const video = conversationVideoRef.current
+                                    if (video) {
+                                      if (video.paused) {
+                                        video.play()
+                                      } else {
+                                        video.pause()
+                                      }
+                                    }
+                                  }}
+                                >
+                                  <Art src={artwork.conversationPlay} />
+                                </button>
+                              </div>
+                            </div>
+                            <div className="conversation-content">
                               <Eyebrow>REACH OUT</Eyebrow>
                               <Heading>Let's Start with a Conversation</Heading>
                               <p>
@@ -2223,51 +2225,30 @@ function CompoundGraph({
     }
 
     function ZoomSuccessPage() {
-      useEffect(() => {
-        // Extract tokens from URL fragment
-        const hash = window.location.hash.substring(1);
-        const params = new URLSearchParams(hash);
-        const accessToken = params.get("access_token");
-        const refreshToken = params.get("refresh_token");
-        const expiresIn = params.get("expires_in");
+          useEffect(() => {
+            // Check for connected=true query parameter (new Supabase storage flow)
+            const params = new URLSearchParams(window.location.search);
+            const connected = params.get("connected") === "true";
 
-        if (accessToken) {
-          // Store securely (e.g., in secure httpOnly cookie via backend, or encrypted in localStorage for demo)
-          localStorage.setItem("zoom_access_token", accessToken);
-          if (refreshToken) localStorage.setItem("zoom_refresh_token", refreshToken);
-          if (expiresIn) localStorage.setItem("zoom_expires_at", String(Date.now() + parseInt(expiresIn) * 1000));
-          // Clean URL
-          window.history.replaceState({}, document.title, "/zoom-success");
-        }
-      }, []);
+            if (connected) {
+              // Clean URL
+              window.history.replaceState({}, document.title, "/zoom-success");
+            }
+          }, []);
 
-      const storedToken = typeof window !== "undefined" ? localStorage.getItem("zoom_access_token") : null;
-
-      return (
-        <section className="zoom-success">
-          <div className="container text-center">
-            <h1>Zoom Connected Successfully</h1>
-            <p className="lede">Your Zoom account has been linked. You can now create meetings from KSEFinServe.</p>
-            {storedToken ? (
-              <div className="zoom-token-status">
-                <p><strong>Access Token:</strong> stored securely</p>
-                <button className="button button-navy" onClick={() => {
-                  localStorage.removeItem("zoom_access_token");
-                  localStorage.removeItem("zoom_refresh_token");
-                  localStorage.removeItem("zoom_expires_at");
-                  window.location.reload();
-                }}>
-                  Disconnect Zoom
-                </button>
+          return (
+            <section className="zoom-success">
+              <div className="container text-center">
+                <h1>Zoom Connected Successfully</h1>
+                <p className="lede">Your Zoom account has been linked. You can now create meetings from KSEFinServe.</p>
+                <div className="zoom-token-status">
+                  <p><strong>Status:</strong> Connected (tokens stored securely in Supabase)</p>
+                </div>
+                <p className="mt-4"><a href="/" className="button button-gold">Back to Home</a></p>
               </div>
-            ) : (
-              <p className="muted">No active Zoom connection found.</p>
-            )}
-            <p className="mt-4"><a href="/" className="button button-gold">Back to Home</a></p>
-          </div>
-        </section>
-      );
-    }
+            </section>
+          );
+        }
 
     function Benefit({
   title,
